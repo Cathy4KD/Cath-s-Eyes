@@ -52,6 +52,7 @@ const App = {
             postmortem: 'Post-Mortem',
             rapports: 'Rapports',
             import: 'Import Données',
+            pieces: 'Pièces',
             'avis-syndicaux': 'Avis syndicaux',
             'reunions': 'Réunions',
             'parametres': 'Paramètres'
@@ -90,6 +91,9 @@ const App = {
             case 'import':
                 content.innerHTML = Screens.renderImport();
                 this.setupImportZone();
+                break;
+            case 'pieces':
+                content.innerHTML = Screens.renderPieces();
                 break;
             case 'avis-syndicaux':
                 content.innerHTML = Screens.renderAvisSyndicaux();

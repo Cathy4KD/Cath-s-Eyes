@@ -2051,5 +2051,90 @@ Actions à suivre:
                 </p>
             </div>
         `;
+    },
+
+    // === PIÈCES ===
+    renderPieces() {
+        const pieces = DataManager.data.pieces || [];
+
+        if (pieces.length === 0) {
+            return `
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">🔩 Liste des Pièces</h3>
+                    </div>
+                    <div style="padding: 40px; text-align: center; color: var(--text-light);">
+                        <p>Aucune pièce importée.</p>
+                        <p style="margin-top: 10px;">Importez des pièces depuis l'écran "Import Données".</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Obtenir les OT uniques pour le filtre
+        const otUniques = [...new Set(pieces.map(p => p.otLie).filter(Boolean))].sort();
+
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🔩 Liste des Pièces</h3>
+                    <span class="badge badge-primary">${pieces.length} pièces</span>
+                </div>
+
+                <div style="padding: 15px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <input type="text" id="pieceSearch" placeholder="Rechercher..."
+                           style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; flex: 1; min-width: 200px;"
+                           oninput="Screens.filterPieces()">
+                    <select id="pieceOTFilter" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;"
+                            onchange="Screens.filterPieces()">
+                        <option value="">Tous les OT</option>
+                        ${otUniques.map(ot => `<option value="${ot}">${ot}</option>`).join('')}
+                    </select>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table class="table" id="piecesTable">
+                        <thead>
+                            <tr>
+                                <th>OT Lié</th>
+                                <th>Référence</th>
+                                <th>Désignation</th>
+                                <th>Quantité</th>
+                                <th>Fournisseur</th>
+                                <th>Catégorie</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pieces.map(p => `
+                                <tr data-ot="${(p.otLie || '').toLowerCase()}" data-search="${(p.otLie + ' ' + p.reference + ' ' + p.designation + ' ' + p.fournisseur).toLowerCase()}">
+                                    <td><strong>${p.otLie || '-'}</strong></td>
+                                    <td>${p.reference || '-'}</td>
+                                    <td>${p.designation || '-'}</td>
+                                    <td>${p.quantite || 1}${p.unite ? ' ' + p.unite : ''}</td>
+                                    <td>${p.fournisseur || '-'}</td>
+                                    <td>${p.categorie || '-'}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    },
+
+    filterPieces() {
+        const search = (document.getElementById('pieceSearch')?.value || '').toLowerCase();
+        const otFilter = (document.getElementById('pieceOTFilter')?.value || '').toLowerCase();
+        const rows = document.querySelectorAll('#piecesTable tbody tr');
+
+        rows.forEach(row => {
+            const rowSearch = row.dataset.search || '';
+            const rowOT = row.dataset.ot || '';
+
+            const matchSearch = !search || rowSearch.includes(search);
+            const matchOT = !otFilter || rowOT === otFilter;
+
+            row.style.display = (matchSearch && matchOT) ? '' : 'none';
+        });
     }
 };
