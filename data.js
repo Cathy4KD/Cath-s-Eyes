@@ -11,13 +11,18 @@ const DataManager = {
         postmortem: [],        // Actions post-mortem
         comments: {},          // Commentaires par OT {otId: [comments]}
         customFields: [],      // Champs personnalisés définis lors de l'import
+        pieces: [],            // Pièces importées
+        avis: [],              // Avis importés
+        processus: null,       // Données du processus d'arrêt (initialisé par ProcessusArret)
         metadata: {
             lastImportTravaux: null,
             lastImportExecution: null,
+            lastImportPieces: null,
             totalOT: 0,
             arretName: '',
             arretDateDebut: null,
-            arretDateFin: null
+            arretDateFin: null,
+            lastLocalSave: null
         }
     },
 
@@ -42,8 +47,25 @@ const DataManager = {
         try {
             const saved = localStorage.getItem(this.STORAGE_KEY);
             if (saved) {
-                this.data = JSON.parse(saved);
-                console.log('Données locales chargées:', this.data.travaux.length, 'travaux');
+                const loadedData = JSON.parse(saved);
+                // Fusionner avec la structure par défaut pour préserver tous les champs
+                this.data = {
+                    travaux: loadedData.travaux || [],
+                    execution: loadedData.execution || [],
+                    postmortem: loadedData.postmortem || [],
+                    comments: loadedData.comments || {},
+                    customFields: loadedData.customFields || [],
+                    pieces: loadedData.pieces || [],
+                    avis: loadedData.avis || [],
+                    processus: loadedData.processus || null,
+                    metadata: {
+                        ...this.data.metadata,
+                        ...(loadedData.metadata || {})
+                    }
+                };
+                console.log('Données locales chargées:', this.data.travaux.length, 'travaux,',
+                    (this.data.pieces || []).length, 'pièces,',
+                    'processus:', this.data.processus ? 'oui' : 'non');
             }
         } catch (e) {
             console.error('Erreur chargement localStorage:', e);
@@ -86,9 +108,15 @@ const DataManager = {
     saveToLocalStorage() {
         try {
             this.data.metadata.lastLocalSave = Date.now();
-            localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.data));
+            const dataStr = JSON.stringify(this.data);
+            localStorage.setItem(this.STORAGE_KEY, dataStr);
+            console.log('Données sauvegardées:', Math.round(dataStr.length / 1024), 'KB');
         } catch (e) {
             console.error('Erreur sauvegarde localStorage:', e);
+            // Afficher une alerte si quota dépassé
+            if (e.name === 'QuotaExceededError' || e.code === 22) {
+                alert('Erreur: Espace de stockage insuffisant. Les données n\'ont pas pu être sauvegardées. Essayez d\'exporter vos données et de vider le cache.');
+            }
         }
     },
 
