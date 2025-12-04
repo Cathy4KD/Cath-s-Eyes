@@ -108,6 +108,25 @@ body {
     font-size: 1.2rem;
 }
 
+/* Lien externe dans la sidebar */
+.nav-link-external {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    color: inherit;
+    text-decoration: none;
+}
+
+.nav-external:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.external-icon {
+    margin-left: auto;
+    font-size: 0.8rem;
+    opacity: 0.6;
+}
+
 .sidebar-footer {
     padding: 15px 20px;
     border-top: 1px solid rgba(255,255,255,0.1);
