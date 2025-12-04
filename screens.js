@@ -2078,7 +2078,12 @@ Actions à suivre:
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">🔩 Liste des Pièces</h3>
-                    <span class="badge badge-primary">${pieces.length} pièces</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span class="badge badge-primary">${pieces.length} pièces</span>
+                        <button onclick="Screens.syncPiecesToFirebase()" class="btn-sync" title="Synchroniser vers Firebase" style="background: #4CAF50; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;">
+                            ☁️ Sync Firebase
+                        </button>
+                    </div>
                 </div>
 
                 <div style="padding: 15px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
@@ -2136,5 +2141,23 @@ Actions à suivre:
 
             row.style.display = (matchSearch && matchOT) ? '' : 'none';
         });
+    },
+
+    async syncPiecesToFirebase() {
+        const pieces = DataManager.data.pieces || [];
+        if (pieces.length === 0) {
+            App.showToast('Aucune pièce à synchroniser', 'warning');
+            return;
+        }
+
+        try {
+            App.showToast('Synchronisation en cours...', 'info');
+            await FirebaseManager.syncToCloud();
+            App.showToast(`${pieces.length} pièces synchronisées vers Firebase`, 'success');
+            console.log('Pièces synchronisées:', pieces.length);
+        } catch (error) {
+            console.error('Erreur sync pièces:', error);
+            App.showToast('Erreur de synchronisation', 'error');
+        }
     }
 };
