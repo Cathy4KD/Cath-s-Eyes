@@ -74,7 +74,7 @@ const DataManager = {
 
     // Charger depuis Firebase (asynchrone)
     // Note: Les travaux restent en local (trop gros pour Firebase)
-    // Seuls les pièces, avis, comments, etc. sont synchronisés
+    // Seuls les pièces, avis, comments, processus, etc. sont synchronisés
     async loadFromFirebase() {
         if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
             try {
@@ -93,10 +93,16 @@ const DataManager = {
                     if (cloudData.postmortem) this.data.postmortem = cloudData.postmortem;
                     if (cloudData.comments) this.data.comments = cloudData.comments;
 
+                    // Fusionner processus (date d'arrêt, etc.) - prendre Firebase si local est vide
+                    if (cloudData.processus && !this.data.processus) {
+                        this.data.processus = cloudData.processus;
+                    }
+
                     // Garder les travaux locaux
                     this.data.travaux = localTravaux;
 
-                    console.log('Données Firebase fusionnées - Pièces:', (this.data.pieces || []).length);
+                    console.log('Données Firebase fusionnées - Pièces:', (this.data.pieces || []).length,
+                        '- Processus:', this.data.processus ? 'oui' : 'non');
                 }
             } catch (e) {
                 console.error('Erreur chargement Firebase:', e);
@@ -120,14 +126,24 @@ const DataManager = {
         }
     },
 
-    // Sauvegarder (localStorage uniquement - sync Firebase manuelle via bouton)
+    // Timer pour debounce de la sync Firebase
+    _syncTimer: null,
+
+    // Sauvegarder (localStorage + sync Firebase automatique avec debounce)
     saveToStorage() {
         this.saveToLocalStorage();
-        // Note: La sync Firebase est maintenant manuelle (bouton ☁️ Sync)
-        // pour éviter les erreurs de taille de document
+
+        // Sync Firebase automatique avec debounce de 3 secondes
+        // pour éviter trop d'appels lors de modifications rapides
+        if (this._syncTimer) {
+            clearTimeout(this._syncTimer);
+        }
+        this._syncTimer = setTimeout(() => {
+            this.syncToFirebase();
+        }, 3000);
     },
 
-    // Synchroniser vers Firebase (appelé manuellement)
+    // Synchroniser vers Firebase
     syncToFirebase: async function() {
         if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
             await FirebaseManager.syncToCloud();

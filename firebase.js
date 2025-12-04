@@ -121,10 +121,11 @@ const FirebaseManager = {
 
         this.syncInProgress = true;
         try {
-            // Document metadata (léger)
+            // Document metadata (léger) - inclut processus pour la date d'arrêt
             const metadataRef = this.db.collection('arretAnnuel').doc('metadata');
             await metadataRef.set({
                 metadata: this.cleanForFirestore(DataManager.data.metadata || {}),
+                processus: this.cleanForFirestore(DataManager.data.processus || null),
                 postmortem: this.cleanForFirestore(DataManager.data.postmortem || []),
                 comments: this.cleanForFirestore(DataManager.data.comments || {}),
                 customFields: this.cleanForFirestore(DataManager.data.customFields || []),
@@ -144,7 +145,7 @@ const FirebaseManager = {
             // Ils restent en localStorage uniquement
 
             console.log('Données synchronisées vers Firebase');
-            this.showToast('Données synchronisées', 'success');
+            this.showToast('Synchronisé ☁️', 'success');
             return true;
         } catch (error) {
             console.error('Erreur sync vers cloud:', error);
@@ -168,7 +169,7 @@ const FirebaseManager = {
             const metaData = metadataDoc.exists ? metadataDoc.data() : {};
             const piecesData = piecesDoc.exists ? piecesDoc.data() : {};
 
-            console.log('Données chargées depuis Firebase');
+            console.log('Données chargées depuis Firebase, processus:', metaData.processus ? 'oui' : 'non');
             return {
                 // Les travaux restent en local (trop gros pour Firebase)
                 travaux: [],
@@ -178,6 +179,7 @@ const FirebaseManager = {
                 customFields: metaData.customFields || [],
                 pieces: piecesData.pieces || [],
                 avis: metaData.avis || [],
+                processus: metaData.processus || null,
                 metadata: metaData.metadata || {
                     lastImportTravaux: null,
                     lastImportExecution: null,
