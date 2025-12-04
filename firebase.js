@@ -102,35 +102,46 @@ const FirebaseManager = {
         return obj;
     },
 
+    // Nettoyer un travail pour Firebase (enlever rawData volumineux)
+    cleanTravailForFirebase(travail) {
+        const { rawData, ...cleanTravail } = travail;
+        return this.cleanForFirestore(cleanTravail);
+    },
+
+    // Nettoyer une pièce pour Firebase (enlever rawData volumineux)
+    cleanPieceForFirebase(piece) {
+        const { rawData, ...cleanPiece } = piece;
+        return this.cleanForFirestore(cleanPiece);
+    },
+
     // Sauvegarder toutes les données vers Firebase
-    // Les pièces sont stockées dans un document séparé (limite 1MB par doc)
+    // Données séparées en plusieurs documents (limite 1MB par doc)
     async syncToCloud() {
         if (this.syncInProgress || !this.db) return;
 
         this.syncInProgress = true;
         try {
-            // Document principal (sans les pièces pour réduire la taille)
-            const mainDataRef = this.db.collection('arretAnnuel').doc('mainData');
-            const mainData = {
-                travaux: this.cleanForFirestore(DataManager.data.travaux || []),
+            // Document metadata (léger)
+            const metadataRef = this.db.collection('arretAnnuel').doc('metadata');
+            await metadataRef.set({
+                metadata: this.cleanForFirestore(DataManager.data.metadata || {}),
                 postmortem: this.cleanForFirestore(DataManager.data.postmortem || []),
                 comments: this.cleanForFirestore(DataManager.data.comments || {}),
                 customFields: this.cleanForFirestore(DataManager.data.customFields || []),
-                metadata: this.cleanForFirestore(DataManager.data.metadata || {}),
                 avis: this.cleanForFirestore(DataManager.data.avis || []),
                 lastSync: firebase.firestore.FieldValue.serverTimestamp()
-            };
+            });
 
-            // Document séparé pour les pièces
+            // Document pièces (sans rawData)
             const piecesRef = this.db.collection('arretAnnuel').doc('pieces');
-            const piecesData = {
-                pieces: this.cleanForFirestore(DataManager.data.pieces || []),
+            const cleanPieces = (DataManager.data.pieces || []).map(p => this.cleanPieceForFirebase(p));
+            await piecesRef.set({
+                pieces: cleanPieces,
                 lastSync: firebase.firestore.FieldValue.serverTimestamp()
-            };
+            });
 
-            // Sauvegarder les deux documents
-            await mainDataRef.set(mainData);
-            await piecesRef.set(piecesData);
+            // Les travaux sont trop gros, on ne les sync pas automatiquement
+            // Ils restent en localStorage uniquement
 
             console.log('Données synchronisées vers Firebase');
             this.showToast('Données synchronisées', 'success');
@@ -149,35 +160,33 @@ const FirebaseManager = {
         if (!this.db) return null;
 
         try {
-            // Charger le document principal
-            const mainDoc = await this.db.collection('arretAnnuel').doc('mainData').get();
+            // Charger le document metadata
+            const metadataDoc = await this.db.collection('arretAnnuel').doc('metadata').get();
             // Charger le document des pièces
             const piecesDoc = await this.db.collection('arretAnnuel').doc('pieces').get();
 
-            if (mainDoc.exists) {
-                const data = mainDoc.data();
-                const piecesData = piecesDoc.exists ? piecesDoc.data() : {};
+            const metaData = metadataDoc.exists ? metadataDoc.data() : {};
+            const piecesData = piecesDoc.exists ? piecesDoc.data() : {};
 
-                console.log('Données chargées depuis Firebase');
-                return {
-                    travaux: data.travaux || [],
-                    execution: data.execution || [],
-                    postmortem: data.postmortem || [],
-                    comments: data.comments || {},
-                    customFields: data.customFields || [],
-                    pieces: piecesData.pieces || data.pieces || [],
-                    avis: data.avis || [],
-                    metadata: data.metadata || {
-                        lastImportTravaux: null,
-                        lastImportExecution: null,
-                        totalOT: 0,
-                        arretName: '',
-                        arretDateDebut: null,
-                        arretDateFin: null
-                    }
-                };
-            }
-            return null;
+            console.log('Données chargées depuis Firebase');
+            return {
+                // Les travaux restent en local (trop gros pour Firebase)
+                travaux: [],
+                execution: [],
+                postmortem: metaData.postmortem || [],
+                comments: metaData.comments || {},
+                customFields: metaData.customFields || [],
+                pieces: piecesData.pieces || [],
+                avis: metaData.avis || [],
+                metadata: metaData.metadata || {
+                    lastImportTravaux: null,
+                    lastImportExecution: null,
+                    totalOT: 0,
+                    arretName: '',
+                    arretDateDebut: null,
+                    arretDateFin: null
+                }
+            };
         } catch (error) {
             console.error('Erreur chargement depuis cloud:', error);
             return null;

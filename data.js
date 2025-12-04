@@ -51,21 +51,30 @@ const DataManager = {
     },
 
     // Charger depuis Firebase (asynchrone)
+    // Note: Les travaux restent en local (trop gros pour Firebase)
+    // Seuls les pièces, avis, comments, etc. sont synchronisés
     async loadFromFirebase() {
         if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
             try {
                 const cloudData = await FirebaseManager.loadFromCloud();
                 if (cloudData) {
-                    // Fusionner les données cloud avec les données locales
-                    // Prioriser les données cloud si elles sont plus récentes
-                    const cloudTime = cloudData.metadata?.lastSync?.toMillis?.() || 0;
-                    const localTime = this.data.metadata?.lastLocalSave || 0;
+                    // Garder les travaux locaux, fusionner le reste depuis Firebase
+                    const localTravaux = this.data.travaux || [];
 
-                    if (cloudTime > localTime || this.data.travaux.length === 0) {
-                        this.data = cloudData;
-                        this.saveToLocalStorage();
-                        console.log('Données Firebase chargées:', this.data.travaux.length, 'travaux');
+                    // Fusionner les pièces (prendre Firebase si disponible)
+                    if (cloudData.pieces && cloudData.pieces.length > 0) {
+                        this.data.pieces = cloudData.pieces;
                     }
+
+                    // Fusionner les autres données légères
+                    if (cloudData.avis) this.data.avis = cloudData.avis;
+                    if (cloudData.postmortem) this.data.postmortem = cloudData.postmortem;
+                    if (cloudData.comments) this.data.comments = cloudData.comments;
+
+                    // Garder les travaux locaux
+                    this.data.travaux = localTravaux;
+
+                    console.log('Données Firebase fusionnées - Pièces:', (this.data.pieces || []).length);
                 }
             } catch (e) {
                 console.error('Erreur chargement Firebase:', e);
