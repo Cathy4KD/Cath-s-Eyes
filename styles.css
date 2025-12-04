@@ -108,23 +108,43 @@ body {
     font-size: 1.2rem;
 }
 
-/* Lien externe dans la sidebar */
-.nav-link-external {
+/* Bouton app externe dans la sidebar */
+.app-link-btn {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    width: 100%;
-    color: inherit;
+    justify-content: center;
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    border-radius: 16px;
     text-decoration: none;
+    color: white;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
 }
 
-.nav-external:hover {
-    background: rgba(255,255,255,0.1);
+.app-link-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.5);
 }
 
-.external-icon {
-    margin-left: auto;
-    font-size: 0.8rem;
-    opacity: 0.6;
+.app-link-btn:active {
+    transform: translateY(0) scale(0.98);
+}
+
+.app-link-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.app-link-text {
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-top: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .sidebar-footer {
