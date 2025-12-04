@@ -115,7 +115,7 @@ const FirebaseManager = {
     },
 
     // Sauvegarder toutes les données vers Firebase
-    // Données séparées en plusieurs documents (limite 1MB par doc)
+    // Travaux stockés individuellement dans une collection (contourne limite 1MB/doc)
     async syncToCloud() {
         if (this.syncInProgress || !this.db) return;
 
@@ -141,8 +141,8 @@ const FirebaseManager = {
                 lastSync: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // Les travaux sont trop gros, on ne les sync pas automatiquement
-            // Ils restent en localStorage uniquement
+            // Synchroniser les travaux (chaque travail = 1 document)
+            await this.syncTravaux();
 
             console.log('Données synchronisées vers Firebase');
             this.showToast('Synchronisé ☁️', 'success');
@@ -156,6 +156,47 @@ const FirebaseManager = {
         }
     },
 
+    // Synchroniser les travaux vers Firebase (collection séparée)
+    async syncTravaux() {
+        const travaux = DataManager.data.travaux || [];
+        if (travaux.length === 0) return;
+
+        const batch = this.db.batch();
+        const travauxRef = this.db.collection('travaux');
+
+        // Utiliser des batches pour les opérations en masse (max 500 par batch)
+        for (let i = 0; i < travaux.length; i++) {
+            const travail = travaux[i];
+            const cleanTravail = this.cleanTravailForFirebase(travail);
+            const docRef = travauxRef.doc(travail.id || `OT-${i}`);
+            batch.set(docRef, cleanTravail);
+
+            // Firebase limite à 500 opérations par batch
+            if ((i + 1) % 500 === 0) {
+                await batch.commit();
+            }
+        }
+
+        // Commit le reste
+        await batch.commit();
+        console.log(`${travaux.length} travaux synchronisés vers Firebase`);
+    },
+
+    // Charger les travaux depuis Firebase
+    async loadTravaux() {
+        try {
+            const snapshot = await this.db.collection('travaux').get();
+            const travaux = [];
+            snapshot.forEach(doc => {
+                travaux.push({ id: doc.id, ...doc.data() });
+            });
+            return travaux;
+        } catch (error) {
+            console.error('Erreur chargement travaux:', error);
+            return [];
+        }
+    },
+
     // Charger les données depuis Firebase
     async loadFromCloud() {
         if (!this.db) return null;
@@ -165,14 +206,16 @@ const FirebaseManager = {
             const metadataDoc = await this.db.collection('arretAnnuel').doc('metadata').get();
             // Charger le document des pièces
             const piecesDoc = await this.db.collection('arretAnnuel').doc('pieces').get();
+            // Charger les travaux
+            const travaux = await this.loadTravaux();
 
             const metaData = metadataDoc.exists ? metadataDoc.data() : {};
             const piecesData = piecesDoc.exists ? piecesDoc.data() : {};
 
-            console.log('Données chargées depuis Firebase, processus:', metaData.processus ? 'oui' : 'non');
+            console.log('Données chargées depuis Firebase:', travaux.length, 'travaux,',
+                (piecesData.pieces || []).length, 'pièces, processus:', metaData.processus ? 'oui' : 'non');
             return {
-                // Les travaux restent en local (trop gros pour Firebase)
-                travaux: [],
+                travaux: travaux,
                 execution: [],
                 postmortem: metaData.postmortem || [],
                 comments: metaData.comments || {},

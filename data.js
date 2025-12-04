@@ -73,22 +73,25 @@ const DataManager = {
     },
 
     // Charger depuis Firebase (asynchrone)
-    // Note: Les travaux restent en local (trop gros pour Firebase)
-    // Seuls les pièces, avis, comments, processus, etc. sont synchronisés
+    // Toutes les données sont synchronisées vers Firebase
     async loadFromFirebase() {
         if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
             try {
                 const cloudData = await FirebaseManager.loadFromCloud();
                 if (cloudData) {
-                    // Garder les travaux locaux, fusionner le reste depuis Firebase
-                    const localTravaux = this.data.travaux || [];
+                    // Fusionner les travaux (prendre Firebase si plus récent ou local vide)
+                    if (cloudData.travaux && cloudData.travaux.length > 0) {
+                        if (this.data.travaux.length === 0) {
+                            this.data.travaux = cloudData.travaux;
+                        }
+                    }
 
                     // Fusionner les pièces (prendre Firebase si disponible)
                     if (cloudData.pieces && cloudData.pieces.length > 0) {
                         this.data.pieces = cloudData.pieces;
                     }
 
-                    // Fusionner les autres données légères
+                    // Fusionner les autres données
                     if (cloudData.avis) this.data.avis = cloudData.avis;
                     if (cloudData.postmortem) this.data.postmortem = cloudData.postmortem;
                     if (cloudData.comments) this.data.comments = cloudData.comments;
@@ -98,10 +101,8 @@ const DataManager = {
                         this.data.processus = cloudData.processus;
                     }
 
-                    // Garder les travaux locaux
-                    this.data.travaux = localTravaux;
-
-                    console.log('Données Firebase fusionnées - Pièces:', (this.data.pieces || []).length,
+                    console.log('Données Firebase fusionnées - Travaux:', this.data.travaux.length,
+                        '- Pièces:', (this.data.pieces || []).length,
                         '- Processus:', this.data.processus ? 'oui' : 'non');
                 }
             } catch (e) {
