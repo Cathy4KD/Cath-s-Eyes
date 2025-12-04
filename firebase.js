@@ -78,6 +78,30 @@ const FirebaseManager = {
 
     // === OPÉRATIONS FIRESTORE ===
 
+    // Nettoyer les données pour Firestore (remplacer undefined par null)
+    cleanForFirestore(obj) {
+        if (obj === undefined) return null;
+        if (obj === null) return null;
+        if (Array.isArray(obj)) {
+            return obj.map(item => this.cleanForFirestore(item));
+        }
+        if (typeof obj === 'object' && obj !== null) {
+            const cleaned = {};
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    const value = obj[key];
+                    if (value === undefined) {
+                        cleaned[key] = null;
+                    } else {
+                        cleaned[key] = this.cleanForFirestore(value);
+                    }
+                }
+            }
+            return cleaned;
+        }
+        return obj;
+    },
+
     // Sauvegarder toutes les données vers Firebase
     async syncToCloud() {
         if (this.syncInProgress || !this.db) return;
@@ -87,17 +111,20 @@ const FirebaseManager = {
             const batch = this.db.batch();
             const dataRef = this.db.collection('arretAnnuel').doc('mainData');
 
-            // Sauvegarder les données principales
-            batch.set(dataRef, {
-                travaux: DataManager.data.travaux,
-                postmortem: DataManager.data.postmortem,
-                comments: DataManager.data.comments,
-                customFields: DataManager.data.customFields,
-                metadata: DataManager.data.metadata,
-                pieces: DataManager.data.pieces || [],
-                avis: DataManager.data.avis || [],
+            // Nettoyer les données avant envoi (Firestore n'accepte pas undefined)
+            const cleanedData = {
+                travaux: this.cleanForFirestore(DataManager.data.travaux || []),
+                postmortem: this.cleanForFirestore(DataManager.data.postmortem || []),
+                comments: this.cleanForFirestore(DataManager.data.comments || {}),
+                customFields: this.cleanForFirestore(DataManager.data.customFields || []),
+                metadata: this.cleanForFirestore(DataManager.data.metadata || {}),
+                pieces: this.cleanForFirestore(DataManager.data.pieces || []),
+                avis: this.cleanForFirestore(DataManager.data.avis || []),
                 lastSync: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            };
+
+            // Sauvegarder les données principales
+            batch.set(dataRef, cleanedData);
 
             await batch.commit();
             console.log('Données synchronisées vers Firebase');
