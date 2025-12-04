@@ -103,30 +103,35 @@ const FirebaseManager = {
     },
 
     // Sauvegarder toutes les données vers Firebase
+    // Les pièces sont stockées dans un document séparé (limite 1MB par doc)
     async syncToCloud() {
         if (this.syncInProgress || !this.db) return;
 
         this.syncInProgress = true;
         try {
-            const batch = this.db.batch();
-            const dataRef = this.db.collection('arretAnnuel').doc('mainData');
-
-            // Nettoyer les données avant envoi (Firestore n'accepte pas undefined)
-            const cleanedData = {
+            // Document principal (sans les pièces pour réduire la taille)
+            const mainDataRef = this.db.collection('arretAnnuel').doc('mainData');
+            const mainData = {
                 travaux: this.cleanForFirestore(DataManager.data.travaux || []),
                 postmortem: this.cleanForFirestore(DataManager.data.postmortem || []),
                 comments: this.cleanForFirestore(DataManager.data.comments || {}),
                 customFields: this.cleanForFirestore(DataManager.data.customFields || []),
                 metadata: this.cleanForFirestore(DataManager.data.metadata || {}),
-                pieces: this.cleanForFirestore(DataManager.data.pieces || []),
                 avis: this.cleanForFirestore(DataManager.data.avis || []),
                 lastSync: firebase.firestore.FieldValue.serverTimestamp()
             };
 
-            // Sauvegarder les données principales
-            batch.set(dataRef, cleanedData);
+            // Document séparé pour les pièces
+            const piecesRef = this.db.collection('arretAnnuel').doc('pieces');
+            const piecesData = {
+                pieces: this.cleanForFirestore(DataManager.data.pieces || []),
+                lastSync: firebase.firestore.FieldValue.serverTimestamp()
+            };
 
-            await batch.commit();
+            // Sauvegarder les deux documents
+            await mainDataRef.set(mainData);
+            await piecesRef.set(piecesData);
+
             console.log('Données synchronisées vers Firebase');
             this.showToast('Données synchronisées', 'success');
             return true;
@@ -144,11 +149,15 @@ const FirebaseManager = {
         if (!this.db) return null;
 
         try {
-            const docRef = this.db.collection('arretAnnuel').doc('mainData');
-            const doc = await docRef.get();
+            // Charger le document principal
+            const mainDoc = await this.db.collection('arretAnnuel').doc('mainData').get();
+            // Charger le document des pièces
+            const piecesDoc = await this.db.collection('arretAnnuel').doc('pieces').get();
 
-            if (doc.exists) {
-                const data = doc.data();
+            if (mainDoc.exists) {
+                const data = mainDoc.data();
+                const piecesData = piecesDoc.exists ? piecesDoc.data() : {};
+
                 console.log('Données chargées depuis Firebase');
                 return {
                     travaux: data.travaux || [],
@@ -156,7 +165,7 @@ const FirebaseManager = {
                     postmortem: data.postmortem || [],
                     comments: data.comments || {},
                     customFields: data.customFields || [],
-                    pieces: data.pieces || [],
+                    pieces: piecesData.pieces || data.pieces || [],
                     avis: data.avis || [],
                     metadata: data.metadata || {
                         lastImportTravaux: null,
