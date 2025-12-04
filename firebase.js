@@ -271,7 +271,98 @@ const FirebaseManager = {
     }
 };
 
-// Initialiser Firebase quand le DOM est prêt
+// === MODULE NOTIFICATIONS KITTING ===
+// Écoute les notifications depuis l'app Kitting Aciérie
+
+const KittingNotifications = {
+    unsubscribe: null,
+    STORAGE_KEY: 'kitting_last_seen_count',
+
+    // Initialiser l'écoute des notifications
+    init() {
+        if (!FirebaseManager.db) {
+            console.warn('Firebase non initialisé, notifications Kitting désactivées');
+            return;
+        }
+
+        // Écouter les changements en temps réel sur le document de notifications
+        this.unsubscribe = FirebaseManager.db.collection('kittingNotifications').doc('stats')
+            .onSnapshot(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    this.handleNotification(data);
+                }
+            }, error => {
+                console.error('Erreur écoute notifications Kitting:', error);
+            });
+
+        console.log('Écoute notifications Kitting activée');
+    },
+
+    // Gérer une notification reçue
+    handleNotification(data) {
+        const currentCount = (data.totalKittings || 0) + (data.totalPieces || 0);
+        const lastSeenCount = parseInt(localStorage.getItem(this.STORAGE_KEY) || '0');
+
+        const newItems = currentCount - lastSeenCount;
+
+        if (newItems > 0 && lastSeenCount > 0) {
+            // Il y a de nouveaux éléments
+            this.showBadge(newItems);
+            // Optionnel: afficher un toast
+            FirebaseManager.showToast(`${newItems} nouveau(x) élément(s) dans Kitting`, 'info');
+        } else if (lastSeenCount === 0) {
+            // Première visite, sauvegarder le count actuel sans notifier
+            localStorage.setItem(this.STORAGE_KEY, currentCount.toString());
+        }
+    },
+
+    // Afficher le badge sur le bouton Kitting
+    showBadge(count) {
+        const badge = document.getElementById('kittingBadge');
+        if (badge) {
+            badge.textContent = count > 9 ? '9+' : count;
+            badge.style.display = 'flex';
+        }
+    },
+
+    // Masquer le badge (appelé quand l'utilisateur clique sur Kitting)
+    hideBadge() {
+        const badge = document.getElementById('kittingBadge');
+        if (badge) {
+            badge.style.display = 'none';
+        }
+    },
+
+    // Marquer comme vu (appelé quand on clique sur le lien Kitting)
+    markAsSeen() {
+        // Récupérer le count actuel depuis Firebase
+        if (!FirebaseManager.db) return;
+
+        FirebaseManager.db.collection('kittingNotifications').doc('stats').get()
+            .then(doc => {
+                if (doc.exists) {
+                    const data = doc.data();
+                    const currentCount = (data.totalKittings || 0) + (data.totalPieces || 0);
+                    localStorage.setItem(this.STORAGE_KEY, currentCount.toString());
+                    this.hideBadge();
+                }
+            })
+            .catch(err => console.error('Erreur markAsSeen:', err));
+    },
+
+    // Arrêter l'écoute
+    stop() {
+        if (this.unsubscribe) {
+            this.unsubscribe();
+            this.unsubscribe = null;
+        }
+    }
+};
+
+// Initialiser Firebase et les notifications quand le DOM est prêt
 document.addEventListener('DOMContentLoaded', async () => {
     await FirebaseManager.init();
+    // Initialiser les notifications après Firebase
+    setTimeout(() => KittingNotifications.init(), 1000);
 });
