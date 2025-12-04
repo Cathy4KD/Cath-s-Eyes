@@ -92,24 +92,19 @@ const DataManager = {
         }
     },
 
-    // Sauvegarder (localStorage + Firebase)
+    // Sauvegarder (localStorage uniquement - sync Firebase manuelle via bouton)
     saveToStorage() {
         this.saveToLocalStorage();
-        this.syncToFirebase();
+        // Note: La sync Firebase est maintenant manuelle (bouton ☁️ Sync)
+        // pour éviter les erreurs de taille de document
     },
 
-    // Synchroniser vers Firebase (avec debounce)
-    syncToFirebase: (function() {
-        let timeout = null;
-        return function() {
-            if (timeout) clearTimeout(timeout);
-            timeout = setTimeout(async () => {
-                if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
-                    await FirebaseManager.syncToCloud();
-                }
-            }, 2000); // Attendre 2s avant de sync (évite trop d'écritures)
-        };
-    })(),
+    // Synchroniser vers Firebase (appelé manuellement)
+    syncToFirebase: async function() {
+        if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
+            await FirebaseManager.syncToCloud();
+        }
+    },
 
     // Configurer la synchronisation Firebase temps réel
     setupFirebaseSync() {

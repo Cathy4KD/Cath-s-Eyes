@@ -193,11 +193,11 @@ const FirebaseManager = {
         }
     },
 
-    // Écouter les changements en temps réel
+    // Écouter les changements en temps réel (pièces uniquement)
     subscribeToChanges(callback) {
         if (!this.db) return null;
 
-        return this.db.collection('arretAnnuel').doc('mainData')
+        return this.db.collection('arretAnnuel').doc('pieces')
             .onSnapshot(doc => {
                 if (doc.exists) {
                     callback(doc.data());
