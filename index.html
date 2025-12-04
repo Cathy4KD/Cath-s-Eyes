@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion Arrêt Annuel</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2>🔧 Arrêt Annuel</h2>
+            <span class="version">v2.0</span>
+        </div>
+
+        <ul class="nav-menu">
+            <li class="nav-item active" data-screen="dashboard">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </li>
+            <li class="nav-item" data-screen="travaux">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Liste Travaux</span>
+            </li>
+            <li class="nav-item" data-screen="preparation">
+                <span class="nav-icon">📝</span>
+                <span class="nav-text">Préparation</span>
+            </li>
+            <li class="nav-item" data-screen="execution">
+                <span class="nav-icon">⚡</span>
+                <span class="nav-text">Exécution</span>
+            </li>
+            <li class="nav-item" data-screen="postmortem">
+                <span class="nav-icon">📈</span>
+                <span class="nav-text">Post-Mortem</span>
+            </li>
+            <li class="nav-item" data-screen="rapports">
+                <span class="nav-icon">📄</span>
+                <span class="nav-text">Rapports</span>
+            </li>
+            <li class="nav-item" data-screen="import">
+                <span class="nav-icon">📥</span>
+                <span class="nav-text">Import Données</span>
+            </li>
+
+            <li class="nav-separator"></li>
+
+            <li class="nav-item" data-screen="avis-syndicaux">
+                <span class="nav-icon">📢</span>
+                <span class="nav-text">Avis syndicaux</span>
+            </li>
+            <li class="nav-item" data-screen="reunions">
+                <span class="nav-icon">👥</span>
+                <span class="nav-text">Réunions</span>
+            </li>
+            <li class="nav-item" data-screen="parametres">
+                <span class="nav-icon">⚙️</span>
+                <span class="nav-text">Paramètres</span>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="data-status" id="dataStatus">
+                <span class="status-dot offline"></span>
+                <span>Aucune donnée</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <button class="menu-toggle" id="menuToggle">☰</button>
+                <h1 id="pageTitle">Dashboard</h1>
+            </div>
+            <div class="header-right">
+                <div class="search-box">
+                    <input type="text" id="globalSearch" placeholder="Rechercher un OT, équipement...">
+                </div>
+                <div class="header-info">
+                    <span id="lastUpdate">Dernière MAJ: --</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Content Area -->
+        <div class="content-area" id="contentArea">
+            <!-- Les écrans seront chargés dynamiquement ici -->
+        </div>
+    </main>
+
+    <!-- Modal pour détails -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Détail</h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="data.js"></script>
+    <script src="import.js"></script>
+    <script src="screens.js"></script>
+    <script src="processus.js"></script>
+    <script src="screen-preparation.js"></script>
+    <script src="screen-travail-detail.js"></script>
+    <script src="reports.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

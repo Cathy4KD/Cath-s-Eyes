@@ -1,0 +1,34 @@
+# Fichiers système
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Éditeurs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude
+.claude/
+
+# Fichiers temporaires
+*.tmp
+*.temp
+*-temp.js
+
+# Fichiers de données locales (seront gérés par Firebase)
+# Décommentez si vous ne voulez pas versionner ces fichiers
+# Calendrier.xlsx
+
+# Node modules (si vous ajoutez npm plus tard)
+node_modules/
+
+# Variables d'environnement (contiendra les clés Firebase)
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+npm-debug.log*
