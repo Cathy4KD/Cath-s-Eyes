@@ -25,31 +25,116 @@ const DataManager = {
     STORAGE_KEY: 'arret_annuel_data_v2',
 
     // Initialisation
-    init() {
-        this.loadFromStorage();
+    async init() {
+        // D'abord charger depuis localStorage (rapide)
+        this.loadFromLocalStorage();
+
+        // Ensuite essayer de charger depuis Firebase
+        await this.loadFromFirebase();
+
         this.setupAutoSave();
+        this.setupFirebaseSync();
         console.log('DataManager initialisé');
     },
 
-    // Charger depuis localStorage
-    loadFromStorage() {
+    // Charger depuis localStorage (synchrone, rapide)
+    loadFromLocalStorage() {
         try {
             const saved = localStorage.getItem(this.STORAGE_KEY);
             if (saved) {
                 this.data = JSON.parse(saved);
-                console.log('Données chargées:', this.data.travaux.length, 'travaux');
+                console.log('Données locales chargées:', this.data.travaux.length, 'travaux');
             }
         } catch (e) {
-            console.error('Erreur chargement données:', e);
+            console.error('Erreur chargement localStorage:', e);
         }
     },
 
-    // Sauvegarder dans localStorage
-    saveToStorage() {
+    // Charger depuis Firebase (asynchrone)
+    async loadFromFirebase() {
+        if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
+            try {
+                const cloudData = await FirebaseManager.loadFromCloud();
+                if (cloudData) {
+                    // Fusionner les données cloud avec les données locales
+                    // Prioriser les données cloud si elles sont plus récentes
+                    const cloudTime = cloudData.metadata?.lastSync?.toMillis?.() || 0;
+                    const localTime = this.data.metadata?.lastLocalSave || 0;
+
+                    if (cloudTime > localTime || this.data.travaux.length === 0) {
+                        this.data = cloudData;
+                        this.saveToLocalStorage();
+                        console.log('Données Firebase chargées:', this.data.travaux.length, 'travaux');
+                    }
+                }
+            } catch (e) {
+                console.error('Erreur chargement Firebase:', e);
+            }
+        }
+    },
+
+    // Sauvegarder dans localStorage uniquement
+    saveToLocalStorage() {
         try {
+            this.data.metadata.lastLocalSave = Date.now();
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.data));
         } catch (e) {
-            console.error('Erreur sauvegarde:', e);
+            console.error('Erreur sauvegarde localStorage:', e);
+        }
+    },
+
+    // Sauvegarder (localStorage + Firebase)
+    saveToStorage() {
+        this.saveToLocalStorage();
+        this.syncToFirebase();
+    },
+
+    // Synchroniser vers Firebase (avec debounce)
+    syncToFirebase: (function() {
+        let timeout = null;
+        return function() {
+            if (timeout) clearTimeout(timeout);
+            timeout = setTimeout(async () => {
+                if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
+                    await FirebaseManager.syncToCloud();
+                }
+            }, 2000); // Attendre 2s avant de sync (évite trop d'écritures)
+        };
+    })(),
+
+    // Configurer la synchronisation Firebase temps réel
+    setupFirebaseSync() {
+        if (typeof FirebaseManager !== 'undefined') {
+            // Attendre que Firebase soit prêt
+            const checkFirebase = setInterval(() => {
+                if (FirebaseManager.db) {
+                    clearInterval(checkFirebase);
+                    FirebaseManager.subscribeToChanges((data) => {
+                        // Mise à jour temps réel depuis d'autres clients
+                        if (data && data.lastSync) {
+                            const cloudTime = data.lastSync.toMillis?.() || 0;
+                            const localTime = this.data.metadata?.lastLocalSave || 0;
+
+                            // Ne mettre à jour que si les données cloud sont plus récentes
+                            if (cloudTime > localTime + 5000) { // 5s de marge
+                                console.log('Mise à jour temps réel depuis Firebase');
+                                this.data = {
+                                    travaux: data.travaux || [],
+                                    execution: data.execution || [],
+                                    postmortem: data.postmortem || [],
+                                    comments: data.comments || {},
+                                    customFields: data.customFields || [],
+                                    pieces: data.pieces || [],
+                                    avis: data.avis || [],
+                                    metadata: data.metadata || this.data.metadata
+                                };
+                                this.saveToLocalStorage();
+                                this.notifyUpdate('all');
+                            }
+                        }
+                    });
+                }
+            }, 500);
         }
     },
 

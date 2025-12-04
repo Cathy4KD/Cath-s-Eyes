@@ -1,0 +1,232 @@
+/**
+ * Module Firebase - Arrêt Annuel
+ * Gère la connexion et synchronisation avec Firebase Firestore
+ */
+
+// Configuration Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyBI6F9YaMkxjIOzMpyjz3osrTklAMpIBZE",
+    authDomain: "caths-eyes.firebaseapp.com",
+    projectId: "caths-eyes",
+    storageBucket: "caths-eyes.firebasestorage.app",
+    messagingSenderId: "659756322626",
+    appId: "1:659756322626:web:4163988910805ef7ec82db"
+};
+
+// Module Firebase Manager
+const FirebaseManager = {
+    db: null,
+    isOnline: false,
+    syncInProgress: false,
+
+    // Initialisation Firebase
+    async init() {
+        try {
+            // Initialiser Firebase
+            firebase.initializeApp(firebaseConfig);
+            this.db = firebase.firestore();
+
+            // Activer la persistance hors ligne
+            await this.db.enablePersistence({ synchronizeTabs: true }).catch(err => {
+                if (err.code === 'failed-precondition') {
+                    console.warn('Persistance impossible: plusieurs onglets ouverts');
+                } else if (err.code === 'unimplemented') {
+                    console.warn('Persistance non supportée par ce navigateur');
+                }
+            });
+
+            this.isOnline = true;
+            console.log('Firebase initialisé avec succès');
+            this.updateConnectionStatus(true);
+
+            // Écouter les changements de connexion
+            window.addEventListener('online', () => this.handleConnectionChange(true));
+            window.addEventListener('offline', () => this.handleConnectionChange(false));
+
+            return true;
+        } catch (error) {
+            console.error('Erreur initialisation Firebase:', error);
+            this.updateConnectionStatus(false);
+            return false;
+        }
+    },
+
+    // Gérer les changements de connexion
+    handleConnectionChange(online) {
+        this.isOnline = online;
+        this.updateConnectionStatus(online);
+        if (online) {
+            console.log('Connexion rétablie - synchronisation...');
+            this.syncToCloud();
+        }
+    },
+
+    // Mettre à jour l'indicateur de statut
+    updateConnectionStatus(online) {
+        const statusEl = document.getElementById('dataStatus');
+        if (statusEl) {
+            const dot = statusEl.querySelector('.status-dot');
+            const text = statusEl.querySelector('span:last-child');
+            if (dot) {
+                dot.className = 'status-dot ' + (online ? 'online' : 'offline');
+            }
+            if (text) {
+                text.textContent = online ? 'Connecté' : 'Hors ligne';
+            }
+        }
+    },
+
+    // === OPÉRATIONS FIRESTORE ===
+
+    // Sauvegarder toutes les données vers Firebase
+    async syncToCloud() {
+        if (this.syncInProgress || !this.db) return;
+
+        this.syncInProgress = true;
+        try {
+            const batch = this.db.batch();
+            const dataRef = this.db.collection('arretAnnuel').doc('mainData');
+
+            // Sauvegarder les données principales
+            batch.set(dataRef, {
+                travaux: DataManager.data.travaux,
+                postmortem: DataManager.data.postmortem,
+                comments: DataManager.data.comments,
+                customFields: DataManager.data.customFields,
+                metadata: DataManager.data.metadata,
+                pieces: DataManager.data.pieces || [],
+                avis: DataManager.data.avis || [],
+                lastSync: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            await batch.commit();
+            console.log('Données synchronisées vers Firebase');
+            this.showToast('Données synchronisées', 'success');
+            return true;
+        } catch (error) {
+            console.error('Erreur sync vers cloud:', error);
+            this.showToast('Erreur de synchronisation', 'error');
+            return false;
+        } finally {
+            this.syncInProgress = false;
+        }
+    },
+
+    // Charger les données depuis Firebase
+    async loadFromCloud() {
+        if (!this.db) return null;
+
+        try {
+            const docRef = this.db.collection('arretAnnuel').doc('mainData');
+            const doc = await docRef.get();
+
+            if (doc.exists) {
+                const data = doc.data();
+                console.log('Données chargées depuis Firebase');
+                return {
+                    travaux: data.travaux || [],
+                    execution: data.execution || [],
+                    postmortem: data.postmortem || [],
+                    comments: data.comments || {},
+                    customFields: data.customFields || [],
+                    pieces: data.pieces || [],
+                    avis: data.avis || [],
+                    metadata: data.metadata || {
+                        lastImportTravaux: null,
+                        lastImportExecution: null,
+                        totalOT: 0,
+                        arretName: '',
+                        arretDateDebut: null,
+                        arretDateFin: null
+                    }
+                };
+            }
+            return null;
+        } catch (error) {
+            console.error('Erreur chargement depuis cloud:', error);
+            return null;
+        }
+    },
+
+    // Écouter les changements en temps réel
+    subscribeToChanges(callback) {
+        if (!this.db) return null;
+
+        return this.db.collection('arretAnnuel').doc('mainData')
+            .onSnapshot(doc => {
+                if (doc.exists) {
+                    callback(doc.data());
+                }
+            }, error => {
+                console.error('Erreur écoute temps réel:', error);
+            });
+    },
+
+    // === OPÉRATIONS SPÉCIFIQUES ===
+
+    // Sauvegarder un travail spécifique
+    async saveTravail(travail) {
+        if (!this.db) return false;
+
+        try {
+            await this.db.collection('travaux').doc(travail.id).set(travail);
+            return true;
+        } catch (error) {
+            console.error('Erreur sauvegarde travail:', error);
+            return false;
+        }
+    },
+
+    // Sauvegarder les processus
+    async saveProcessus(processusData) {
+        if (!this.db) return false;
+
+        try {
+            await this.db.collection('arretAnnuel').doc('processus').set({
+                data: processusData,
+                lastUpdate: firebase.firestore.FieldValue.serverTimestamp()
+            });
+            return true;
+        } catch (error) {
+            console.error('Erreur sauvegarde processus:', error);
+            return false;
+        }
+    },
+
+    // Charger les processus
+    async loadProcessus() {
+        if (!this.db) return null;
+
+        try {
+            const doc = await this.db.collection('arretAnnuel').doc('processus').get();
+            if (doc.exists) {
+                return doc.data().data;
+            }
+            return null;
+        } catch (error) {
+            console.error('Erreur chargement processus:', error);
+            return null;
+        }
+    },
+
+    // Afficher une notification toast
+    showToast(message, type = 'info') {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = `toast toast-${type}`;
+        toast.textContent = message;
+        container.appendChild(toast);
+
+        setTimeout(() => {
+            toast.classList.add('toast-fade');
+            setTimeout(() => toast.remove(), 300);
+        }, 3000);
+    }
+};
+
+// Initialiser Firebase quand le DOM est prêt
+document.addEventListener('DOMContentLoaded', async () => {
+    await FirebaseManager.init();
+});
