@@ -8,7 +8,7 @@ const Screens = {
     renderDashboard() {
         const stats = DataManager.getGlobalStats();
         const travaux = DataManager.getTravaux();
-        const pieces = DataManager.getPieces();
+        const pieces = DataManager.data.pieces || [];
 
         // Calculer les alertes
         const alertes = this.getAlertes(travaux, pieces);
