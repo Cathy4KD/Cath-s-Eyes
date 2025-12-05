@@ -2527,46 +2527,41 @@ const ScreenPreparation = {
                     <div class="detail-card da-card">
                         <div class="card-header-flex">
                             <h3>📋 Stratégie ${anneeActuelle} (${fournisseurs.length})</h3>
-                            <button class="btn btn-sm btn-primary" onclick="ScreenPreparation.addFournisseurAppro()">
-                                + Ajouter
-                            </button>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-outline" onclick="ScreenPreparation.exportApproExcel()" title="Exporter Excel">
+                                    📊 Excel
+                                </button>
+                                <button class="btn btn-sm btn-outline" onclick="ScreenPreparation.exportApproPDF()" title="Exporter PDF">
+                                    📄 PDF
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="ScreenPreparation.addFournisseurAppro()">
+                                    + Ajouter
+                                </button>
+                            </div>
                         </div>
 
-                        <div class="table-container">
-                            <table class="planifier-table appro-table">
+                        <div class="da-table-container">
+                            <table class="da-table appro-table">
                                 <thead>
                                     <tr>
-                                        <th>Fournisseur</th>
-                                        <th>Type de travaux</th>
-                                        <th>Justification</th>
-                                        <th>Estimé ($)</th>
-                                        <th>Année</th>
-                                        <th>Actions</th>
+                                        <th style="min-width: 150px;">Fournisseur</th>
+                                        <th style="min-width: 150px;">Type de travaux</th>
+                                        <th style="min-width: 200px;">Justification</th>
+                                        <th style="width: 120px;">Estimé ($)</th>
+                                        <th style="width: 60px;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${fournisseurs.length === 0 ? `
-                                        <tr><td colspan="6" class="empty-msg">Aucun fournisseur défini pour ${anneeActuelle}</td></tr>
-                                    ` : fournisseurs.map((f, i) => `
-                                        <tr>
-                                            <td><strong>${f.fournisseur || '-'}</strong></td>
-                                            <td>${f.typeTravaux || '-'}</td>
-                                            <td title="${f.justification || ''}">${(f.justification || '-').substring(0, 40)}${(f.justification || '').length > 40 ? '...' : ''}</td>
-                                            <td class="montant">${this.formatMontant(f.estime)}</td>
-                                            <td class="center">${anneeActuelle}</td>
-                                            <td>
-                                                <button class="btn-icon" onclick="ScreenPreparation.editFournisseurAppro(${anneeActuelle}, ${i})">✏️</button>
-                                                <button class="btn-icon danger" onclick="ScreenPreparation.deleteFournisseurAppro(${anneeActuelle}, ${i})">✕</button>
-                                            </td>
-                                        </tr>
-                                    `).join('')}
+                                        <tr class="empty-row"><td colspan="5" class="empty-msg">Aucun fournisseur. Cliquez sur "+ Ajouter" pour commencer.</td></tr>
+                                    ` : fournisseurs.map((f, i) => this.renderLigneFournisseurAppro(f, i, anneeActuelle)).join('')}
                                 </tbody>
                                 ${fournisseurs.length > 0 ? `
                                     <tfoot>
                                         <tr class="total-row">
                                             <td colspan="3" class="total-label">TOTAL ${anneeActuelle}</td>
                                             <td class="total-value">${this.formatMontant(totalEstime)}</td>
-                                            <td colspan="2"></td>
+                                            <td></td>
                                         </tr>
                                     </tfoot>
                                 ` : ''}
@@ -2680,86 +2675,66 @@ const ScreenPreparation = {
         this.refresh();
     },
 
-    addFournisseurAppro() {
-        this.showFournisseurApproModal();
-    },
-
-    editFournisseurAppro(annee, index) {
-        this.showFournisseurApproModal(annee, index);
-    },
-
-    showFournisseurApproModal(annee = null, editIndex = null) {
-        const anneeActuelle = annee || new Date().getFullYear();
-        const approData = DataManager.data.processus?.strategieAppro || {};
-        const fournisseurs = approData[anneeActuelle] || [];
-        const item = editIndex !== null ? fournisseurs[editIndex] : null;
-
-        const html = `
-            <div class="overlay-modal" id="approModal">
-                <div class="overlay-box" style="max-width: 550px;">
-                    <div class="overlay-header">
-                        <h3>${item ? 'Modifier' : 'Ajouter'} un fournisseur</h3>
-                        <button class="close-btn" onclick="document.getElementById('approModal').remove()">✕</button>
-                    </div>
-                    <div class="overlay-body">
-                        <div class="form-group">
-                            <label>Fournisseur *</label>
-                            <input type="text" id="approFournisseur" class="form-control" value="${item?.fournisseur || ''}" placeholder="Nom du fournisseur">
-                        </div>
-                        <div class="form-group">
-                            <label>Type de travaux *</label>
-                            <input type="text" id="approTypeTravaux" class="form-control" value="${item?.typeTravaux || ''}" placeholder="Ex: Mécanique, Électrique, Soudure...">
-                        </div>
-                        <div class="form-group">
-                            <label>Justification</label>
-                            <textarea id="approJustification" class="form-control" rows="3" placeholder="Justification du choix du fournisseur...">${item?.justification || ''}</textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Montant estimé ($)</label>
-                            <input type="number" id="approEstime" class="form-control" value="${item?.estime || ''}" min="0" step="100" placeholder="0">
-                        </div>
-                    </div>
-                    <div class="overlay-footer">
-                        <button class="btn btn-outline" onclick="document.getElementById('approModal').remove()">Annuler</button>
-                        <button class="btn btn-primary" onclick="ScreenPreparation.saveFournisseurAppro(${anneeActuelle}, ${editIndex})">Enregistrer</button>
-                    </div>
-                </div>
-            </div>
+    // Rendre une ligne éditable du tableau fournisseurs
+    renderLigneFournisseurAppro(fournisseur, index, annee) {
+        return `
+            <tr data-index="${index}">
+                <td>
+                    <input type="text" class="da-input" value="${fournisseur.fournisseur || ''}"
+                           onchange="ScreenPreparation.updateFournisseurAppro(${annee}, ${index}, 'fournisseur', this.value)"
+                           placeholder="Nom du fournisseur">
+                </td>
+                <td>
+                    <input type="text" class="da-input" value="${fournisseur.typeTravaux || ''}"
+                           onchange="ScreenPreparation.updateFournisseurAppro(${annee}, ${index}, 'typeTravaux', this.value)"
+                           placeholder="Type de travaux">
+                </td>
+                <td class="td-commentaire">
+                    <textarea class="da-input da-textarea" rows="2"
+                              onchange="ScreenPreparation.updateFournisseurAppro(${annee}, ${index}, 'justification', this.value)"
+                              placeholder="Justification...">${fournisseur.justification || ''}</textarea>
+                </td>
+                <td>
+                    <input type="number" class="da-input da-input-montant" value="${fournisseur.estime || ''}"
+                           onchange="ScreenPreparation.updateFournisseurAppro(${annee}, ${index}, 'estime', this.value)"
+                           placeholder="0" min="0" step="100">
+                </td>
+                <td class="actions-cell">
+                    <button class="btn-icon danger" onclick="ScreenPreparation.deleteFournisseurAppro(${annee}, ${index})" title="Supprimer">✕</button>
+                </td>
+            </tr>
         `;
-        document.body.insertAdjacentHTML('beforeend', html);
-        document.getElementById('approFournisseur').focus();
     },
 
-    saveFournisseurAppro(annee, editIndex = null) {
+    addFournisseurAppro() {
+        const annee = new Date().getFullYear();
         if (!DataManager.data.processus) DataManager.data.processus = {};
         if (!DataManager.data.processus.strategieAppro) DataManager.data.processus.strategieAppro = {};
         if (!DataManager.data.processus.strategieAppro[annee]) DataManager.data.processus.strategieAppro[annee] = [];
 
-        const fournisseur = document.getElementById('approFournisseur').value.trim();
-        const typeTravaux = document.getElementById('approTypeTravaux').value.trim();
-
-        if (!fournisseur || !typeTravaux) {
-            App.showToast('Fournisseur et Type de travaux obligatoires', 'warning');
-            return;
-        }
-
-        const item = {
-            fournisseur: fournisseur,
-            typeTravaux: typeTravaux,
-            justification: document.getElementById('approJustification').value.trim(),
-            estime: parseFloat(document.getElementById('approEstime').value) || 0
-        };
-
-        if (editIndex !== null) {
-            DataManager.data.processus.strategieAppro[annee][editIndex] = item;
-        } else {
-            DataManager.data.processus.strategieAppro[annee].push(item);
-        }
+        DataManager.data.processus.strategieAppro[annee].push({
+            fournisseur: '',
+            typeTravaux: '',
+            justification: '',
+            estime: 0
+        });
 
         DataManager.saveToStorage();
-        document.getElementById('approModal').remove();
         this.refresh();
-        App.showToast('Fournisseur enregistré', 'success');
+        App.showToast('Ligne ajoutée', 'success');
+    },
+
+    updateFournisseurAppro(annee, index, field, value) {
+        if (DataManager.data.processus?.strategieAppro?.[annee]?.[index]) {
+            if (field === 'estime') {
+                DataManager.data.processus.strategieAppro[annee][index][field] = parseFloat(value) || 0;
+                // Refresh pour mettre à jour le total
+                this.refresh();
+            } else {
+                DataManager.data.processus.strategieAppro[annee][index][field] = value;
+            }
+            DataManager.saveToStorage();
+        }
     },
 
     deleteFournisseurAppro(annee, index) {
@@ -2769,6 +2744,120 @@ const ScreenPreparation = {
             this.refresh();
             App.showToast('Fournisseur supprimé', 'success');
         }
+    },
+
+    // Export Excel pour Stratégie d'approvisionnement
+    exportApproExcel() {
+        const annee = new Date().getFullYear();
+        const approData = DataManager.data.processus?.strategieAppro || {};
+        const fournisseurs = approData[annee] || [];
+
+        if (fournisseurs.length === 0) {
+            App.showToast('Aucune donnée à exporter', 'warning');
+            return;
+        }
+
+        // Créer le CSV
+        let csv = '\ufeff'; // BOM pour Excel
+        csv += `Stratégie d'approvisionnement ${annee}\n\n`;
+        csv += 'Fournisseur;Type de travaux;Justification;Estimé ($)\n';
+
+        let total = 0;
+        fournisseurs.forEach(f => {
+            const estime = parseFloat(f.estime) || 0;
+            total += estime;
+            csv += `"${f.fournisseur || ''}";"${f.typeTravaux || ''}";"${(f.justification || '').replace(/"/g, '""')}";"${estime}"\n`;
+        });
+
+        csv += `\n"TOTAL";"";"";"${total}"\n`;
+
+        // Télécharger
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `strategie_approvisionnement_${annee}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        App.showToast('Export Excel généré', 'success');
+    },
+
+    // Export PDF pour Stratégie d'approvisionnement
+    exportApproPDF() {
+        const annee = new Date().getFullYear();
+        const approData = DataManager.data.processus?.strategieAppro || {};
+        const fournisseurs = approData[annee] || [];
+
+        if (fournisseurs.length === 0) {
+            App.showToast('Aucune donnée à exporter', 'warning');
+            return;
+        }
+
+        // Calculer le total
+        const total = fournisseurs.reduce((sum, f) => sum + (parseFloat(f.estime) || 0), 0);
+
+        // Créer le contenu HTML pour l'impression
+        const printContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Stratégie d'approvisionnement ${annee}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; }
+                    h1 { color: #1e40af; border-bottom: 2px solid #1e40af; padding-bottom: 10px; }
+                    .info { color: #666; margin-bottom: 20px; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+                    th { background: #1e40af; color: white; padding: 12px 8px; text-align: left; }
+                    td { padding: 10px 8px; border-bottom: 1px solid #ddd; }
+                    tr:nth-child(even) { background: #f8fafc; }
+                    .montant { text-align: right; font-weight: 500; }
+                    .total-row { background: #1e40af !important; color: white; font-weight: bold; }
+                    .total-row td { border: none; }
+                    .footer { margin-top: 30px; font-size: 12px; color: #666; text-align: center; }
+                </style>
+            </head>
+            <body>
+                <h1>📦 Stratégie d'approvisionnement ${annee}</h1>
+                <p class="info">Généré le ${new Date().toLocaleDateString('fr-CA')} - ${fournisseurs.length} fournisseur(s)</p>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fournisseur</th>
+                            <th>Type de travaux</th>
+                            <th>Justification</th>
+                            <th style="text-align: right;">Estimé ($)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${fournisseurs.map(f => `
+                            <tr>
+                                <td><strong>${f.fournisseur || '-'}</strong></td>
+                                <td>${f.typeTravaux || '-'}</td>
+                                <td>${f.justification || '-'}</td>
+                                <td class="montant">${this.formatMontant(f.estime)}</td>
+                            </tr>
+                        `).join('')}
+                        <tr class="total-row">
+                            <td colspan="3">TOTAL</td>
+                            <td class="montant">${this.formatMontant(total)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <p class="footer">Cath's Eyes - Arrêt Annuel</p>
+            </body>
+            </html>
+        `;
+
+        // Ouvrir dans une nouvelle fenêtre et imprimer
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.onload = function() {
+            printWindow.print();
+        };
+        App.showToast('PDF prêt pour impression', 'success');
     },
 
     // ==========================================
