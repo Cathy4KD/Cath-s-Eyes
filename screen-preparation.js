@@ -2979,11 +2979,11 @@ const ScreenPreparation = {
                                     ` : projets.map((p, i) => `
                                         <tr>
                                             <td><strong>${p.ordre || '-'}</strong></td>
-                                            <td>${p.designation || '-'}</td>
+                                            <td class="td-wrap">${p.designation || '-'}</td>
                                             <td>${p.posteTechnique || '-'}</td>
                                             <td>${p.responsable || '-'}</td>
                                             <td class="center">${p.duree || '-'}</td>
-                                            <td>${(p.commentaire || '-').substring(0, 30)}${(p.commentaire || '').length > 30 ? '...' : ''}</td>
+                                            <td class="td-wrap td-commentaire-full">${p.commentaire || '-'}</td>
                                             <td class="center">${p.documents?.length ? `📎 ${p.documents.length}` : '-'}</td>
                                             <td>
                                                 <button class="btn-icon" onclick="ScreenPreparation.editProjet(${i})">✏️</button>
@@ -3025,11 +3025,11 @@ const ScreenPreparation = {
                                     ` : capitalisation.map((c, i) => `
                                         <tr>
                                             <td><strong>${c.ordre || '-'}</strong></td>
-                                            <td>${c.designation || '-'}</td>
+                                            <td class="td-wrap">${c.designation || '-'}</td>
                                             <td>${c.posteTechnique || '-'}</td>
                                             <td>${c.responsable || '-'}</td>
                                             <td class="center">${c.duree || '-'}</td>
-                                            <td>${(c.commentaire || '-').substring(0, 30)}${(c.commentaire || '').length > 30 ? '...' : ''}</td>
+                                            <td class="td-wrap td-commentaire-full">${c.commentaire || '-'}</td>
                                             <td class="center">${c.documents?.length ? `📎 ${c.documents.length}` : '-'}</td>
                                             <td>
                                                 <button class="btn-icon" onclick="ScreenPreparation.editCapitalisation(${i})">✏️</button>
@@ -3071,11 +3071,11 @@ const ScreenPreparation = {
                                     ` : projetsIng.map((p, i) => `
                                         <tr>
                                             <td><strong>${p.ordre || '-'}</strong></td>
-                                            <td>${p.designation || '-'}</td>
+                                            <td class="td-wrap">${p.designation || '-'}</td>
                                             <td>${p.posteTechnique || '-'}</td>
                                             <td>${p.responsable || '-'}</td>
                                             <td class="center">${p.duree || '-'}</td>
-                                            <td>${(p.commentaire || '-').substring(0, 30)}${(p.commentaire || '').length > 30 ? '...' : ''}</td>
+                                            <td class="td-wrap td-commentaire-full">${p.commentaire || '-'}</td>
                                             <td class="center">${p.documents?.length ? `📎 ${p.documents.length}` : '-'}</td>
                                             <td>
                                                 <button class="btn-icon" onclick="ScreenPreparation.editProjetIng(${i})">✏️</button>

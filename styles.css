@@ -3990,6 +3990,21 @@ tr.clickable:hover {
     vertical-align: top;
 }
 
+/* Cellules avec texte complet sur plusieurs lignes */
+.td-wrap {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-width: 250px;
+}
+
+.td-commentaire-full {
+    min-width: 200px;
+    max-width: 300px;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    color: #475569;
+}
+
 /* Relances automatiques */
 .relance-date {
     display: inline-block;
