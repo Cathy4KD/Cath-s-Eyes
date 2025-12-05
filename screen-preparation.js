@@ -3637,9 +3637,11 @@ const ScreenPreparation = {
                 return poste && postesAssocies.includes(poste.trim());
             });
 
+            const heuresTotal = travauxSecteur.reduce((sum, t) => sum + (parseFloat(t.estimationHeures) || 0), 0);
+
             stats[secteur.id] = {
                 count: travauxSecteur.length,
-                heures: travauxSecteur.reduce((sum, t) => sum + (parseFloat(t.estimationHeures) || 0), 0),
+                heures: Math.round(heuresTotal * 100) / 100, // Arrondi à 2 décimales
                 postes: postesAssocies.length
             };
         });
