@@ -6363,20 +6363,28 @@ Cordialement</textarea>
         const espaceData = DataManager.data.processus?.espaceClos || {};
 
         // Extraire tous les numéros EC/EP uniques (format EC**** ou EC-**** ou EP**** ou EP-****)
-        const ecRegex = /(?:EC|EP)[-]?\d{3,}/gi;
+        // Regex amélioré pour capturer EC-1234, EC1234, EC 1234, EP-1234, etc.
+        const ecRegex = /\b(EC|EP)[\s\-]?(\d{3,})/gi;
         const ecMap = new Map(); // Map pour stocker EC -> travaux associés
 
         travaux.forEach((t, index) => {
-            if (t.description) {
-                const matches = t.description.match(ecRegex);
-                if (matches) {
-                    matches.forEach(match => {
-                        const ecNorm = match.toUpperCase().replace('-', ''); // Normaliser EC1234 et EC-1234
-                        if (!ecMap.has(ecNorm)) {
-                            ecMap.set(ecNorm, []);
-                        }
+            // Chercher dans description ET dans equipement
+            const texteARechercher = [t.description, t.equipement, t.operation].filter(Boolean).join(' ');
+
+            if (texteARechercher) {
+                let match;
+                const regex = new RegExp(ecRegex.source, 'gi'); // Créer nouvelle instance pour reset
+                while ((match = regex.exec(texteARechercher)) !== null) {
+                    // Normaliser : EC-1234 et EC1234 deviennent EC1234
+                    const ecNorm = (match[1] + match[2]).toUpperCase();
+                    if (!ecMap.has(ecNorm)) {
+                        ecMap.set(ecNorm, []);
+                    }
+                    // Éviter les doublons du même travail
+                    const existeDeja = ecMap.get(ecNorm).some(tr => tr.travailIndex === index);
+                    if (!existeDeja) {
                         ecMap.get(ecNorm).push({ ...t, travailIndex: index });
-                    });
+                    }
                 }
             }
         });
