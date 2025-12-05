@@ -607,6 +607,10 @@ const ProcessusArret = {
         this.init();
         DataManager.data.processus.dateArret = date;
         DataManager.saveToStorage();
+        // Sync Firebase immédiate pour la date d'arrêt (importante)
+        if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
+            FirebaseManager.syncToCloud();
+        }
     },
 
     // Calculer les dates cibles basées sur T-0

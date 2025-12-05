@@ -121,6 +121,10 @@ const FirebaseManager = {
 
         this.syncInProgress = true;
         try {
+            // Log pour debug
+            console.log('Sync Firebase - processus:', DataManager.data.processus);
+            console.log('Sync Firebase - dateArret:', DataManager.data.processus?.dateArret);
+
             // Document metadata (léger) - inclut processus pour la date d'arrêt
             const metadataRef = this.db.collection('arretAnnuel').doc('metadata');
             await metadataRef.set({

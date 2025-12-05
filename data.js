@@ -252,6 +252,9 @@ const DataManager = {
         this.saveToStorage();
         this.notifyUpdate('travaux');
 
+        // Sync Firebase immédiate après import
+        this.syncToFirebase();
+
         return this.data.travaux.length;
     },
 
@@ -330,6 +333,9 @@ const DataManager = {
         this.saveToStorage();
         this.notifyUpdate('pieces');
 
+        // Sync Firebase immédiate après import
+        this.syncToFirebase();
+
         return { total: this.data.pieces.length, added: addedCount, updated: updatedCount };
     },
 
@@ -390,6 +396,9 @@ const DataManager = {
         this.data.metadata.lastImportAvis = new Date().toISOString();
         this.saveToStorage();
         this.notifyUpdate('avis');
+
+        // Sync Firebase immédiate après import
+        this.syncToFirebase();
 
         return { total: this.data.avis.length, added: addedCount, updated: updatedCount };
     },
