@@ -8,6 +8,13 @@ const Screens = {
     renderDashboard() {
         const stats = DataManager.getGlobalStats();
         const travaux = DataManager.getTravaux();
+        const pieces = DataManager.getPieces();
+
+        // Calculer les alertes
+        const alertes = this.getAlertes(travaux, pieces);
+
+        // Calculer les stats kitting
+        const kittingStats = this.getKittingStats();
 
         return `
             <div class="stats-grid">
@@ -41,128 +48,80 @@ const Screens = {
                 </div>
             </div>
 
-            <div class="grid-2">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Avancement Préparation</h3>
-                        <span class="badge badge-primary">${stats.preparation.pourcentage}%</span>
-                    </div>
-                    <div class="progress-bar" style="height: 20px;">
-                        <div class="progress-fill green" style="width: ${stats.preparation.pourcentage}%"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.9rem;">
-                        <span>✅ Prêt: ${stats.preparation.pret}</span>
-                        <span>🔄 En cours: ${stats.preparation.enCours}</span>
-                        <span>⏳ Non commencé: ${stats.preparation.nonCommence}</span>
-                    </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Avancement Préparation</h3>
+                    <span class="badge badge-primary">${stats.preparation.pourcentage}%</span>
                 </div>
-
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Avancement Exécution</h3>
-                        <span class="badge badge-info">${stats.execution.pourcentage}%</span>
-                    </div>
-                    <div class="progress-bar" style="height: 20px;">
-                        <div class="progress-fill blue" style="width: ${stats.execution.pourcentage}%"></div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.9rem;">
-                        <span>🏁 Terminé: ${stats.execution.termine}</span>
-                        <span>⚡ En cours: ${stats.execution.enCours}</span>
-                        <span>⏸️ Non démarré: ${stats.execution.nonDemarre}</span>
-                    </div>
+                <div class="progress-bar" style="height: 20px;">
+                    <div class="progress-fill green" style="width: ${stats.preparation.pourcentage}%"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 15px; font-size: 0.9rem;">
+                    <span>✅ Prêt: ${stats.preparation.pret}</span>
+                    <span>🔄 En cours: ${stats.preparation.enCours}</span>
+                    <span>⏳ Non commencé: ${stats.preparation.nonCommence}</span>
                 </div>
             </div>
 
             <div class="grid-2">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Par Discipline</h3>
+                        <h3 class="card-title">Alertes</h3>
+                        <span class="badge ${alertes.total > 0 ? 'badge-danger' : 'badge-success'}">${alertes.total}</span>
                     </div>
-                    <div class="table-container" style="max-height: 300px;">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Discipline</th>
-                                    <th>Total</th>
-                                    <th>Terminé</th>
-                                    <th>Avancement</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${Object.entries(stats.parDiscipline).map(([disc, data]) => `
-                                    <tr>
-                                        <td>${disc || 'Non défini'}</td>
-                                        <td>${data.total}</td>
-                                        <td>${data.termine}</td>
-                                        <td>
-                                            <div class="progress-bar" style="width: 100px;">
-                                                <div class="progress-fill blue" style="width: ${Math.round(data.termine/data.total*100)}%"></div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                    <div class="alertes-container" style="max-height: 250px; overflow-y: auto;">
+                        ${alertes.total === 0 ? `
+                            <div style="text-align: center; padding: 30px; color: var(--success);">
+                                <div style="font-size: 2rem;">✓</div>
+                                <p>Aucune alerte</p>
+                            </div>
+                        ` : `
+                            ${alertes.items.map(a => `
+                                <div class="alerte-item ${a.type}" style="padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 4px solid ${a.color}; background: ${a.bg};">
+                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                        <span>${a.icon}</span>
+                                        <span style="font-weight: 500;">${a.titre}</span>
+                                    </div>
+                                    <div style="font-size: 0.85rem; color: var(--text-light); margin-top: 4px;">${a.detail}</div>
+                                </div>
+                            `).join('')}
+                        `}
                     </div>
                 </div>
 
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">Heures</h3>
+                        <h3 class="card-title">Résumé Kitting</h3>
+                        <button class="btn btn-outline btn-sm" onclick="App.navigate('preparation', 'PL7.0')">Voir PL7.0</button>
                     </div>
-                    <div style="padding: 20px 0;">
-                        <div style="display: flex; justify-content: space-around; text-align: center;">
+                    <div style="padding: 15px 0;">
+                        <div style="display: flex; justify-content: space-around; text-align: center; margin-bottom: 20px;">
                             <div>
                                 <div style="font-size: 2rem; font-weight: bold; color: var(--primary);">
-                                    ${stats.execution.heuresEstimees.toLocaleString('fr-FR')}
+                                    ${kittingStats.total}
                                 </div>
-                                <div style="color: var(--text-light);">Heures estimées</div>
+                                <div style="color: var(--text-light); font-size: 0.85rem;">Kittings Total</div>
                             </div>
                             <div>
                                 <div style="font-size: 2rem; font-weight: bold; color: var(--success);">
-                                    ${stats.execution.heuresReelles.toLocaleString('fr-FR')}
+                                    ${kittingStats.prets}
                                 </div>
-                                <div style="color: var(--text-light);">Heures réelles</div>
+                                <div style="color: var(--text-light); font-size: 0.85rem;">Prêts</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 2rem; font-weight: bold; color: var(--warning);">
+                                    ${kittingStats.enAttente}
+                                </div>
+                                <div style="color: var(--text-light); font-size: 0.85rem;">En attente</div>
                             </div>
                         </div>
+                        <div class="progress-bar" style="height: 12px; margin-bottom: 10px;">
+                            <div class="progress-fill green" style="width: ${kittingStats.pourcentage}%"></div>
+                        </div>
+                        <div style="text-align: center; font-size: 0.9rem; color: var(--text-light);">
+                            ${kittingStats.piecesRecues} / ${kittingStats.totalPieces} pièces reçues
+                        </div>
                     </div>
-                    <div class="card-header" style="margin-top: 20px;">
-                        <h3 class="card-title">Actions Post-Mortem</h3>
-                    </div>
-                    <p style="font-size: 1.5rem;">
-                        <span style="color: var(--danger);">${stats.actionsOuvertes}</span> / ${stats.actionsPostMortem} ouvertes
-                    </p>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Travaux Récents / Critiques</h3>
-                    <button class="btn btn-outline btn-sm" onclick="App.navigate('travaux')">Voir tout</button>
-                </div>
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>OT</th>
-                                <th>Description</th>
-                                <th>Discipline</th>
-                                <th>Priorité</th>
-                                <th>Statut Exec</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${travaux.slice(0, 10).map(t => `
-                                <tr class="clickable" onclick="App.showDetail('${t.id}')">
-                                    <td><strong>${t.ot}</strong></td>
-                                    <td>${t.description.substring(0, 50)}...</td>
-                                    <td>${t.discipline || '-'}</td>
-                                    <td><span class="badge ${this.getPrioriteBadge(t.priorite)}">${t.priorite}</span></td>
-                                    <td><span class="status-indicator ${this.getStatusClass(t.execution.statutExec)}">${t.execution.statutExec}</span></td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
                 </div>
             </div>
         `;
@@ -1064,6 +1023,124 @@ const Screens = {
             case 'Bloqué': return 'blocked';
             default: return 'pending';
         }
+    },
+
+    // === ALERTES DASHBOARD ===
+    getAlertes(travaux, pieces) {
+        const alertes = [];
+
+        // Travaux bloqués
+        const travauxBloques = travaux.filter(t => t.execution && t.execution.statutExec === 'Bloqué');
+        if (travauxBloques.length > 0) {
+            alertes.push({
+                type: 'danger',
+                icon: '🚫',
+                titre: `${travauxBloques.length} travaux bloqués`,
+                detail: travauxBloques.slice(0, 3).map(t => t.ot).join(', ') + (travauxBloques.length > 3 ? '...' : ''),
+                color: '#ef4444',
+                bg: 'rgba(239, 68, 68, 0.1)'
+            });
+        }
+
+        // Travaux haute priorité non terminés
+        const travauxHautePriorite = travaux.filter(t =>
+            t.priorite === 'Haute' &&
+            t.execution &&
+            t.execution.statutExec !== 'Terminé'
+        );
+        if (travauxHautePriorite.length > 0) {
+            alertes.push({
+                type: 'warning',
+                icon: '⚠️',
+                titre: `${travauxHautePriorite.length} travaux haute priorité`,
+                detail: 'En attente ou en cours',
+                color: '#f59e0b',
+                bg: 'rgba(245, 158, 11, 0.1)'
+            });
+        }
+
+        // Pièces en attente (kitting créé mais non reçues)
+        if (typeof KittingSync !== 'undefined' && KittingSync.kittings) {
+            const piecesEnAttente = pieces.filter(p => {
+                const status = KittingSync.getPieceKittingStatus(p);
+                return status.hasKitting && !status.pieceReceived;
+            });
+            if (piecesEnAttente.length > 0) {
+                alertes.push({
+                    type: 'info',
+                    icon: '📦',
+                    titre: `${piecesEnAttente.length} pièces en attente`,
+                    detail: 'Kitting créé, réception en attente',
+                    color: '#3b82f6',
+                    bg: 'rgba(59, 130, 246, 0.1)'
+                });
+            }
+        }
+
+        // Travaux sans préparation complète mais en exécution
+        const travauxSansPrep = travaux.filter(t => {
+            if (!t.execution || t.execution.statutExec === 'Non démarré') return false;
+            const p = t.preparation || {};
+            const prepOk = p.materielCommande && p.permisSecurite && p.consignationPrevue;
+            return !prepOk;
+        });
+        if (travauxSansPrep.length > 0) {
+            alertes.push({
+                type: 'warning',
+                icon: '📋',
+                titre: `${travauxSansPrep.length} en exécution sans prép. complète`,
+                detail: 'Préparation incomplète',
+                color: '#f59e0b',
+                bg: 'rgba(245, 158, 11, 0.1)'
+            });
+        }
+
+        return {
+            total: alertes.length,
+            items: alertes
+        };
+    },
+
+    // === STATS KITTING DASHBOARD ===
+    getKittingStats() {
+        if (typeof KittingSync === 'undefined' || !KittingSync.kittings) {
+            return {
+                total: 0,
+                prets: 0,
+                enAttente: 0,
+                pourcentage: 0,
+                piecesRecues: 0,
+                totalPieces: 0
+            };
+        }
+
+        const kittings = KittingSync.kittings;
+        const total = kittings.length;
+        const prets = kittings.filter(k => k.status === 'pret').length;
+        const enAttente = total - prets;
+
+        // Compter les pièces
+        let piecesRecues = 0;
+        let totalPieces = 0;
+        kittings.forEach(k => {
+            if (k.pieces && Array.isArray(k.pieces)) {
+                k.pieces.forEach(p => {
+                    totalPieces++;
+                    if (p.received) piecesRecues++;
+                });
+            }
+        });
+
+        const pourcentage = totalPieces > 0 ? Math.round((piecesRecues / totalPieces) * 100) : 0;
+
+        return {
+            total,
+            prets,
+            enAttente,
+            pourcentage,
+            piecesRecues,
+            totalPieces
+        };
     },
 
     // === AVIS SYNDICAUX ===
