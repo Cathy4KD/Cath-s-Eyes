@@ -4678,6 +4678,17 @@ const ScreenPreparation = {
         const recues = pieces.filter(p => p.cmdInfo.statut === 'recue').length;
         const commandees = pieces.filter(p => p.cmdInfo.statut === 'commandee').length;
 
+        // Stats kitting pour cette liste
+        const piecesAvecKitting = pieces.filter(p => {
+            if (typeof KittingSync === 'undefined') return false;
+            const ks = KittingSync.getPieceKittingStatus(p);
+            return ks.hasKitting;
+        });
+        const kittingsPrets = piecesAvecKitting.filter(p => {
+            const ks = KittingSync.getPieceKittingStatus(p);
+            return ks.kittingStatus === 'pret';
+        }).length;
+
         return `
             <div class="detail-card planifier-card">
                 <div class="card-header-flex">
@@ -4686,6 +4697,7 @@ const ScreenPreparation = {
                         <span class="badge badge-warning">${pieces.length - recues - commandees} en attente</span>
                         <span class="badge badge-info">${commandees} commandées</span>
                         <span class="badge badge-success">${recues} reçues</span>
+                        ${piecesAvecKitting.length > 0 ? `<span class="badge" style="background: #4ade80; color: #166534;">📦 ${kittingsPrets}/${piecesAvecKitting.length} kittings prêts</span>` : ''}
                     </div>
                 </div>
 
@@ -4698,9 +4710,9 @@ const ScreenPreparation = {
                                 <th>Quantité</th>
                                 <th>Fournisseur</th>
                                 <th>OT lié</th>
+                                <th>Kitting</th>
                                 <th>Statut</th>
                                 <th>N° Commande</th>
-                                <th>Commentaire</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -4708,13 +4720,29 @@ const ScreenPreparation = {
                                 <tr><td colspan="8" class="empty-msg">Aucune pièce dans cette catégorie</td></tr>
                             ` : pieces.map(p => {
                                 const statut = p.cmdInfo.statut || 'en_attente';
+                                // Obtenir le statut kitting
+                                const kittingStatus = typeof KittingSync !== 'undefined' ? KittingSync.getPieceKittingStatus(p) : { hasKitting: false };
+                                const kittingClass = kittingStatus.hasKitting
+                                    ? (kittingStatus.kittingStatus === 'pret' ? 'kitting-pret' : 'kitting-incomplet')
+                                    : '';
+                                const baseClass = statut === 'recue' ? 'row-success' : statut === 'retard' ? 'row-danger' : '';
+                                const rowClass = kittingClass || baseClass;
+
+                                const kittingBadge = kittingStatus.hasKitting
+                                    ? (kittingStatus.kittingStatus === 'pret'
+                                        ? `<span class="badge" style="background: #4ade80; color: #166534; font-size: 0.7rem;">✓ Prêt</span>`
+                                        : `<span class="badge" style="background: #fbbf24; color: #92400e; font-size: 0.7rem;">⏳</span>`)
+                                    : `<span style="color: var(--text-light); font-size: 0.75rem;">-</span>`;
+                                const locationInfo = kittingStatus.location ? `<br><small style="font-size: 0.65rem; color: var(--text-light);">${kittingStatus.location}</small>` : '';
+
                                 return `
-                                <tr class="${statut === 'recue' ? 'row-success' : statut === 'retard' ? 'row-danger' : ''}" data-unique-id="${p.uniqueId}">
+                                <tr class="${rowClass}" data-unique-id="${p.uniqueId}">
                                     <td><strong>${p.reference || '-'}</strong></td>
-                                    <td title="${p.designation || ''}">${(p.designation || '-').substring(0, 35)}${(p.designation || '').length > 35 ? '...' : ''}</td>
+                                    <td title="${p.designation || ''}">${(p.designation || '-').substring(0, 30)}${(p.designation || '').length > 30 ? '...' : ''}</td>
                                     <td class="center">${p.quantite || '-'}</td>
                                     <td>${p.fournisseur || '-'}</td>
                                     <td>${p.otLie || '-'}</td>
+                                    <td style="text-align: center;">${kittingBadge}${locationInfo}</td>
                                     <td>
                                         <select class="mini-select" onchange="ScreenPreparation.updatePieceStatut('${p.uniqueId}', this.value)">
                                             <option value="en_attente" ${statut === 'en_attente' ? 'selected' : ''}>En attente</option>
@@ -4728,12 +4756,6 @@ const ScreenPreparation = {
                                         <input type="text" class="mini-input" value="${p.cmdInfo.numeroCommande || ''}"
                                             placeholder="N° cmd"
                                             onchange="ScreenPreparation.updatePieceNumeroCommande('${p.uniqueId}', this.value)">
-                                    </td>
-                                    <td class="commentaire-cell">
-                                        <div class="commentaire-wrapper">
-                                            <span class="commentaire-text">${(p.cmdInfo.commentaire || '').substring(0, 15)}${(p.cmdInfo.commentaire || '').length > 15 ? '...' : ''}</span>
-                                            <button class="btn-icon btn-edit-comment" onclick="ScreenPreparation.editPieceCommentaire('${p.uniqueId}')" title="Modifier">✏️</button>
-                                        </div>
                                     </td>
                                 </tr>
                             `}).join('')}

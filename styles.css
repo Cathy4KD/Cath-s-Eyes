@@ -5260,3 +5260,23 @@ tr:hover .btn-edit-comment {
         width: 100%;
     }
 }
+
+/* === KITTING STATUS COLORS === */
+/* Lignes colorées selon le statut kitting */
+.kitting-pret {
+    background: linear-gradient(90deg, rgba(74, 222, 128, 0.15) 0%, rgba(74, 222, 128, 0.05) 100%) !important;
+    border-left: 3px solid #4ade80;
+}
+
+.kitting-pret:hover {
+    background: linear-gradient(90deg, rgba(74, 222, 128, 0.25) 0%, rgba(74, 222, 128, 0.1) 100%) !important;
+}
+
+.kitting-incomplet {
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.15) 0%, rgba(251, 191, 36, 0.05) 100%) !important;
+    border-left: 3px solid #fbbf24;
+}
+
+.kitting-incomplet:hover {
+    background: linear-gradient(90deg, rgba(251, 191, 36, 0.25) 0%, rgba(251, 191, 36, 0.1) 100%) !important;
+}

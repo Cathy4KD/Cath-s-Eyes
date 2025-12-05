@@ -2074,6 +2074,9 @@ Actions à suivre:
         // Obtenir les OT uniques pour le filtre
         const otUniques = [...new Set(pieces.map(p => p.otLie).filter(Boolean))].sort();
 
+        // Statistiques kitting
+        const kittingStats = typeof KittingSync !== 'undefined' ? KittingSync.getStats() : null;
+
         return `
             <div class="card">
                 <div class="card-header">
@@ -2086,6 +2089,24 @@ Actions à suivre:
                     </div>
                 </div>
 
+                <!-- Légende des couleurs kitting -->
+                <div style="padding: 10px 15px; background: var(--bg-light); border-bottom: 1px solid var(--border); display: flex; gap: 20px; flex-wrap: wrap; align-items: center; font-size: 0.85rem;">
+                    <span style="font-weight: 500;">Statut Kitting:</span>
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="width: 12px; height: 12px; background: #4ade80; border-radius: 3px;"></span>
+                        Kitting prêt
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="width: 12px; height: 12px; background: #fbbf24; border-radius: 3px;"></span>
+                        Kitting incomplet
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 5px;">
+                        <span style="width: 12px; height: 12px; background: #e5e7eb; border-radius: 3px;"></span>
+                        Pas de kitting
+                    </span>
+                    ${kittingStats ? `<span style="margin-left: auto; color: var(--text-light);">Kittings: ${kittingStats.prets}/${kittingStats.total} prêts</span>` : ''}
+                </div>
+
                 <div style="padding: 15px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
                     <input type="text" id="pieceSearch" placeholder="Rechercher..."
                            style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; flex: 1; min-width: 200px;"
@@ -2094,6 +2115,13 @@ Actions à suivre:
                             onchange="Screens.filterPieces()">
                         <option value="">Tous les OT</option>
                         ${otUniques.map(ot => `<option value="${ot}">${ot}</option>`).join('')}
+                    </select>
+                    <select id="pieceKittingFilter" style="padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;"
+                            onchange="Screens.filterPieces()">
+                        <option value="">Tous statuts kitting</option>
+                        <option value="pret">Kitting prêt</option>
+                        <option value="incomplet">Kitting incomplet</option>
+                        <option value="none">Sans kitting</option>
                     </select>
                 </div>
 
@@ -2106,20 +2134,35 @@ Actions à suivre:
                                 <th>Désignation</th>
                                 <th>Quantité</th>
                                 <th>Fournisseur</th>
-                                <th>Catégorie</th>
+                                <th>Kitting</th>
                             </tr>
                         </thead>
                         <tbody>
-                            ${pieces.map(p => `
-                                <tr data-ot="${(p.otLie || '').toLowerCase()}" data-search="${(p.otLie + ' ' + p.reference + ' ' + p.designation + ' ' + p.fournisseur).toLowerCase()}">
+                            ${pieces.map(p => {
+                                const kittingStatus = typeof KittingSync !== 'undefined' ? KittingSync.getPieceKittingStatus(p) : { hasKitting: false };
+                                const rowClass = kittingStatus.hasKitting
+                                    ? (kittingStatus.kittingStatus === 'pret' ? 'kitting-pret' : 'kitting-incomplet')
+                                    : '';
+                                const kittingBadge = kittingStatus.hasKitting
+                                    ? (kittingStatus.kittingStatus === 'pret'
+                                        ? `<span class="badge" style="background: #4ade80; color: #166534;">✓ Prêt</span>`
+                                        : `<span class="badge" style="background: #fbbf24; color: #92400e;">⏳ Incomplet</span>`)
+                                    : `<span style="color: var(--text-light);">-</span>`;
+                                const locationInfo = kittingStatus.location ? `<br><small style="color: var(--text-light);">${kittingStatus.location}</small>` : '';
+
+                                return `
+                                <tr class="${rowClass}"
+                                    data-ot="${(p.otLie || '').toLowerCase()}"
+                                    data-kitting="${kittingStatus.hasKitting ? kittingStatus.kittingStatus : 'none'}"
+                                    data-search="${(p.otLie + ' ' + p.reference + ' ' + p.designation + ' ' + p.fournisseur).toLowerCase()}">
                                     <td><strong>${p.otLie || '-'}</strong></td>
                                     <td>${p.reference || '-'}</td>
                                     <td>${p.designation || '-'}</td>
                                     <td>${p.quantite || 1}${p.unite ? ' ' + p.unite : ''}</td>
                                     <td>${p.fournisseur || '-'}</td>
-                                    <td>${p.categorie || '-'}</td>
+                                    <td>${kittingBadge}${locationInfo}</td>
                                 </tr>
-                            `).join('')}
+                            `}).join('')}
                         </tbody>
                     </table>
                 </div>
@@ -2130,16 +2173,19 @@ Actions à suivre:
     filterPieces() {
         const search = (document.getElementById('pieceSearch')?.value || '').toLowerCase();
         const otFilter = (document.getElementById('pieceOTFilter')?.value || '').toLowerCase();
+        const kittingFilter = document.getElementById('pieceKittingFilter')?.value || '';
         const rows = document.querySelectorAll('#piecesTable tbody tr');
 
         rows.forEach(row => {
             const rowSearch = row.dataset.search || '';
             const rowOT = row.dataset.ot || '';
+            const rowKitting = row.dataset.kitting || '';
 
             const matchSearch = !search || rowSearch.includes(search);
             const matchOT = !otFilter || rowOT === otFilter;
+            const matchKitting = !kittingFilter || rowKitting === kittingFilter;
 
-            row.style.display = (matchSearch && matchOT) ? '' : 'none';
+            row.style.display = (matchSearch && matchOT && matchKitting) ? '' : 'none';
         });
     },
 

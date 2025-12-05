@@ -283,53 +283,206 @@ const FirebaseManager = {
     }
 };
 
-// === MODULE NOTIFICATIONS KITTING ===
-// Écoute les notifications depuis l'app Kitting Aciérie
+// === MODULE KITTING SYNC ===
+// Écoute les kittings depuis l'app Kitting Aciérie et met à jour les pièces/statuts
 
-const KittingNotifications = {
+const KittingSync = {
+    db: null, // Base de données Kitting Aciérie
     unsubscribe: null,
+    kittings: [], // Cache des kittings
     STORAGE_KEY: 'kitting_last_seen_count',
 
-    // Initialiser l'écoute des notifications
-    init() {
-        if (!FirebaseManager.db) {
-            console.warn('Firebase non initialisé, notifications Kitting désactivées');
-            return;
-        }
+    // Configuration Firebase Kitting Aciérie
+    kittingFirebaseConfig: {
+        apiKey: "AIzaSyA4bfAKvmgkw1DyTZSvcudndX7z7hUJWZU",
+        authDomain: "kitting-acierie.firebaseapp.com",
+        projectId: "kitting-acierie",
+        storageBucket: "kitting-acierie.firebasestorage.app",
+        messagingSenderId: "22aborede098",
+        appId: "1:220598741098:web:kitting"
+    },
 
-        // Écouter les changements en temps réel sur le document de notifications
-        this.unsubscribe = FirebaseManager.db.collection('kittingNotifications').doc('stats')
-            .onSnapshot(doc => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    this.handleNotification(data);
+    // Initialiser la connexion à Kitting Firebase
+    async init() {
+        try {
+            // Initialiser la seconde app Firebase pour Kitting
+            const kittingApp = firebase.initializeApp(this.kittingFirebaseConfig, 'kitting-acierie');
+            this.db = kittingApp.firestore();
+
+            // Écouter les changements sur la collection kittings
+            this.subscribeToKittings();
+
+            console.log('KittingSync initialisé avec succès');
+            return true;
+        } catch (error) {
+            // Si l'app existe déjà, la récupérer
+            if (error.code === 'app/duplicate-app') {
+                const kittingApp = firebase.app('kitting-acierie');
+                this.db = kittingApp.firestore();
+                this.subscribeToKittings();
+                console.log('KittingSync reconnecté');
+                return true;
+            }
+            console.error('Erreur initialisation KittingSync:', error);
+            return false;
+        }
+    },
+
+    // Écouter les changements sur la collection kittings
+    subscribeToKittings() {
+        if (!this.db) return;
+
+        this.unsubscribe = this.db.collection('kittings')
+            .orderBy('createdAt', 'desc')
+            .onSnapshot(snapshot => {
+                this.kittings = [];
+                snapshot.forEach(doc => {
+                    this.kittings.push({ id: doc.id, ...doc.data() });
+                });
+
+                console.log('Kittings mis à jour:', this.kittings.length);
+
+                // Mettre à jour les pièces avec le statut kitting
+                this.updatePiecesKittingStatus();
+
+                // Mettre à jour le statut PL7.0
+                this.updatePL7Status();
+
+                // Notifier l'UI pour rafraîchir
+                if (typeof DataManager !== 'undefined') {
+                    DataManager.notifyUpdate('kittings');
                 }
             }, error => {
-                console.error('Erreur écoute notifications Kitting:', error);
+                console.error('Erreur écoute kittings:', error);
             });
 
-        console.log('Écoute notifications Kitting activée');
+        console.log('Écoute kittings activée');
     },
 
-    // Gérer une notification reçue
-    handleNotification(data) {
-        const currentCount = (data.totalKittings || 0) + (data.totalPieces || 0);
-        const lastSeenCount = parseInt(localStorage.getItem(this.STORAGE_KEY) || '0');
+    // Normaliser un numéro OT pour comparaison
+    normalizeOT(ot) {
+        if (!ot) return '';
+        return ot.toString().trim().toLowerCase()
+            .replace(/[\s\-_]/g, '')
+            .replace(/^0+/, '');
+    },
 
-        const newItems = currentCount - lastSeenCount;
+    // Trouver le kitting associé à une pièce (par OT)
+    getKittingForPiece(piece) {
+        const pieceOT = this.normalizeOT(piece.otLie || piece.ot);
+        if (!pieceOT) return null;
 
-        if (newItems > 0 && lastSeenCount > 0) {
-            // Il y a de nouveaux éléments
-            this.showBadge(newItems);
-            // Optionnel: afficher un toast
-            FirebaseManager.showToast(`${newItems} nouveau(x) élément(s) dans Kitting`, 'info');
-        } else if (lastSeenCount === 0) {
-            // Première visite, sauvegarder le count actuel sans notifier
-            localStorage.setItem(this.STORAGE_KEY, currentCount.toString());
+        return this.kittings.find(k => {
+            const kittingOT = this.normalizeOT(k.ordre);
+            return kittingOT === pieceOT;
+        });
+    },
+
+    // Vérifier si une pièce est dans un kitting et son statut
+    getPieceKittingStatus(piece) {
+        const kitting = this.getKittingForPiece(piece);
+        if (!kitting) {
+            return { hasKitting: false, status: null, kitting: null };
+        }
+
+        // Chercher la pièce dans le kitting
+        const pieceRef = (piece.reference || '').toLowerCase();
+        const pieceDesign = (piece.designation || '').toLowerCase();
+
+        const kittingPiece = kitting.pieces?.find(kp => {
+            const kpName = (kp.name || '').toLowerCase();
+            return kpName.includes(pieceRef) || kpName.includes(pieceDesign);
+        });
+
+        return {
+            hasKitting: true,
+            kittingStatus: kitting.status, // 'pret' ou 'incomplet'
+            pieceReceived: kittingPiece?.received || false,
+            kitting: kitting,
+            location: kitting.location
+        };
+    },
+
+    // Mettre à jour le statut kitting de toutes les pièces
+    updatePiecesKittingStatus() {
+        if (!DataManager?.data?.pieces) return;
+
+        let updated = false;
+        DataManager.data.pieces.forEach(piece => {
+            const status = this.getPieceKittingStatus(piece);
+            if (status.hasKitting !== piece.hasKitting ||
+                status.kittingStatus !== piece.kittingStatus ||
+                status.pieceReceived !== piece.pieceReceived) {
+                piece.hasKitting = status.hasKitting;
+                piece.kittingStatus = status.kittingStatus;
+                piece.pieceReceived = status.pieceReceived;
+                piece.kittingLocation = status.location;
+                updated = true;
+            }
+        });
+
+        if (updated) {
+            DataManager.saveToLocalStorage();
         }
     },
 
-    // Afficher le badge sur le bouton Kitting
+    // Mettre à jour le statut de l'étape PL7.0 - Commande matériel
+    updatePL7Status() {
+        if (!this.kittings.length || typeof ProcessusArret === 'undefined') return;
+
+        const totalKittings = this.kittings.length;
+        const kittingsPrets = this.kittings.filter(k => k.status === 'pret').length;
+
+        // Calculer le pourcentage
+        const pourcentage = totalKittings > 0 ? Math.round((kittingsPrets / totalKittings) * 100) : 0;
+
+        // Déterminer le statut
+        let statut = 'non_demarre';
+        if (pourcentage === 100) {
+            statut = 'termine';
+        } else if (pourcentage > 0) {
+            statut = 'en_cours';
+        }
+
+        // Mettre à jour PL7.0
+        const currentState = ProcessusArret.getEtatEtape('PL7.0');
+        if (currentState && (currentState.pourcentage !== pourcentage || currentState.statut !== statut)) {
+            ProcessusArret.updateEtatEtape('PL7.0', {
+                statut: statut,
+                pourcentage: pourcentage,
+                commentaires: currentState.commentaires || []
+            });
+
+            console.log(`PL7.0 mis à jour: ${pourcentage}% (${kittingsPrets}/${totalKittings} kittings prêts)`);
+        }
+    },
+
+    // Obtenir les statistiques des kittings
+    getStats() {
+        const total = this.kittings.length;
+        const prets = this.kittings.filter(k => k.status === 'pret').length;
+        const incomplets = total - prets;
+
+        return {
+            total,
+            prets,
+            incomplets,
+            pourcentage: total > 0 ? Math.round((prets / total) * 100) : 0
+        };
+    },
+
+    // Obtenir tous les kittings
+    getKittings() {
+        return this.kittings;
+    },
+
+    // Obtenir un kitting par OT
+    getKittingByOT(ot) {
+        const normalizedOT = this.normalizeOT(ot);
+        return this.kittings.find(k => this.normalizeOT(k.ordre) === normalizedOT);
+    },
+
+    // Badge notifications (ancien comportement conservé)
     showBadge(count) {
         const badge = document.getElementById('kittingBadge');
         if (badge) {
@@ -338,7 +491,6 @@ const KittingNotifications = {
         }
     },
 
-    // Masquer le badge (appelé quand l'utilisateur clique sur Kitting)
     hideBadge() {
         const badge = document.getElementById('kittingBadge');
         if (badge) {
@@ -346,21 +498,10 @@ const KittingNotifications = {
         }
     },
 
-    // Marquer comme vu (appelé quand on clique sur le lien Kitting)
     markAsSeen() {
-        // Récupérer le count actuel depuis Firebase
-        if (!FirebaseManager.db) return;
-
-        FirebaseManager.db.collection('kittingNotifications').doc('stats').get()
-            .then(doc => {
-                if (doc.exists) {
-                    const data = doc.data();
-                    const currentCount = (data.totalKittings || 0) + (data.totalPieces || 0);
-                    localStorage.setItem(this.STORAGE_KEY, currentCount.toString());
-                    this.hideBadge();
-                }
-            })
-            .catch(err => console.error('Erreur markAsSeen:', err));
+        const currentCount = this.kittings.length;
+        localStorage.setItem(this.STORAGE_KEY, currentCount.toString());
+        this.hideBadge();
     },
 
     // Arrêter l'écoute
@@ -371,6 +512,9 @@ const KittingNotifications = {
         }
     }
 };
+
+// Alias pour compatibilité
+const KittingNotifications = KittingSync;
 
 // Initialiser Firebase et les notifications quand le DOM est prêt
 document.addEventListener('DOMContentLoaded', async () => {
