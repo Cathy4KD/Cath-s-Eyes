@@ -410,12 +410,25 @@ const DataManager = {
         return { total: this.data.avis.length, added: addedCount, updated: updatedCount };
     },
 
+    // Créer une clé unique pour un travail basée sur OT + Description
+    createTravailKey(ot, description) {
+        const otNorm = (ot || '').toString().trim().toLowerCase();
+        const descNorm = (description || '').toString().trim().toLowerCase();
+        return `${otNorm}|||${descNorm}`;
+    },
+
     // Fusion des travaux (conserve commentaires et modifications)
+    // Clé unique = OT + Description
     mergeTravaux(newTravaux) {
-        const existingMap = new Map(this.data.travaux.map(t => [t.ot, t]));
+        const existingMap = new Map();
+        this.data.travaux.forEach(t => {
+            const key = this.createTravailKey(t.ot, t.description);
+            existingMap.set(key, t);
+        });
 
         newTravaux.forEach(newT => {
-            const existing = existingMap.get(newT.ot);
+            const key = this.createTravailKey(newT.ot, newT.description);
+            const existing = existingMap.get(key);
             if (existing) {
                 // Mise à jour en conservant les données locales
                 Object.assign(existing, {
@@ -426,6 +439,7 @@ const DataManager = {
                 });
             } else {
                 this.data.travaux.push(newT);
+                existingMap.set(key, newT);
             }
         });
     },
@@ -455,9 +469,21 @@ const DataManager = {
         return result;
     },
 
-    // Obtenir un travail par ID ou OT
-    getTravail(idOrOt) {
-        return this.data.travaux.find(t => t.id === idOrOt || t.ot === idOrOt);
+    // Obtenir un travail par ID, OT, ou clé OT+Description
+    getTravail(idOrOtOrKey, description = null) {
+        // Si description fournie, chercher par clé OT+Description
+        if (description !== null) {
+            const key = this.createTravailKey(idOrOtOrKey, description);
+            return this.data.travaux.find(t => this.createTravailKey(t.ot, t.description) === key);
+        }
+        // Sinon chercher par ID ou OT (compatibilité)
+        return this.data.travaux.find(t => t.id === idOrOtOrKey || t.ot === idOrOtOrKey);
+    },
+
+    // Obtenir un travail par clé unique (OT + Description)
+    getTravailByKey(ot, description) {
+        const key = this.createTravailKey(ot, description);
+        return this.data.travaux.find(t => this.createTravailKey(t.ot, t.description) === key);
     },
 
     // === STATISTIQUES ===
