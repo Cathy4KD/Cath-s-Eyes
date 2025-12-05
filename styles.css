@@ -4692,6 +4692,21 @@ tr.reunion-proche:hover {
     flex: 1;
 }
 
+.input-with-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.input-with-btn .form-control {
+    flex: 1;
+}
+
+.input-with-btn .btn {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
 .search-indicator {
     font-size: 0.85rem;
     white-space: nowrap;

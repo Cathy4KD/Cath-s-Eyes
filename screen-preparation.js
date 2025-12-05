@@ -3127,14 +3127,15 @@ const ScreenPreparation = {
                     <div class="overlay-body">
                         <div class="form-grid-2">
                             <div class="form-group">
-                                <label>Ordre (N° OT) *</label>
-                                <div class="input-with-search">
+                                <label>Ordre (N° OT)</label>
+                                <div class="input-with-btn">
                                     <input type="text" id="projetOrdre" class="form-control" value="${projet?.ordre || ''}"
-                                        placeholder="Entrez un numéro d'ordre"
-                                        oninput="ScreenPreparation.rechercherOrdre('projet', this.value)">
-                                    <span class="search-indicator" id="projetSearchIndicator"></span>
+                                        placeholder="N° OT (optionnel)">
+                                    <button type="button" class="btn btn-sm btn-outline" onclick="ScreenPreparation.ouvrirRechercheTravaux('projet')">
+                                        🔍 Rechercher
+                                    </button>
                                 </div>
-                                <small class="form-hint">Entrez un numéro pour rechercher dans les travaux importés</small>
+                                <small class="form-hint">Laissez vide ou cliquez sur Rechercher pour sélectionner un travail</small>
                             </div>
                             <div class="form-group">
                                 <label>Désignation</label>
@@ -3194,16 +3195,12 @@ const ScreenPreparation = {
         const duree = document.getElementById('projetDuree').value.trim();
         const commentaire = document.getElementById('projetCommentaire').value.trim();
 
-        if (!ordre) {
-            App.showToast('Le numéro d\'ordre est obligatoire', 'warning');
-            return;
-        }
-
+        // OT n'est plus obligatoire
         if (!DataManager.data.processus) DataManager.data.processus = {};
         if (!DataManager.data.processus.projetsCapitalisation) DataManager.data.processus.projetsCapitalisation = { projets: [], capitalisation: [] };
 
         const projet = {
-            ordre,
+            ordre: ordre || '',
             designation,
             posteTechnique,
             responsable,
@@ -3256,14 +3253,15 @@ const ScreenPreparation = {
                     <div class="overlay-body">
                         <div class="form-grid-2">
                             <div class="form-group">
-                                <label>Ordre (N° OT) *</label>
-                                <div class="input-with-search">
+                                <label>Ordre (N° OT)</label>
+                                <div class="input-with-btn">
                                     <input type="text" id="capOrdre" class="form-control" value="${item?.ordre || ''}"
-                                        placeholder="Entrez un numéro d'ordre"
-                                        oninput="ScreenPreparation.rechercherOrdre('cap', this.value)">
-                                    <span class="search-indicator" id="capSearchIndicator"></span>
+                                        placeholder="N° OT (optionnel)">
+                                    <button type="button" class="btn btn-sm btn-outline" onclick="ScreenPreparation.ouvrirRechercheTravaux('cap')">
+                                        🔍 Rechercher
+                                    </button>
                                 </div>
-                                <small class="form-hint">Entrez un numéro pour rechercher dans les travaux importés</small>
+                                <small class="form-hint">Laissez vide ou cliquez sur Rechercher pour sélectionner un travail</small>
                             </div>
                             <div class="form-group">
                                 <label>Désignation</label>
@@ -3324,16 +3322,12 @@ const ScreenPreparation = {
         const duree = document.getElementById('capDuree').value.trim();
         const commentaire = document.getElementById('capCommentaire').value.trim();
 
-        if (!ordre) {
-            App.showToast('Le numéro d\'ordre est obligatoire', 'warning');
-            return;
-        }
-
+        // OT n'est plus obligatoire
         if (!DataManager.data.processus) DataManager.data.processus = {};
         if (!DataManager.data.processus.projetsCapitalisation) DataManager.data.processus.projetsCapitalisation = { projets: [], capitalisation: [] };
 
         const item = {
-            ordre,
+            ordre: ordre || '',
             designation,
             posteTechnique,
             responsable,
@@ -3362,6 +3356,131 @@ const ScreenPreparation = {
             this.refresh();
             App.showToast('Capitalisation supprimée', 'success');
         }
+    },
+
+    // ==========================================
+    // Recherche de travaux pour Projets/Capitalisation
+    // ==========================================
+
+    rechercheTravauxTarget: null, // 'projet', 'cap', ou 'ping'
+    rechercheTravauxFiltre: '',
+
+    ouvrirRechercheTravaux(target) {
+        this.rechercheTravauxTarget = target;
+        this.rechercheTravauxFiltre = '';
+        const travaux = this.getTravauxImportes();
+
+        if (travaux.length === 0) {
+            App.showToast('Aucun travail importé. Importez des données d\'abord.', 'warning');
+            return;
+        }
+
+        const html = `
+            <div class="overlay-modal" id="rechercheTravauxModal" style="z-index: 10001;">
+                <div class="overlay-box" style="max-width: 900px; max-height: 80vh;">
+                    <div class="overlay-header">
+                        <h3>🔍 Rechercher un travail</h3>
+                        <button class="close-btn" onclick="document.getElementById('rechercheTravauxModal').remove()">✕</button>
+                    </div>
+                    <div class="overlay-body" style="padding: 15px;">
+                        <div class="search-bar" style="margin-bottom: 15px;">
+                            <input type="text" id="rechercheTravailInput" class="form-control"
+                                   placeholder="Rechercher par OT, description, poste technique..."
+                                   oninput="ScreenPreparation.filtrerTravauxRecherche(this.value)"
+                                   autofocus>
+                        </div>
+                        <div class="table-container" style="max-height: 50vh; overflow-y: auto;">
+                            <table class="data-table" id="tableRechercheTravaux">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 100px;">OT</th>
+                                        <th>Description</th>
+                                        <th style="width: 150px;">Poste technique</th>
+                                        <th style="width: 100px;">Discipline</th>
+                                        <th style="width: 80px;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${this.renderListeTravauxRecherche(travaux)}
+                                </tbody>
+                            </table>
+                        </div>
+                        <div style="margin-top: 10px; color: var(--text-light); font-size: 0.85rem;">
+                            ${travaux.length} travaux disponibles
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+        document.getElementById('rechercheTravailInput').focus();
+    },
+
+    renderListeTravauxRecherche(travaux, filtre = '') {
+        const filtreLC = filtre.toLowerCase();
+        const travauxFiltres = filtre
+            ? travaux.filter(t =>
+                (t.ot || '').toLowerCase().includes(filtreLC) ||
+                (t.description || '').toLowerCase().includes(filtreLC) ||
+                (t.posteTechnique || '').toLowerCase().includes(filtreLC) ||
+                (t.discipline || '').toLowerCase().includes(filtreLC)
+            )
+            : travaux;
+
+        // Limiter à 100 résultats pour la performance
+        const travauxAffiches = travauxFiltres.slice(0, 100);
+
+        if (travauxAffiches.length === 0) {
+            return '<tr><td colspan="5" class="empty-msg">Aucun travail trouvé</td></tr>';
+        }
+
+        return travauxAffiches.map(t => `
+            <tr class="clickable" onclick="ScreenPreparation.selectionnerTravail('${t.ot}', '${(t.description || '').replace(/'/g, "\\'")}', '${(t.posteTechnique || '').replace(/'/g, "\\'")}')">
+                <td><strong>${t.ot || '-'}</strong></td>
+                <td>${(t.description || '-').substring(0, 60)}${(t.description || '').length > 60 ? '...' : ''}</td>
+                <td>${t.posteTechnique || '-'}</td>
+                <td>${t.discipline || '-'}</td>
+                <td class="center">
+                    <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); ScreenPreparation.selectionnerTravail('${t.ot}', '${(t.description || '').replace(/'/g, "\\'")}', '${(t.posteTechnique || '').replace(/'/g, "\\'")}')">
+                        Choisir
+                    </button>
+                </td>
+            </tr>
+        `).join('') + (travauxFiltres.length > 100 ? `<tr><td colspan="5" class="center" style="color: var(--text-light);">... et ${travauxFiltres.length - 100} autres résultats. Affinez votre recherche.</td></tr>` : '');
+    },
+
+    filtrerTravauxRecherche(filtre) {
+        this.rechercheTravauxFiltre = filtre;
+        const travaux = this.getTravauxImportes();
+        const tbody = document.querySelector('#tableRechercheTravaux tbody');
+        if (tbody) {
+            tbody.innerHTML = this.renderListeTravauxRecherche(travaux, filtre);
+        }
+    },
+
+    selectionnerTravail(ot, description, posteTechnique) {
+        const target = this.rechercheTravauxTarget;
+
+        // Remplir les champs selon le formulaire cible
+        if (target === 'projet') {
+            document.getElementById('projetOrdre').value = ot || '';
+            document.getElementById('projetDesignation').value = description || '';
+            document.getElementById('projetPosteTechnique').value = posteTechnique || '';
+        } else if (target === 'cap') {
+            document.getElementById('capOrdre').value = ot || '';
+            document.getElementById('capDesignation').value = description || '';
+            document.getElementById('capPosteTechnique').value = posteTechnique || '';
+        } else if (target === 'ping') {
+            document.getElementById('pingOrdre').value = ot || '';
+            document.getElementById('pingDesignation').value = description || '';
+            document.getElementById('pingPosteTechnique').value = posteTechnique || '';
+        }
+
+        // Fermer le modal de recherche
+        const modal = document.getElementById('rechercheTravauxModal');
+        if (modal) modal.remove();
+
+        App.showToast('Travail sélectionné', 'success');
     },
 
     // ==========================================
@@ -4255,14 +4374,15 @@ const ScreenPreparation = {
                     <div class="overlay-body">
                         <div class="form-grid-2">
                             <div class="form-group">
-                                <label>Ordre (N° OT) *</label>
-                                <div class="input-with-search">
+                                <label>Ordre (N° OT)</label>
+                                <div class="input-with-btn">
                                     <input type="text" id="pingOrdre" class="form-control" value="${item?.ordre || ''}"
-                                        placeholder="Entrez un numéro d'ordre"
-                                        oninput="ScreenPreparation.rechercherOrdre('ping', this.value)">
-                                    <span class="search-indicator" id="pingSearchIndicator"></span>
+                                        placeholder="N° OT (optionnel)">
+                                    <button type="button" class="btn btn-sm btn-outline" onclick="ScreenPreparation.ouvrirRechercheTravaux('ping')">
+                                        🔍 Rechercher
+                                    </button>
                                 </div>
-                                <small class="form-hint">Entrez un numéro pour rechercher dans les travaux importés</small>
+                                <small class="form-hint">Laissez vide ou cliquez sur Rechercher pour sélectionner un travail</small>
                             </div>
                             <div class="form-group">
                                 <label>Désignation</label>
@@ -4323,16 +4443,12 @@ const ScreenPreparation = {
         const duree = document.getElementById('pingDuree').value.trim();
         const commentaire = document.getElementById('pingCommentaire').value.trim();
 
-        if (!ordre) {
-            App.showToast('Le numéro d\'ordre est obligatoire', 'warning');
-            return;
-        }
-
+        // OT n'est plus obligatoire
         if (!DataManager.data.processus) DataManager.data.processus = {};
         if (!DataManager.data.processus.projetsIngenierie) DataManager.data.processus.projetsIngenierie = { items: [] };
 
         const item = {
-            ordre,
+            ordre: ordre || '',
             designation,
             posteTechnique,
             responsable,
