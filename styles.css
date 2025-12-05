@@ -3370,12 +3370,20 @@ tr.clickable:hover {
     border-radius: 4px;
     font-size: 0.8rem;
     background: white;
-    width: 80px;
+    width: 100%;
+    min-width: 120px;
 }
 
 .mini-input:focus {
     outline: none;
     border-color: var(--primary);
+}
+
+/* Numéro PSV */
+.psv-num {
+    color: #0070d2;
+    font-family: monospace;
+    font-size: 0.95rem;
 }
 
 .mini-stats {

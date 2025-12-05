@@ -4635,22 +4635,55 @@ const ScreenPreparation = {
 
     // Filtre et tri pour PSV
     psvFiltre: '',
-    psvTri: 'ot',
+    psvTri: 'psv',
     psvTriDir: 'asc',
 
     renderDetailPSV() {
         const travaux = DataManager.data.travaux || [];
         const psvData = DataManager.data.processus?.psv || {};
 
-        // Filtrer les travaux contenant "PSV" dans la description
-        let travauxPSV = travaux.filter(t =>
-            t.description && t.description.toUpperCase().includes('PSV')
-        );
+        // Extraire tous les numéros PSV uniques (format PSV**** ou PSV-****)
+        const psvRegex = /PSV[-]?\d{4,}/gi;
+        const psvMap = new Map(); // Map pour stocker PSV -> travaux associés
+
+        travaux.forEach((t, index) => {
+            if (t.description) {
+                const matches = t.description.match(psvRegex);
+                if (matches) {
+                    matches.forEach(match => {
+                        const psvNorm = match.toUpperCase().replace('-', ''); // Normaliser PSV1234 et PSV-1234
+                        if (!psvMap.has(psvNorm)) {
+                            psvMap.set(psvNorm, []);
+                        }
+                        psvMap.get(psvNorm).push({ ...t, travailIndex: index });
+                    });
+                }
+            }
+        });
+
+        // Convertir en tableau avec infos PSV
+        let travauxPSV = Array.from(psvMap.entries()).map(([psvNum, travauxList]) => {
+            const uniqueId = psvNum;
+            const psvInfo = psvData[uniqueId] || {};
+            const premierTravail = travauxList[0];
+            return {
+                psvNum,
+                ot: travauxList.map(t => t.ot).join(', '),
+                description: premierTravail.description,
+                equipement: premierTravail.equipement,
+                entreprise: premierTravail.entreprise,
+                travauxAssocies: travauxList,
+                nbTravaux: travauxList.length,
+                uniqueId,
+                psvInfo
+            };
+        });
 
         // Appliquer le filtre de recherche
         if (this.psvFiltre) {
             const filtre = this.psvFiltre.toLowerCase();
             travauxPSV = travauxPSV.filter(t =>
+                (t.psvNum && t.psvNum.toLowerCase().includes(filtre)) ||
                 (t.ot && t.ot.toString().toLowerCase().includes(filtre)) ||
                 (t.description && t.description.toLowerCase().includes(filtre)) ||
                 (t.equipement && t.equipement.toLowerCase().includes(filtre)) ||
@@ -4658,18 +4691,15 @@ const ScreenPreparation = {
             );
         }
 
-        // Mapper avec uniqueId pour indépendance des lignes
-        const travauxAvecId = travauxPSV.map((t, idx) => {
-            const travailIndex = travaux.findIndex(tr => tr === t);
-            const uniqueId = `${t.ot}_${travailIndex}`;
-            const psvInfo = psvData[uniqueId] || {};
-            return { ...t, uniqueId, travailIndex, psvInfo };
-        });
+        // Renommer pour compatibilité avec le reste du code
+        const travauxAvecId = travauxPSV;
 
         // Appliquer le tri
         travauxAvecId.sort((a, b) => {
             let comparison = 0;
-            if (this.psvTri === 'ot') {
+            if (this.psvTri === 'psv') {
+                comparison = (a.psvNum || '').localeCompare(b.psvNum || '');
+            } else if (this.psvTri === 'ot') {
                 comparison = (a.ot || '').toString().localeCompare((b.ot || '').toString());
             } else if (this.psvTri === 'entreprise') {
                 comparison = (a.entreprise || '').localeCompare(b.entreprise || '');
@@ -4694,7 +4724,7 @@ const ScreenPreparation = {
                 <div class="detail-body planifier-body">
                     <div class="detail-card planifier-card info-card">
                         <p class="info-text">
-                            🔧 <strong>Pressure Safety Valves (PSV)</strong> - Travaux extraits automatiquement de la Liste des travaux contenant "PSV" dans la description.
+                            🔧 <strong>Pressure Safety Valves (PSV)</strong> - Liste des numéros PSV uniques extraits automatiquement (format PSV**** ou PSV-****).
                         </p>
                     </div>
 
@@ -4732,6 +4762,7 @@ const ScreenPreparation = {
                             <div class="filter-group">
                                 <label>Trier par:</label>
                                 <select class="form-control" onchange="ScreenPreparation.psvTri = this.value; ScreenPreparation.refresh();">
+                                    <option value="psv" ${this.psvTri === 'psv' ? 'selected' : ''}>N° PSV</option>
                                     <option value="ot" ${this.psvTri === 'ot' ? 'selected' : ''}>OT</option>
                                     <option value="entreprise" ${this.psvTri === 'entreprise' ? 'selected' : ''}>Entreprise</option>
                                     <option value="equipement" ${this.psvTri === 'equipement' ? 'selected' : ''}>Équipement</option>
@@ -4745,34 +4776,34 @@ const ScreenPreparation = {
 
                     <div class="detail-card planifier-card">
                         <div class="card-header-flex">
-                            <h3>🔩 Travaux PSV (${travauxAvecId.length})</h3>
+                            <h3>🔩 Liste PSV (${travauxAvecId.length} uniques)</h3>
                         </div>
 
                         <div class="table-container">
                             <table class="planifier-table">
                                 <thead>
                                     <tr>
-                                        <th>OT</th>
-                                        <th>Description</th>
+                                        <th>N° PSV</th>
+                                        <th>OT associés</th>
                                         <th>Équipement</th>
-                                        <th>Opération</th>
                                         <th>Entreprise</th>
+                                        <th>Nb travaux</th>
                                         <th>Statut</th>
-                                        <th>Commentaire</th>
+                                        <th>Commentaire PSV</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${travauxAvecId.length === 0 ? `
-                                        <tr><td colspan="7" class="empty-msg">${this.psvFiltre ? 'Aucun résultat pour cette recherche' : 'Aucun travail avec "PSV" dans la description'}</td></tr>
+                                        <tr><td colspan="7" class="empty-msg">${this.psvFiltre ? 'Aucun résultat pour cette recherche' : 'Aucun numéro PSV trouvé (format PSV**** ou PSV-****)'}</td></tr>
                                     ` : travauxAvecId.map((t) => {
                                         const statut = t.psvInfo.statut || 'a_faire';
                                         return `
                                         <tr class="${statut === 'termine' ? 'row-success' : ''}" data-unique-id="${t.uniqueId}">
-                                            <td><strong>${t.ot || '-'}</strong></td>
-                                            <td title="${t.description || ''}">${(t.description || '-').substring(0, 40)}${(t.description || '').length > 40 ? '...' : ''}</td>
+                                            <td><strong class="psv-num">${t.psvNum || '-'}</strong></td>
+                                            <td class="td-wrap" style="max-width: 150px; font-size: 0.85rem;">${t.ot || '-'}</td>
                                             <td>${t.equipement || '-'}</td>
-                                            <td>${t.operation || '-'}</td>
                                             <td>${t.entreprise || '-'}</td>
+                                            <td class="center"><span class="badge badge-info">${t.nbTravaux}</span></td>
                                             <td>
                                                 <select class="mini-select" onchange="ScreenPreparation.updatePSVStatut('${t.uniqueId}', this.value)">
                                                     <option value="a_faire" ${statut === 'a_faire' ? 'selected' : ''}>À faire</option>
@@ -4780,11 +4811,10 @@ const ScreenPreparation = {
                                                     <option value="termine" ${statut === 'termine' ? 'selected' : ''}>Terminé</option>
                                                 </select>
                                             </td>
-                                            <td class="commentaire-cell">
-                                                <div class="commentaire-wrapper">
-                                                    <span class="commentaire-text">${(t.commentaire || '').substring(0, 20)}${(t.commentaire || '').length > 20 ? '...' : ''}</span>
-                                                    <button class="btn-icon btn-edit-comment" onclick="ScreenPreparation.editCommentaireTravail(${t.travailIndex})" title="Modifier">✏️</button>
-                                                </div>
+                                            <td>
+                                                <input type="text" class="mini-input" value="${t.psvInfo.commentaire || ''}"
+                                                    placeholder="Commentaire..."
+                                                    onchange="ScreenPreparation.updatePSVCommentaire('${t.uniqueId}', this.value)">
                                             </td>
                                         </tr>
                                     `}).join('')}
@@ -4810,6 +4840,18 @@ const ScreenPreparation = {
         DataManager.data.processus.psv[uniqueId].statut = statut;
         DataManager.saveToStorage();
         this.refresh();
+    },
+
+    updatePSVCommentaire(uniqueId, commentaire) {
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.psv) DataManager.data.processus.psv = {};
+
+        if (!DataManager.data.processus.psv[uniqueId]) {
+            DataManager.data.processus.psv[uniqueId] = {};
+        }
+
+        DataManager.data.processus.psv[uniqueId].commentaire = commentaire;
+        DataManager.saveToStorage();
     },
 
     // ==========================================
