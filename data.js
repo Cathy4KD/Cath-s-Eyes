@@ -152,51 +152,20 @@ const DataManager = {
         }
     },
 
-    // Configurer la synchronisation Firebase temps réel
+    // Configurer la synchronisation Firebase
+    // OPTIMISATION: Pas de listeners temps réel pour économiser les requêtes
+    // Les données sont chargées au démarrage et sauvegardées à la demande
     setupFirebaseSync() {
-        if (typeof FirebaseManager !== 'undefined') {
-            // Attendre que Firebase soit prêt
-            const checkFirebase = setInterval(() => {
-                if (FirebaseManager.db) {
-                    clearInterval(checkFirebase);
-
-                    // Écouter les changements des pièces
-                    FirebaseManager.subscribeToChanges((data) => {
-                        if (data && data.lastSync) {
-                            const cloudTime = data.lastSync.toMillis?.() || 0;
-                            const localTime = this.data.metadata?.lastLocalSave || 0;
-
-                            if (cloudTime > localTime + 5000) {
-                                console.log('Mise à jour temps réel pièces depuis Firebase');
-                                this.data.pieces = data.pieces || [];
-                                this.saveToLocalStorage();
-                                this.notifyUpdate('pieces');
-                            }
-                        }
-                    });
-
-                    // Écouter les changements des travaux
-                    FirebaseManager.subscribeToTravauxChanges((data) => {
-                        if (data && data.lastSync) {
-                            const cloudTime = data.lastSync.toMillis?.() || 0;
-                            const localTime = this.data.metadata?.lastLocalSave || 0;
-
-                            if (cloudTime > localTime + 5000) {
-                                console.log('Mise à jour temps réel travaux depuis Firebase');
-                                this.data.travaux = data.travaux || [];
-                                this.saveToLocalStorage();
-                                this.notifyUpdate('travaux');
-                            }
-                        }
-                    });
-                }
-            }, 500);
-        }
+        // Les listeners temps réel ont été désactivés pour économiser le quota Firebase
+        // Les données sont synchronisées uniquement lors des modifications
+        console.log('Firebase sync configuré (mode économique - pas de listeners temps réel)');
     },
 
-    // Auto-save toutes les 30 secondes
+    // Auto-save localStorage uniquement (pas de sync Firebase automatique)
+    // OPTIMISATION: Firebase sync seulement lors des modifications utilisateur
     setupAutoSave() {
-        setInterval(() => this.saveToStorage(), 30000);
+        // Sauvegarde locale toutes les 30 secondes
+        setInterval(() => this.saveToLocalStorage(), 30000);
     },
 
     // === GESTION DES TRAVAUX ===

@@ -404,26 +404,18 @@ const KittingSync = {
     },
 
     // Mettre à jour le statut kitting de toutes les pièces
+    // OPTIMISATION: Met à jour en mémoire seulement, pas de sauvegarde automatique
     updatePiecesKittingStatus() {
         if (!DataManager?.data?.pieces) return;
 
-        let updated = false;
         DataManager.data.pieces.forEach(piece => {
             const status = this.getPieceKittingStatus(piece);
-            if (status.hasKitting !== piece.hasKitting ||
-                status.kittingStatus !== piece.kittingStatus ||
-                status.pieceReceived !== piece.pieceReceived) {
-                piece.hasKitting = status.hasKitting;
-                piece.kittingStatus = status.kittingStatus;
-                piece.pieceReceived = status.pieceReceived;
-                piece.kittingLocation = status.location;
-                updated = true;
-            }
+            piece.hasKitting = status.hasKitting;
+            piece.kittingStatus = status.kittingStatus;
+            piece.pieceReceived = status.pieceReceived;
+            piece.kittingLocation = status.location;
         });
-
-        if (updated) {
-            DataManager.saveToLocalStorage();
-        }
+        // Pas de sauvegarde automatique - sera fait lors de la prochaine action utilisateur
     },
 
     // Mettre à jour le statut de l'étape PL7.0 - Commande matériel
