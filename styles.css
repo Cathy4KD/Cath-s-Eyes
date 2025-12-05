@@ -3972,6 +3972,40 @@ tr.clickable:hover {
     vertical-align: top;
 }
 
+/* Relances automatiques */
+.relance-date {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.relance-passee {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.relance-imminente {
+    background: #fff7ed;
+    color: #ea580c;
+    border: 1px solid #fed7aa;
+}
+
+.relance-proche {
+    background: #fefce8;
+    color: #ca8a04;
+    border: 1px solid #fef08a;
+}
+
+.relance-done {
+    background: #f0fdf4;
+    color: #16a34a;
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
 .da-input-date {
     max-width: 130px;
     font-size: 12px;

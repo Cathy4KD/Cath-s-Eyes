@@ -2095,17 +2095,14 @@ const ScreenPreparation = {
                     <input type="date" class="da-input da-input-date" value="${soumission.dateDemande || ''}"
                            onchange="ScreenPreparation.updateSoumission(${index}, 'dateDemande', this.value)">
                 </td>
-                <td>
-                    <input type="date" class="da-input da-input-date" value="${soumission.relance1 || ''}"
-                           onchange="ScreenPreparation.updateSoumission(${index}, 'relance1', this.value)">
+                <td class="center">
+                    <span class="relance-date ${this.getRelanceStatus(soumission.dateDemande, 14, soumission.dateReception)}">${this.calculerRelance(soumission.dateDemande, 14)}</span>
                 </td>
-                <td>
-                    <input type="date" class="da-input da-input-date" value="${soumission.relance2 || ''}"
-                           onchange="ScreenPreparation.updateSoumission(${index}, 'relance2', this.value)">
+                <td class="center">
+                    <span class="relance-date ${this.getRelanceStatus(soumission.dateDemande, 28, soumission.dateReception)}">${this.calculerRelance(soumission.dateDemande, 28)}</span>
                 </td>
-                <td>
-                    <input type="date" class="da-input da-input-date" value="${soumission.relance3 || ''}"
-                           onchange="ScreenPreparation.updateSoumission(${index}, 'relance3', this.value)">
+                <td class="center">
+                    <span class="relance-date ${this.getRelanceStatus(soumission.dateDemande, 42, soumission.dateReception)}">${this.calculerRelance(soumission.dateDemande, 42)}</span>
                 </td>
                 <td>
                     <input type="date" class="da-input da-input-date" value="${soumission.dateReception || ''}"
@@ -2126,6 +2123,35 @@ const ScreenPreparation = {
                 </td>
             </tr>
         `;
+    },
+
+    // Calculer la date de relance (date demande + jours)
+    calculerRelance(dateDemande, jours) {
+        if (!dateDemande) return '-';
+        const date = new Date(dateDemande);
+        date.setDate(date.getDate() + jours);
+        return date.toLocaleDateString('fr-CA');
+    },
+
+    // Déterminer le statut de la relance (passée, proche, future, ou terminé si reçu)
+    getRelanceStatus(dateDemande, jours, dateReception) {
+        // Si déjà reçu, pas besoin de relance
+        if (dateReception) return 'relance-done';
+        if (!dateDemande) return '';
+
+        const dateRelance = new Date(dateDemande);
+        dateRelance.setDate(dateRelance.getDate() + jours);
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        dateRelance.setHours(0, 0, 0, 0);
+
+        const diffJours = Math.ceil((dateRelance - today) / (1000 * 60 * 60 * 24));
+
+        if (diffJours < 0) return 'relance-passee';      // Date passée
+        if (diffJours <= 3) return 'relance-imminente';  // Dans 3 jours ou moins
+        if (diffJours <= 7) return 'relance-proche';     // Dans la semaine
+        return '';  // Future
     },
 
     addSoumission() {
@@ -2154,8 +2180,8 @@ const ScreenPreparation = {
         if (DataManager.data.processus?.soumissions?.[index]) {
             DataManager.data.processus.soumissions[index][field] = value;
             DataManager.saveToStorage();
-            // Refresh seulement pour dateReception (pour la couleur de ligne)
-            if (field === 'dateReception') {
+            // Refresh pour dateReception et dateDemande (recalcul relances)
+            if (field === 'dateReception' || field === 'dateDemande') {
                 this.refresh();
             }
         }
