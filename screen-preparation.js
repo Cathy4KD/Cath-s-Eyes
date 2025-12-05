@@ -6362,40 +6362,47 @@ Cordialement</textarea>
         const travaux = DataManager.data.travaux || [];
         const espaceData = DataManager.data.processus?.espaceClos || {};
 
-        // Extraire tous les numéros EC/EP uniques (format EC**** ou EC-**** ou EP**** ou EP-****)
-        // Regex amélioré pour capturer EC-1234, EC1234, EC 1234, EP-1234, etc.
-        const ecRegex = /\b(EC|EP)[\s\-]?(\d{3,})/gi;
+        // Extraire tous les codes EC/EP uniques
+        // Format: EC-XXXX, EP-XXXX, ECXXXX, EPXXXX (lettres ou chiffres après EC/EP)
+        const ecRegex = /\b(EC|EP)[-]?([A-Z0-9]{2,})/gi;
         const ecMap = new Map(); // Map pour stocker EC -> travaux associés
 
         travaux.forEach((t, index) => {
-            // Chercher dans description ET dans equipement
+            // Chercher dans description ET dans equipement ET operation
             const texteARechercher = [t.description, t.equipement, t.operation].filter(Boolean).join(' ');
 
             if (texteARechercher) {
                 let match;
                 const regex = new RegExp(ecRegex.source, 'gi'); // Créer nouvelle instance pour reset
                 while ((match = regex.exec(texteARechercher)) !== null) {
-                    // Normaliser : EC-1234 et EC1234 deviennent EC1234
-                    const ecNorm = (match[1] + match[2]).toUpperCase();
+                    // Garder le format original avec tiret : EC-1234 reste EC-1234
+                    const prefix = match[1].toUpperCase();
+                    const suffix = match[2].toUpperCase();
+                    const ecOriginal = match[0].toUpperCase();
+                    // Normaliser pour regrouper EC1234 et EC-1234 ensemble
+                    const ecNorm = prefix + suffix;
+
                     if (!ecMap.has(ecNorm)) {
-                        ecMap.set(ecNorm, []);
+                        ecMap.set(ecNorm, { display: ecOriginal, travaux: [] });
                     }
                     // Éviter les doublons du même travail
-                    const existeDeja = ecMap.get(ecNorm).some(tr => tr.travailIndex === index);
+                    const existeDeja = ecMap.get(ecNorm).travaux.some(tr => tr.travailIndex === index);
                     if (!existeDeja) {
-                        ecMap.get(ecNorm).push({ ...t, travailIndex: index });
+                        ecMap.get(ecNorm).travaux.push({ ...t, travailIndex: index });
                     }
                 }
             }
         });
 
         // Convertir en tableau avec infos EC
-        let travauxEspace = Array.from(ecMap.entries()).map(([ecNum, travauxList]) => {
+        let travauxEspace = Array.from(ecMap.entries()).map(([ecNum, data]) => {
             const uniqueId = ecNum;
             const espInfo = espaceData[uniqueId] || {};
+            const travauxList = data.travaux;
             const premierTravail = travauxList[0];
             return {
-                ecNum,
+                ecNum: data.display, // Afficher le format original (EC-1234)
+                ecNorm: ecNum, // Version normalisée pour les clés
                 ot: travauxList.map(t => t.ot).join(', '),
                 description: premierTravail.description,
                 equipement: premierTravail.equipement,
