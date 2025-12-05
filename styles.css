@@ -108,6 +108,14 @@ body {
     font-size: 1.2rem;
 }
 
+/* Conteneur des boutons apps externes */
+.app-links {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
 /* Bouton app externe dans la sidebar */
 .app-link-btn {
     display: flex;
@@ -120,7 +128,7 @@ body {
     border-radius: 16px;
     text-decoration: none;
     color: white;
-    margin-bottom: 15px;
+    margin-bottom: 0;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
 }
@@ -128,6 +136,16 @@ body {
 .app-link-btn:hover {
     transform: translateY(-3px) scale(1.05);
     box-shadow: 0 8px 25px rgba(255, 107, 53, 0.5);
+}
+
+/* Style SAP - bleu */
+.app-link-btn.sap-link {
+    background: linear-gradient(135deg, #0070d2 0%, #00a1e0 100%);
+    box-shadow: 0 4px 15px rgba(0, 112, 210, 0.3);
+}
+
+.app-link-btn.sap-link:hover {
+    box-shadow: 0 8px 25px rgba(0, 112, 210, 0.5);
 }
 
 .app-link-btn:active {
