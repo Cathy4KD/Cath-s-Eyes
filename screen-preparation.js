@@ -6355,41 +6355,73 @@ Cordialement</textarea>
     // ==========================================
 
     espaceClosFiltre: '',
+    espaceClosTri: 'ec',
+    espaceClosTriDir: 'asc',
 
     renderDetailEspaceClos() {
         const travaux = DataManager.data.travaux || [];
         const espaceData = DataManager.data.processus?.espaceClos || {};
 
-        // Filtrer les travaux contenant "EC" ou "EP" dans la description
-        let travauxEspace = travaux.filter(t => {
-            if (!t.description) return false;
-            const desc = t.description.toUpperCase();
-            // Recherche EC ou EP comme mot ou partie de mot
-            return /\bEC\b|^EC\s|[\s\-_]EC[\s\-_]|[\s\-_]EC$|\bEP\b|^EP\s|[\s\-_]EP[\s\-_]|[\s\-_]EP$/.test(desc) ||
-                   desc.includes(' EC ') || desc.includes(' EP ') ||
-                   desc.includes('-EC-') || desc.includes('-EP-') ||
-                   desc.includes('(EC)') || desc.includes('(EP)') ||
-                   desc.startsWith('EC ') || desc.startsWith('EP ') ||
-                   desc.endsWith(' EC') || desc.endsWith(' EP');
+        // Extraire tous les numéros EC/EP uniques (format EC**** ou EC-**** ou EP**** ou EP-****)
+        const ecRegex = /(?:EC|EP)[-]?\d{3,}/gi;
+        const ecMap = new Map(); // Map pour stocker EC -> travaux associés
+
+        travaux.forEach((t, index) => {
+            if (t.description) {
+                const matches = t.description.match(ecRegex);
+                if (matches) {
+                    matches.forEach(match => {
+                        const ecNorm = match.toUpperCase().replace('-', ''); // Normaliser EC1234 et EC-1234
+                        if (!ecMap.has(ecNorm)) {
+                            ecMap.set(ecNorm, []);
+                        }
+                        ecMap.get(ecNorm).push({ ...t, travailIndex: index });
+                    });
+                }
+            }
         });
 
-        // Mapper avec uniqueId et données sauvegardées
-        travauxEspace = travauxEspace.map((t) => {
-            const travailIndex = travaux.findIndex(tr => tr === t);
-            const uniqueId = `espace_${travailIndex}`;
+        // Convertir en tableau avec infos EC
+        let travauxEspace = Array.from(ecMap.entries()).map(([ecNum, travauxList]) => {
+            const uniqueId = ecNum;
             const espInfo = espaceData[uniqueId] || {};
-            return { ...t, uniqueId, travailIndex, espInfo };
+            const premierTravail = travauxList[0];
+            return {
+                ecNum,
+                ot: travauxList.map(t => t.ot).join(', '),
+                description: premierTravail.description,
+                equipement: premierTravail.equipement,
+                discipline: premierTravail.discipline,
+                travauxAssocies: travauxList,
+                nbTravaux: travauxList.length,
+                uniqueId,
+                espInfo
+            };
         });
 
         // Appliquer le filtre de recherche
         if (this.espaceClosFiltre) {
             const filtre = this.espaceClosFiltre.toLowerCase();
             travauxEspace = travauxEspace.filter(t =>
+                (t.ecNum && t.ecNum.toLowerCase().includes(filtre)) ||
                 (t.ot && t.ot.toString().toLowerCase().includes(filtre)) ||
                 (t.description && t.description.toLowerCase().includes(filtre)) ||
                 (t.equipement && t.equipement.toLowerCase().includes(filtre))
             );
         }
+
+        // Appliquer le tri
+        travauxEspace.sort((a, b) => {
+            let comparison = 0;
+            if (this.espaceClosTri === 'ec') {
+                comparison = (a.ecNum || '').localeCompare(b.ecNum || '');
+            } else if (this.espaceClosTri === 'ot') {
+                comparison = (a.ot || '').toString().localeCompare((b.ot || '').toString());
+            } else if (this.espaceClosTri === 'equipement') {
+                comparison = (a.equipement || '').localeCompare(b.equipement || '');
+            }
+            return this.espaceClosTriDir === 'desc' ? -comparison : comparison;
+        });
 
         // Stats
         const stats = {
@@ -6406,8 +6438,7 @@ Cordialement</textarea>
                 <div class="detail-body planifier-body">
                     <div class="detail-card planifier-card info-card">
                         <p class="info-text">
-                            <strong>Travaux en espace clos</strong> - Travaux contenant "EC" ou "EP" dans la description.
-                            <br><small>Filtré automatiquement depuis la Liste des travaux.</small>
+                            <strong>Espaces clos</strong> - Liste des numéros EC/EP uniques extraits automatiquement (format EC**** ou EP****).
                         </p>
                     </div>
 
@@ -6416,7 +6447,7 @@ Cordialement</textarea>
                         <div class="commande-resume">
                             <div class="resume-stat">
                                 <span class="stat-value">${stats.total}</span>
-                                <span class="stat-label">Travaux EC/EP</span>
+                                <span class="stat-label">Total EC/EP</span>
                             </div>
                             <div class="resume-stat">
                                 <span class="stat-value">${stats.hautRisque}</span>
@@ -6433,29 +6464,39 @@ Cordialement</textarea>
                         </div>
                     </div>
 
-                    <!-- Filtre -->
+                    <!-- Filtres -->
                     <div class="detail-card planifier-card">
                         <div class="tpaa-filters">
                             <div class="filter-group">
                                 <label>Rechercher:</label>
-                                <input type="text" class="form-control" placeholder="OT, description, équipement..."
+                                <input type="text" class="form-control" placeholder="N° EC/EP, OT, équipement..."
                                     value="${this.espaceClosFiltre}"
                                     oninput="ScreenPreparation.espaceClosFiltre = this.value; ScreenPreparation.refresh();">
+                            </div>
+                            <div class="filter-group">
+                                <label>Trier par:</label>
+                                <select class="form-control" onchange="ScreenPreparation.espaceClosTri = this.value; ScreenPreparation.refresh();">
+                                    <option value="ec" ${this.espaceClosTri === 'ec' ? 'selected' : ''}>N° EC/EP</option>
+                                    <option value="ot" ${this.espaceClosTri === 'ot' ? 'selected' : ''}>OT</option>
+                                    <option value="equipement" ${this.espaceClosTri === 'equipement' ? 'selected' : ''}>Équipement</option>
+                                </select>
+                                <button class="btn btn-sm btn-outline" onclick="ScreenPreparation.espaceClosTriDir = ScreenPreparation.espaceClosTriDir === 'asc' ? 'desc' : 'asc'; ScreenPreparation.refresh();">
+                                    ${this.espaceClosTriDir === 'asc' ? '↑' : '↓'}
+                                </button>
                             </div>
                         </div>
                     </div>
 
                     <div class="detail-card planifier-card">
-                        <h3>Travaux en espace clos (${travauxEspace.length})</h3>
+                        <h3>Liste EC/EP (${travauxEspace.length} uniques)</h3>
                         <div class="table-container">
                             <table class="planifier-table">
                                 <thead>
                                     <tr>
-                                        <th>OT</th>
-                                        <th>Description</th>
+                                        <th>N° EC/EP</th>
+                                        <th>OT associés</th>
                                         <th>Équipement</th>
-                                        <th>Discipline</th>
-                                        <th>Heures</th>
+                                        <th>Nb travaux</th>
                                         <th>Niveau risque</th>
                                         <th>Permis émis</th>
                                         <th>Commentaire</th>
@@ -6463,14 +6504,13 @@ Cordialement</textarea>
                                 </thead>
                                 <tbody>
                                     ${travauxEspace.length === 0 ? `
-                                        <tr><td colspan="8" class="empty-msg">Aucun travail contenant "EC" ou "EP" dans la description</td></tr>
+                                        <tr><td colspan="7" class="empty-msg">${this.espaceClosFiltre ? 'Aucun résultat pour cette recherche' : 'Aucun numéro EC/EP trouvé (format EC**** ou EP****)'}</td></tr>
                                     ` : travauxEspace.map(t => `
                                         <tr class="${t.espInfo.permisEmis ? 'row-success' : t.espInfo.niveauRisque === 'haut' ? 'row-danger' : ''}">
-                                            <td><strong>${t.ot || '-'}</strong></td>
-                                            <td title="${t.description || ''}">${(t.description || '-').substring(0, 40)}${(t.description || '').length > 40 ? '...' : ''}</td>
+                                            <td><strong class="ec-num">${t.ecNum || '-'}</strong></td>
+                                            <td class="td-wrap" style="max-width: 150px; font-size: 0.85rem;">${t.ot || '-'}</td>
                                             <td>${t.equipement || '-'}</td>
-                                            <td>${t.discipline || '-'}</td>
-                                            <td class="center">${t.estimationHeures || '-'}</td>
+                                            <td class="center"><span class="badge badge-info">${t.nbTravaux}</span></td>
                                             <td>
                                                 <select class="mini-select ${t.espInfo.niveauRisque === 'haut' ? 'prio-haute' : t.espInfo.niveauRisque === 'moyen' ? 'prio-moyenne' : ''}"
                                                     onchange="ScreenPreparation.updateEspaceRisque('${t.uniqueId}', this.value)">
@@ -6483,11 +6523,10 @@ Cordialement</textarea>
                                                 <input type="checkbox" ${t.espInfo.permisEmis ? 'checked' : ''}
                                                     onchange="ScreenPreparation.updateEspacePermis('${t.uniqueId}', this.checked)">
                                             </td>
-                                            <td class="commentaire-cell">
-                                                <div class="commentaire-wrapper">
-                                                    <span class="commentaire-text">${(t.espInfo.commentaire || '').substring(0, 15)}${(t.espInfo.commentaire || '').length > 15 ? '...' : ''}</span>
-                                                    <button class="btn-icon btn-edit-comment" onclick="ScreenPreparation.editEspaceComment('${t.uniqueId}')" title="Modifier">✏️</button>
-                                                </div>
+                                            <td>
+                                                <input type="text" class="mini-input" value="${t.espInfo.commentaire || ''}"
+                                                    placeholder="Commentaire..."
+                                                    onchange="ScreenPreparation.updateEspaceCommentaire('${t.uniqueId}', this.value)">
                                             </td>
                                         </tr>
                                     `).join('')}
@@ -6518,6 +6557,14 @@ Cordialement</textarea>
         DataManager.data.processus.espaceClos[uniqueId].permisEmis = emis;
         DataManager.saveToStorage();
         this.refresh();
+    },
+
+    updateEspaceCommentaire(uniqueId, commentaire) {
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.espaceClos) DataManager.data.processus.espaceClos = {};
+        if (!DataManager.data.processus.espaceClos[uniqueId]) DataManager.data.processus.espaceClos[uniqueId] = {};
+        DataManager.data.processus.espaceClos[uniqueId].commentaire = commentaire;
+        DataManager.saveToStorage();
     },
 
     editEspaceComment(uniqueId) {

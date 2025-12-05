@@ -3386,6 +3386,13 @@ tr.clickable:hover {
     font-size: 0.95rem;
 }
 
+/* Numéro EC/EP */
+.ec-num {
+    color: #7c3aed;
+    font-family: monospace;
+    font-size: 0.95rem;
+}
+
 .mini-stats {
     display: flex;
     gap: 8px;
