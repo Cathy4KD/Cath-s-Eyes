@@ -453,6 +453,106 @@ const DataManager = {
         return this.data.travaux.find(t => t.id === idOrOt || t.ot === idOrOt);
     },
 
+    // === STATISTIQUES ===
+
+    // Statistiques globales pour le Dashboard
+    getGlobalStats() {
+        const travaux = this.data.travaux || [];
+        const total = travaux.length;
+
+        // Stats préparation
+        const prepTermine = travaux.filter(t => this.getPreparationScore(t) === 100).length;
+        const prepEnCours = travaux.filter(t => {
+            const score = this.getPreparationScore(t);
+            return score > 0 && score < 100;
+        }).length;
+
+        // Stats exécution
+        const execTermine = travaux.filter(t => t.execution?.statutExec === 'Terminé').length;
+        const execEnCours = travaux.filter(t => t.execution?.statutExec === 'En cours').length;
+        const execNonDemarre = total - execTermine - execEnCours;
+
+        // Heures
+        const heuresEstimees = travaux.reduce((sum, t) => sum + (parseFloat(t.estimationHeures) || 0), 0);
+        const heuresReelles = travaux.reduce((sum, t) => sum + (parseFloat(t.execution?.heuresReelles) || 0), 0);
+
+        return {
+            total,
+            preparation: {
+                termine: prepTermine,
+                enCours: prepEnCours,
+                pourcentage: total > 0 ? Math.round((prepTermine / total) * 100) : 0
+            },
+            execution: {
+                termine: execTermine,
+                enCours: execEnCours,
+                nonDemarre: execNonDemarre,
+                pourcentage: total > 0 ? Math.round((execTermine / total) * 100) : 0,
+                heuresEstimees: heuresEstimees,
+                heuresReelles: heuresReelles
+            }
+        };
+    },
+
+    // Statistiques préparation
+    getPreparationStats() {
+        const travaux = this.data.travaux || [];
+        const total = travaux.length;
+
+        const termine = travaux.filter(t => this.getPreparationScore(t) === 100).length;
+        const enCours = travaux.filter(t => {
+            const score = this.getPreparationScore(t);
+            return score > 0 && score < 100;
+        }).length;
+        const aFaire = total - termine - enCours;
+
+        return {
+            total,
+            termine,
+            enCours,
+            aFaire,
+            pourcentage: total > 0 ? Math.round((termine / total) * 100) : 0
+        };
+    },
+
+    // Statistiques exécution
+    getExecutionStats() {
+        const travaux = this.data.travaux || [];
+        const total = travaux.length;
+
+        const termine = travaux.filter(t => t.execution?.statutExec === 'Terminé').length;
+        const enCours = travaux.filter(t => t.execution?.statutExec === 'En cours').length;
+        const nonDemarre = total - termine - enCours;
+
+        const heuresEstimees = travaux.reduce((sum, t) => sum + (parseFloat(t.estimationHeures) || 0), 0);
+        const heuresReelles = travaux.reduce((sum, t) => sum + (parseFloat(t.execution?.heuresReelles) || 0), 0);
+
+        return {
+            total,
+            termine,
+            enCours,
+            nonDemarre,
+            pourcentage: total > 0 ? Math.round((termine / total) * 100) : 0,
+            heuresEstimees: heuresEstimees,
+            heuresReelles: heuresReelles
+        };
+    },
+
+    // Score de préparation d'un travail (0-100)
+    getPreparationScore(travail) {
+        if (!travail || !travail.preparation) return 0;
+        const prep = travail.preparation;
+        const checks = [
+            prep.materielCommande,
+            prep.permisSecurite,
+            prep.consignationPrevue,
+            prep.pieceJointe,
+            prep.gammeValidee
+        ];
+        const done = checks.filter(Boolean).length;
+        return Math.round((done / checks.length) * 100);
+    },
+
     // Mettre à jour un travail
     updateTravail(idOrOt, updates) {
         const travail = this.getTravail(idOrOt);

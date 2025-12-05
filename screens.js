@@ -1788,12 +1788,12 @@ const Screens = {
 
     ouvrirReunion(reunionId) {
         this.reunionSelectionnee = reunionId;
-        App.render();
+        App.navigate('reunions');
     },
 
     fermerReunion() {
         this.reunionSelectionnee = null;
-        App.render();
+        App.navigate('reunions');
     },
 
     renderReunionDetail(reunionId) {
