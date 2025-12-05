@@ -2091,14 +2091,14 @@ Actions à suivre:
 
                 <!-- Légende des couleurs kitting -->
                 <div style="padding: 10px 15px; background: var(--bg-light); border-bottom: 1px solid var(--border); display: flex; gap: 20px; flex-wrap: wrap; align-items: center; font-size: 0.85rem;">
-                    <span style="font-weight: 500;">Statut Kitting:</span>
+                    <span style="font-weight: 500;">Statut Pièce:</span>
                     <span style="display: flex; align-items: center; gap: 5px;">
                         <span style="width: 12px; height: 12px; background: #4ade80; border-radius: 3px;"></span>
-                        Kitting prêt
+                        Reçue
                     </span>
                     <span style="display: flex; align-items: center; gap: 5px;">
                         <span style="width: 12px; height: 12px; background: #fbbf24; border-radius: 3px;"></span>
-                        Kitting incomplet
+                        En attente
                     </span>
                     <span style="display: flex; align-items: center; gap: 5px;">
                         <span style="width: 12px; height: 12px; background: #e5e7eb; border-radius: 3px;"></span>
@@ -2140,20 +2140,21 @@ Actions à suivre:
                         <tbody>
                             ${pieces.map(p => {
                                 const kittingStatus = typeof KittingSync !== 'undefined' ? KittingSync.getPieceKittingStatus(p) : { hasKitting: false };
+                                // Vert si la pièce est reçue, jaune si kitting existe mais pièce non reçue
                                 const rowClass = kittingStatus.hasKitting
-                                    ? (kittingStatus.kittingStatus === 'pret' ? 'kitting-pret' : 'kitting-incomplet')
+                                    ? (kittingStatus.pieceReceived ? 'kitting-pret' : 'kitting-incomplet')
                                     : '';
                                 const kittingBadge = kittingStatus.hasKitting
-                                    ? (kittingStatus.kittingStatus === 'pret'
-                                        ? `<span class="badge" style="background: #4ade80; color: #166534;">✓ Prêt</span>`
-                                        : `<span class="badge" style="background: #fbbf24; color: #92400e;">⏳ Incomplet</span>`)
+                                    ? (kittingStatus.pieceReceived
+                                        ? `<span class="badge" style="background: #4ade80; color: #166534;">✓ Reçue</span>`
+                                        : `<span class="badge" style="background: #fbbf24; color: #92400e;">⏳ En attente</span>`)
                                     : `<span style="color: var(--text-light);">-</span>`;
                                 const locationInfo = kittingStatus.location ? `<br><small style="color: var(--text-light);">${kittingStatus.location}</small>` : '';
 
                                 return `
                                 <tr class="${rowClass}"
                                     data-ot="${(p.otLie || '').toLowerCase()}"
-                                    data-kitting="${kittingStatus.hasKitting ? kittingStatus.kittingStatus : 'none'}"
+                                    data-kitting="${kittingStatus.hasKitting ? (kittingStatus.pieceReceived ? 'pret' : 'incomplet') : 'none'}"
                                     data-search="${(p.otLie + ' ' + p.reference + ' ' + p.designation + ' ' + p.fournisseur).toLowerCase()}">
                                     <td><strong>${p.otLie || '-'}</strong></td>
                                     <td>${p.reference || '-'}</td>

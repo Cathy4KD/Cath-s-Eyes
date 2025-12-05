@@ -4720,17 +4720,17 @@ const ScreenPreparation = {
                                 <tr><td colspan="8" class="empty-msg">Aucune pièce dans cette catégorie</td></tr>
                             ` : pieces.map(p => {
                                 const statut = p.cmdInfo.statut || 'en_attente';
-                                // Obtenir le statut kitting
+                                // Obtenir le statut kitting - vert si pièce reçue, jaune si en attente
                                 const kittingStatus = typeof KittingSync !== 'undefined' ? KittingSync.getPieceKittingStatus(p) : { hasKitting: false };
                                 const kittingClass = kittingStatus.hasKitting
-                                    ? (kittingStatus.kittingStatus === 'pret' ? 'kitting-pret' : 'kitting-incomplet')
+                                    ? (kittingStatus.pieceReceived ? 'kitting-pret' : 'kitting-incomplet')
                                     : '';
                                 const baseClass = statut === 'recue' ? 'row-success' : statut === 'retard' ? 'row-danger' : '';
                                 const rowClass = kittingClass || baseClass;
 
                                 const kittingBadge = kittingStatus.hasKitting
-                                    ? (kittingStatus.kittingStatus === 'pret'
-                                        ? `<span class="badge" style="background: #4ade80; color: #166534; font-size: 0.7rem;">✓ Prêt</span>`
+                                    ? (kittingStatus.pieceReceived
+                                        ? `<span class="badge" style="background: #4ade80; color: #166534; font-size: 0.7rem;">✓ Reçue</span>`
                                         : `<span class="badge" style="background: #fbbf24; color: #92400e; font-size: 0.7rem;">⏳</span>`)
                                     : `<span style="color: var(--text-light); font-size: 0.75rem;">-</span>`;
                                 const locationInfo = kittingStatus.location ? `<br><small style="font-size: 0.65rem; color: var(--text-light);">${kittingStatus.location}</small>` : '';
