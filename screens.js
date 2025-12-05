@@ -1188,7 +1188,7 @@ const Screens = {
 
     // === RAPPEL RÉUNIONS DASHBOARD ===
     getReunionsRappel() {
-        const dateArret = DataManager.data.processus?.definitionArret?.dateDebut;
+        const dateArret = DataManager.data.processus?.dateArret;
 
         // Si pas de date d'arrêt, retourner un tableau vide avec flag
         if (!dateArret) {
