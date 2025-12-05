@@ -320,18 +320,14 @@ const App = {
 
         const preview = ImportManager.generatePreview(ImportManager.currentData, mapping);
 
-        // Ajouter le sélecteur de mode pour les travaux
-        const modeSelector = type === 'travaux' ? ImportManager.renderImportModeSelector() : '';
-
         document.getElementById('importContent').innerHTML = `
             <div class="card">
                 <h3>Validation de l'import</h3>
-                ${modeSelector}
                 ${preview}
             </div>
 
             <div style="margin-top: 20px;">
-                <button class="btn btn-success" onclick="App.confirmImport('${type}')" id="btnConfirmImport">
+                <button class="btn btn-success" onclick="App.confirmImport('${type}')">
                     ✓ Confirmer l'Import
                 </button>
                 <button class="btn btn-outline" onclick="App.navigate('import')">
@@ -341,37 +337,18 @@ const App = {
         `;
     },
 
-    async confirmImport(type) {
-        // Désactiver le bouton et afficher un indicateur de chargement
-        const btn = document.getElementById('btnConfirmImport');
-        if (btn) {
-            btn.disabled = true;
-            btn.innerHTML = '⏳ Import en cours...';
-        }
+    confirmImport(type) {
+        const result = ImportManager.performImport(type);
 
-        try {
-            const result = await ImportManager.performImport(type);
+        if (result.success) {
+            this.showToast(result.message, 'success');
+            this.updateDataStatus();
+            ImportManager.reset();
 
-            if (result.success) {
-                this.showToast(result.message, 'success');
-                this.updateDataStatus();
-                ImportManager.reset();
-
-                // Retourner au dashboard après 1s
-                setTimeout(() => this.navigate('dashboard'), 1000);
-            } else {
-                this.showToast(result.message, 'error');
-                if (btn) {
-                    btn.disabled = false;
-                    btn.innerHTML = '✓ Confirmer l\'Import';
-                }
-            }
-        } catch (error) {
-            this.showToast(`Erreur: ${error.message}`, 'error');
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = '✓ Confirmer l\'Import';
-            }
+            // Retourner au dashboard après 1s
+            setTimeout(() => this.navigate('dashboard'), 1000);
+        } else {
+            this.showToast(result.message, 'error');
         }
     },
 
@@ -559,28 +536,6 @@ const App = {
             DataManager.resetData();
             this.showToast('Données réinitialisées', 'success');
             this.navigate('dashboard');
-        }
-    },
-
-    async resetDataByType(type) {
-        const typeLabels = {
-            travaux: 'Travaux SAP',
-            pieces: 'Pièces',
-            avis: 'Avis',
-            comments: 'Commentaires',
-            postmortem: 'Actions Post-mortem'
-        };
-
-        const label = typeLabels[type] || type;
-
-        if (confirm(`Voulez-vous vraiment supprimer toutes les données "${label}" ? Cette action est irréversible.`)) {
-            try {
-                await DataManager.resetDataByType(type);
-                this.showToast(`${label} réinitialisés`, 'success');
-                this.navigate('import'); // Rafraîchir la page
-            } catch (error) {
-                this.showToast(`Erreur: ${error.message}`, 'error');
-            }
         }
     },
 

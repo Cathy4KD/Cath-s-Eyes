@@ -162,13 +162,11 @@ const DataManager = {
 
                     // Écouter les changements des pièces
                     FirebaseManager.subscribeToChanges((data) => {
-                        // Mise à jour temps réel depuis d'autres clients
                         if (data && data.lastSync) {
                             const cloudTime = data.lastSync.toMillis?.() || 0;
                             const localTime = this.data.metadata?.lastLocalSave || 0;
 
-                            // Ne mettre à jour que si les données cloud sont plus récentes
-                            if (cloudTime > localTime + 5000) { // 5s de marge
+                            if (cloudTime > localTime + 5000) {
                                 console.log('Mise à jour temps réel pièces depuis Firebase');
                                 this.data.pieces = data.pieces || [];
                                 this.saveToLocalStorage();
@@ -178,27 +176,14 @@ const DataManager = {
                     });
 
                     // Écouter les changements des travaux
-                    FirebaseManager.subscribeToTravauxChanges((travaux) => {
-                        if (travaux && travaux.length > 0) {
+                    FirebaseManager.subscribeToTravauxChanges((data) => {
+                        if (data && data.lastSync) {
+                            const cloudTime = data.lastSync.toMillis?.() || 0;
                             const localTime = this.data.metadata?.lastLocalSave || 0;
-                            const now = Date.now();
 
-                            // Éviter les boucles de sync - ne pas mettre à jour si on vient de sauvegarder
-                            if (now - localTime > 5000) {
-                                console.log('Mise à jour temps réel travaux depuis Firebase:', travaux.length, 'travaux');
-
-                                // Fusionner les travaux en conservant les données locales plus récentes
-                                const existingMap = new Map(this.data.travaux.map(t => [t.id, t]));
-
-                                travaux.forEach(cloudTravail => {
-                                    const existing = existingMap.get(cloudTravail.id);
-                                    if (!existing) {
-                                        // Nouveau travail depuis le cloud
-                                        this.data.travaux.push(cloudTravail);
-                                    }
-                                    // Si existe déjà, on conserve la version locale (plus récente)
-                                });
-
+                            if (cloudTime > localTime + 5000) {
+                                console.log('Mise à jour temps réel travaux depuis Firebase');
+                                this.data.travaux = data.travaux || [];
                                 this.saveToLocalStorage();
                                 this.notifyUpdate('travaux');
                             }
@@ -217,11 +202,7 @@ const DataManager = {
     // === GESTION DES TRAVAUX ===
 
     // Importer les travaux depuis Excel
-    // options: { mode: 'merge' | 'replace' | 'update' }
-    // - merge: ajoute les nouveaux, conserve les existants (défaut)
-    // - replace: supprime tout et remplace par les nouvelles données
-    // - update: met à jour les existants par numéro OT, ajoute les nouveaux
-    async importTravaux(rows, mapping, options = { mode: 'merge' }) {
+    importTravaux(rows, mapping) {
         // Identifier les champs personnalisés (commencent par 'custom_')
         const customFieldIds = Object.keys(mapping).filter(k => k.startsWith('custom_'));
 
@@ -271,85 +252,17 @@ const DataManager = {
             return travail;
         });
 
-        // Appliquer selon le mode choisi
-        if (options.mode === 'replace') {
-            // Remplacer tout
-            this.data.travaux = newTravaux;
-        } else if (options.mode === 'update') {
-            // Mettre à jour les existants par OT, ajouter les nouveaux
-            this.updateTravaux(newTravaux);
-        } else {
-            // Mode merge par défaut
-            this.mergeTravaux(newTravaux);
-        }
-
+        // Fusion intelligente avec données existantes
+        this.mergeTravaux(newTravaux);
         this.data.metadata.lastImportTravaux = new Date().toISOString();
         this.data.metadata.totalOT = this.data.travaux.length;
         this.saveToStorage();
         this.notifyUpdate('travaux');
 
-        // Sync Firebase immédiate après import (avec remplacement si mode replace)
-        await this.syncTravauxToFirebase(options.mode === 'replace');
+        // Sync Firebase immédiate après import
+        this.syncToFirebase();
 
         return this.data.travaux.length;
-    },
-
-    // Mettre à jour les travaux existants (par numéro OT) et ajouter les nouveaux
-    updateTravaux(newTravaux) {
-        const existingMap = new Map(this.data.travaux.map(t => [t.ot, t]));
-
-        newTravaux.forEach(newT => {
-            const existing = existingMap.get(newT.ot);
-            if (existing) {
-                // Mise à jour: conserver id, preparation, execution, mais mettre à jour le reste
-                Object.assign(existing, {
-                    ...newT,
-                    id: existing.id,
-                    preparation: existing.preparation,
-                    execution: existing.execution
-                });
-            } else {
-                this.data.travaux.push(newT);
-            }
-        });
-    },
-
-    // Sync travaux vers Firebase avec option de remplacement complet
-    async syncTravauxToFirebase(replaceAll = false) {
-        if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
-            await FirebaseManager.syncTravaux(replaceAll);
-        }
-    },
-
-    // Réinitialiser un type de données spécifique
-    async resetDataByType(type) {
-        switch (type) {
-            case 'travaux':
-                this.data.travaux = [];
-                this.data.metadata.totalOT = 0;
-                this.data.metadata.lastImportTravaux = null;
-                if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
-                    await FirebaseManager.clearTravaux();
-                }
-                break;
-            case 'pieces':
-                this.data.pieces = [];
-                this.data.metadata.lastImportPieces = null;
-                break;
-            case 'avis':
-                this.data.avis = [];
-                this.data.metadata.lastImportAvis = null;
-                break;
-            case 'comments':
-                this.data.comments = {};
-                break;
-            case 'postmortem':
-                this.data.postmortem = [];
-                break;
-        }
-        this.saveToStorage();
-        this.notifyUpdate(type);
-        return true;
     },
 
     // Importer les pièces depuis Excel (fusion intelligente)

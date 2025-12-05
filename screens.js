@@ -777,29 +777,9 @@ const Screens = {
                         <p><strong>Import exécution:</strong> ${DataManager.data.metadata.lastImportExecution ? new Date(DataManager.data.metadata.lastImportExecution).toLocaleString('fr-FR') : 'Jamais'}</p>
                     </div>
                 </div>
-                <div style="margin-top: 20px;">
-                    <h4 style="margin-bottom: 10px;">Réinitialisation par type</h4>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 15px;">
-                        <button class="btn btn-outline btn-sm" onclick="App.resetDataByType('travaux')">
-                            Travaux SAP
-                        </button>
-                        <button class="btn btn-outline btn-sm" onclick="App.resetDataByType('pieces')">
-                            Pièces
-                        </button>
-                        <button class="btn btn-outline btn-sm" onclick="App.resetDataByType('avis')">
-                            Avis
-                        </button>
-                        <button class="btn btn-outline btn-sm" onclick="App.resetDataByType('comments')">
-                            Commentaires
-                        </button>
-                        <button class="btn btn-outline btn-sm" onclick="App.resetDataByType('postmortem')">
-                            Post-mortem
-                        </button>
-                    </div>
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                        <button class="btn btn-danger" onclick="App.resetAllData()">🗑️ Réinitialiser TOUT</button>
-                        <button class="btn btn-secondary" onclick="App.exportAllData()">📤 Exporter JSON</button>
-                    </div>
+                <div style="margin-top: 15px;">
+                    <button class="btn btn-danger" onclick="App.resetAllData()">🗑️ Réinitialiser toutes les données</button>
+                    <button class="btn btn-secondary" onclick="App.exportAllData()">📤 Exporter JSON</button>
                 </div>
             </div>
         `;

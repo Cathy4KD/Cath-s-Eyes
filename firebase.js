@@ -115,16 +115,12 @@ const FirebaseManager = {
     },
 
     // Sauvegarder toutes les données vers Firebase
-    // Travaux stockés individuellement dans une collection (contourne limite 1MB/doc)
+    // Travaux et Pièces stockés chacun dans un document unique
     async syncToCloud() {
         if (this.syncInProgress || !this.db) return;
 
         this.syncInProgress = true;
         try {
-            // Log pour debug
-            console.log('Sync Firebase - processus:', DataManager.data.processus);
-            console.log('Sync Firebase - dateArret:', DataManager.data.processus?.dateArret);
-
             // Document metadata (léger) - inclut processus pour la date d'arrêt
             const metadataRef = this.db.collection('arretAnnuel').doc('metadata');
             await metadataRef.set({
@@ -145,10 +141,15 @@ const FirebaseManager = {
                 lastSync: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // Synchroniser les travaux (chaque travail = 1 document)
-            await this.syncTravaux();
+            // Document travaux (sans rawData) - même structure que pièces
+            const travauxRef = this.db.collection('arretAnnuel').doc('travaux');
+            const cleanTravaux = (DataManager.data.travaux || []).map(t => this.cleanTravailForFirebase(t));
+            await travauxRef.set({
+                travaux: cleanTravaux,
+                lastSync: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
-            console.log('Données synchronisées vers Firebase');
+            console.log('Données synchronisées vers Firebase:', cleanTravaux.length, 'travaux,', cleanPieces.length, 'pièces');
             this.showToast('Synchronisé ☁️', 'success');
             return true;
         } catch (error) {
@@ -157,94 +158,6 @@ const FirebaseManager = {
             return false;
         } finally {
             this.syncInProgress = false;
-        }
-    },
-
-    // Supprimer tous les travaux dans Firebase
-    async clearTravaux() {
-        if (!this.db) return;
-
-        const travauxRef = this.db.collection('travaux');
-        const snapshot = await travauxRef.get();
-
-        if (snapshot.empty) return;
-
-        let batch = this.db.batch();
-        let batchCount = 0;
-
-        for (const doc of snapshot.docs) {
-            batch.delete(doc.ref);
-            batchCount++;
-
-            if (batchCount === 500) {
-                await batch.commit();
-                batch = this.db.batch();
-                batchCount = 0;
-            }
-        }
-
-        if (batchCount > 0) {
-            await batch.commit();
-        }
-        console.log(`${snapshot.size} travaux supprimés de Firebase`);
-    },
-
-    // Synchroniser les travaux vers Firebase (collection séparée)
-    // Si replaceAll=true, supprime d'abord tous les travaux existants
-    async syncTravaux(replaceAll = false) {
-        const travaux = DataManager.data.travaux || [];
-
-        // Si remplacement total, supprimer d'abord les anciens
-        if (replaceAll) {
-            await this.clearTravaux();
-        }
-
-        if (travaux.length === 0) return;
-
-        const travauxRef = this.db.collection('travaux');
-
-        // Utiliser des batches pour les opérations en masse (max 500 par batch)
-        let batch = this.db.batch();
-        let batchCount = 0;
-        let totalCommitted = 0;
-
-        for (let i = 0; i < travaux.length; i++) {
-            const travail = travaux[i];
-            const cleanTravail = this.cleanTravailForFirebase(travail);
-            const docRef = travauxRef.doc(travail.id || `OT-${i}`);
-            batch.set(docRef, cleanTravail);
-            batchCount++;
-
-            // Firebase limite à 500 opérations par batch
-            if (batchCount === 500) {
-                await batch.commit();
-                totalCommitted += batchCount;
-                console.log(`Batch commité: ${totalCommitted}/${travaux.length} travaux`);
-                batch = this.db.batch();  // Créer un nouveau batch
-                batchCount = 0;
-            }
-        }
-
-        // Commit le reste s'il y a des opérations en attente
-        if (batchCount > 0) {
-            await batch.commit();
-            totalCommitted += batchCount;
-        }
-        console.log(`${totalCommitted} travaux synchronisés vers Firebase`);
-    },
-
-    // Charger les travaux depuis Firebase
-    async loadTravaux() {
-        try {
-            const snapshot = await this.db.collection('travaux').get();
-            const travaux = [];
-            snapshot.forEach(doc => {
-                travaux.push({ id: doc.id, ...doc.data() });
-            });
-            return travaux;
-        } catch (error) {
-            console.error('Erreur chargement travaux:', error);
-            return [];
         }
     },
 
@@ -257,16 +170,18 @@ const FirebaseManager = {
             const metadataDoc = await this.db.collection('arretAnnuel').doc('metadata').get();
             // Charger le document des pièces
             const piecesDoc = await this.db.collection('arretAnnuel').doc('pieces').get();
-            // Charger les travaux
-            const travaux = await this.loadTravaux();
+            // Charger le document des travaux
+            const travauxDoc = await this.db.collection('arretAnnuel').doc('travaux').get();
 
             const metaData = metadataDoc.exists ? metadataDoc.data() : {};
             const piecesData = piecesDoc.exists ? piecesDoc.data() : {};
+            const travauxData = travauxDoc.exists ? travauxDoc.data() : {};
 
-            console.log('Données chargées depuis Firebase:', travaux.length, 'travaux,',
+            console.log('Données chargées depuis Firebase:', (travauxData.travaux || []).length, 'travaux,',
                 (piecesData.pieces || []).length, 'pièces, processus:', metaData.processus ? 'oui' : 'non');
+
             return {
-                travaux: travaux,
+                travaux: travauxData.travaux || [],
                 execution: [],
                 postmortem: metaData.postmortem || [],
                 comments: metaData.comments || {},
@@ -307,32 +222,17 @@ const FirebaseManager = {
     subscribeToTravauxChanges(callback) {
         if (!this.db) return null;
 
-        return this.db.collection('travaux')
-            .onSnapshot(snapshot => {
-                const travaux = [];
-                snapshot.forEach(doc => {
-                    travaux.push({ id: doc.id, ...doc.data() });
-                });
-                callback(travaux);
+        return this.db.collection('arretAnnuel').doc('travaux')
+            .onSnapshot(doc => {
+                if (doc.exists) {
+                    callback(doc.data());
+                }
             }, error => {
                 console.error('Erreur écoute temps réel travaux:', error);
             });
     },
 
     // === OPÉRATIONS SPÉCIFIQUES ===
-
-    // Sauvegarder un travail spécifique
-    async saveTravail(travail) {
-        if (!this.db) return false;
-
-        try {
-            await this.db.collection('travaux').doc(travail.id).set(travail);
-            return true;
-        } catch (error) {
-            console.error('Erreur sauvegarde travail:', error);
-            return false;
-        }
-    },
 
     // Sauvegarder les processus
     async saveProcessus(processusData) {

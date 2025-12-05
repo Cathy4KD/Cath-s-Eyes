@@ -529,11 +529,8 @@ const ImportManager = {
         return this.currentMapping;
     },
 
-    // Mode d'import sélectionné
-    importMode: 'merge',
-
     // Effectuer l'import
-    async performImport(type = 'travaux') {
+    performImport(type = 'travaux') {
         // Utiliser le mapping sauvegardé ou essayer de le récupérer depuis l'UI
         const mapping = this.currentMapping || this.getMappingFromUI();
 
@@ -554,12 +551,10 @@ const ImportManager = {
             }
 
             if (type === 'travaux') {
-                const count = await DataManager.importTravaux(this.currentData, mapping, { mode: this.importMode });
-                const modeLabel = this.importMode === 'replace' ? 'remplacés' :
-                                  this.importMode === 'update' ? 'mis à jour' : 'fusionnés';
+                const count = DataManager.importTravaux(this.currentData, mapping);
                 return {
                     success: true,
-                    message: `${count} travaux ${modeLabel} avec succès`,
+                    message: `${count} travaux importés avec succès (${Object.keys(mapping).length} colonnes)`,
                     count
                 };
             } else if (type === 'pieces') {
@@ -590,51 +585,6 @@ const ImportManager = {
                 message: `Erreur lors de l'import: ${error.message}`
             };
         }
-    },
-
-    // Sélecteur du mode d'import pour les travaux
-    renderImportModeSelector() {
-        return `
-            <div class="import-mode-selector">
-                <h4>Mode d'import</h4>
-                <div class="import-mode-options">
-                    <label class="import-mode-option ${this.importMode === 'merge' ? 'selected' : ''}">
-                        <input type="radio" name="importMode" value="merge"
-                            ${this.importMode === 'merge' ? 'checked' : ''}
-                            onchange="ImportManager.setImportMode('merge')">
-                        <div class="mode-content">
-                            <strong>Fusionner</strong>
-                            <span>Ajoute les nouveaux OT, conserve les existants</span>
-                        </div>
-                    </label>
-                    <label class="import-mode-option ${this.importMode === 'update' ? 'selected' : ''}">
-                        <input type="radio" name="importMode" value="update"
-                            ${this.importMode === 'update' ? 'checked' : ''}
-                            onchange="ImportManager.setImportMode('update')">
-                        <div class="mode-content">
-                            <strong>Mettre à jour</strong>
-                            <span>Met à jour les OT existants, ajoute les nouveaux</span>
-                        </div>
-                    </label>
-                    <label class="import-mode-option ${this.importMode === 'replace' ? 'selected' : ''}">
-                        <input type="radio" name="importMode" value="replace"
-                            ${this.importMode === 'replace' ? 'checked' : ''}
-                            onchange="ImportManager.setImportMode('replace')">
-                        <div class="mode-content">
-                            <strong>Remplacer tout</strong>
-                            <span>Supprime toutes les données existantes et importe</span>
-                        </div>
-                    </label>
-                </div>
-            </div>
-        `;
-    },
-
-    setImportMode(mode) {
-        this.importMode = mode;
-        document.querySelectorAll('.import-mode-option').forEach(opt => {
-            opt.classList.toggle('selected', opt.querySelector('input').value === mode);
-        });
     },
 
     // Utilitaires
