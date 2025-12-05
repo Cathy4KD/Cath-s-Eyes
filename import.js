@@ -529,8 +529,11 @@ const ImportManager = {
         return this.currentMapping;
     },
 
+    // Mode d'import sélectionné
+    importMode: 'merge',
+
     // Effectuer l'import
-    performImport(type = 'travaux') {
+    async performImport(type = 'travaux') {
         // Utiliser le mapping sauvegardé ou essayer de le récupérer depuis l'UI
         const mapping = this.currentMapping || this.getMappingFromUI();
 
@@ -551,10 +554,12 @@ const ImportManager = {
             }
 
             if (type === 'travaux') {
-                const count = DataManager.importTravaux(this.currentData, mapping);
+                const count = await DataManager.importTravaux(this.currentData, mapping, { mode: this.importMode });
+                const modeLabel = this.importMode === 'replace' ? 'remplacés' :
+                                  this.importMode === 'update' ? 'mis à jour' : 'fusionnés';
                 return {
                     success: true,
-                    message: `${count} travaux importés avec succès (${Object.keys(mapping).length} colonnes)`,
+                    message: `${count} travaux ${modeLabel} avec succès`,
                     count
                 };
             } else if (type === 'pieces') {
@@ -585,6 +590,51 @@ const ImportManager = {
                 message: `Erreur lors de l'import: ${error.message}`
             };
         }
+    },
+
+    // Sélecteur du mode d'import pour les travaux
+    renderImportModeSelector() {
+        return `
+            <div class="import-mode-selector">
+                <h4>Mode d'import</h4>
+                <div class="import-mode-options">
+                    <label class="import-mode-option ${this.importMode === 'merge' ? 'selected' : ''}">
+                        <input type="radio" name="importMode" value="merge"
+                            ${this.importMode === 'merge' ? 'checked' : ''}
+                            onchange="ImportManager.setImportMode('merge')">
+                        <div class="mode-content">
+                            <strong>Fusionner</strong>
+                            <span>Ajoute les nouveaux OT, conserve les existants</span>
+                        </div>
+                    </label>
+                    <label class="import-mode-option ${this.importMode === 'update' ? 'selected' : ''}">
+                        <input type="radio" name="importMode" value="update"
+                            ${this.importMode === 'update' ? 'checked' : ''}
+                            onchange="ImportManager.setImportMode('update')">
+                        <div class="mode-content">
+                            <strong>Mettre à jour</strong>
+                            <span>Met à jour les OT existants, ajoute les nouveaux</span>
+                        </div>
+                    </label>
+                    <label class="import-mode-option ${this.importMode === 'replace' ? 'selected' : ''}">
+                        <input type="radio" name="importMode" value="replace"
+                            ${this.importMode === 'replace' ? 'checked' : ''}
+                            onchange="ImportManager.setImportMode('replace')">
+                        <div class="mode-content">
+                            <strong>Remplacer tout</strong>
+                            <span>Supprime toutes les données existantes et importe</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+        `;
+    },
+
+    setImportMode(mode) {
+        this.importMode = mode;
+        document.querySelectorAll('.import-mode-option').forEach(opt => {
+            opt.classList.toggle('selected', opt.querySelector('input').value === mode);
+        });
     },
 
     // Utilitaires
@@ -850,6 +900,72 @@ importStyles.textContent = `
     .import-step.completed .step-number {
         background: var(--success);
         color: white;
+    }
+
+    /* Styles pour le sélecteur de mode d'import */
+    .import-mode-selector {
+        background: var(--bg-light);
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .import-mode-selector h4 {
+        margin-bottom: 12px;
+        color: var(--text);
+    }
+
+    .import-mode-options {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+
+    .import-mode-option {
+        flex: 1;
+        min-width: 200px;
+        padding: 12px 15px;
+        border: 2px solid var(--border);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        background: var(--bg-white);
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .import-mode-option:hover {
+        border-color: var(--primary);
+        background: rgba(37, 99, 235, 0.05);
+    }
+
+    .import-mode-option.selected {
+        border-color: var(--primary);
+        background: rgba(37, 99, 235, 0.1);
+    }
+
+    .import-mode-option input[type="radio"] {
+        margin-top: 3px;
+    }
+
+    .import-mode-option .mode-content {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .import-mode-option .mode-content strong {
+        color: var(--text);
+    }
+
+    .import-mode-option .mode-content span {
+        font-size: 0.85rem;
+        color: var(--text-light);
+    }
+
+    .import-mode-option.selected .mode-content strong {
+        color: var(--primary);
     }
 `;
 document.head.appendChild(importStyles);

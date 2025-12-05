@@ -160,30 +160,77 @@ const FirebaseManager = {
         }
     },
 
+    // Supprimer tous les travaux dans Firebase
+    async clearTravaux() {
+        if (!this.db) return;
+
+        const travauxRef = this.db.collection('travaux');
+        const snapshot = await travauxRef.get();
+
+        if (snapshot.empty) return;
+
+        let batch = this.db.batch();
+        let batchCount = 0;
+
+        for (const doc of snapshot.docs) {
+            batch.delete(doc.ref);
+            batchCount++;
+
+            if (batchCount === 500) {
+                await batch.commit();
+                batch = this.db.batch();
+                batchCount = 0;
+            }
+        }
+
+        if (batchCount > 0) {
+            await batch.commit();
+        }
+        console.log(`${snapshot.size} travaux supprimés de Firebase`);
+    },
+
     // Synchroniser les travaux vers Firebase (collection séparée)
-    async syncTravaux() {
+    // Si replaceAll=true, supprime d'abord tous les travaux existants
+    async syncTravaux(replaceAll = false) {
         const travaux = DataManager.data.travaux || [];
+
+        // Si remplacement total, supprimer d'abord les anciens
+        if (replaceAll) {
+            await this.clearTravaux();
+        }
+
         if (travaux.length === 0) return;
 
-        const batch = this.db.batch();
         const travauxRef = this.db.collection('travaux');
 
         // Utiliser des batches pour les opérations en masse (max 500 par batch)
+        let batch = this.db.batch();
+        let batchCount = 0;
+        let totalCommitted = 0;
+
         for (let i = 0; i < travaux.length; i++) {
             const travail = travaux[i];
             const cleanTravail = this.cleanTravailForFirebase(travail);
             const docRef = travauxRef.doc(travail.id || `OT-${i}`);
             batch.set(docRef, cleanTravail);
+            batchCount++;
 
             // Firebase limite à 500 opérations par batch
-            if ((i + 1) % 500 === 0) {
+            if (batchCount === 500) {
                 await batch.commit();
+                totalCommitted += batchCount;
+                console.log(`Batch commité: ${totalCommitted}/${travaux.length} travaux`);
+                batch = this.db.batch();  // Créer un nouveau batch
+                batchCount = 0;
             }
         }
 
-        // Commit le reste
-        await batch.commit();
-        console.log(`${travaux.length} travaux synchronisés vers Firebase`);
+        // Commit le reste s'il y a des opérations en attente
+        if (batchCount > 0) {
+            await batch.commit();
+            totalCommitted += batchCount;
+        }
+        console.log(`${totalCommitted} travaux synchronisés vers Firebase`);
     },
 
     // Charger les travaux depuis Firebase
@@ -242,7 +289,7 @@ const FirebaseManager = {
         }
     },
 
-    // Écouter les changements en temps réel (pièces uniquement)
+    // Écouter les changements en temps réel (pièces)
     subscribeToChanges(callback) {
         if (!this.db) return null;
 
@@ -252,7 +299,23 @@ const FirebaseManager = {
                     callback(doc.data());
                 }
             }, error => {
-                console.error('Erreur écoute temps réel:', error);
+                console.error('Erreur écoute temps réel pièces:', error);
+            });
+    },
+
+    // Écouter les changements en temps réel (travaux)
+    subscribeToTravauxChanges(callback) {
+        if (!this.db) return null;
+
+        return this.db.collection('travaux')
+            .onSnapshot(snapshot => {
+                const travaux = [];
+                snapshot.forEach(doc => {
+                    travaux.push({ id: doc.id, ...doc.data() });
+                });
+                callback(travaux);
+            }, error => {
+                console.error('Erreur écoute temps réel travaux:', error);
             });
     },
 
