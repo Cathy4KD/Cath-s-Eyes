@@ -208,7 +208,7 @@ const ProcessusArret = {
                 },
                 {
                     id: 'PL13.0',
-                    nom: 'Arrêt Électrique',
+                    nom: 'Arrêt et besoins Électriques',
                     description: 'Planification des coupures et travaux électriques majeurs',
                     responsable: '',
                     documents: ['Plan électrique', 'Séquence de coupure'],
