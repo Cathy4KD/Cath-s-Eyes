@@ -2007,16 +2007,16 @@ const ScreenPreparation = {
                             <table class="da-table" id="soumissionsTable">
                                 <thead>
                                     <tr>
-                                        <th>Entrepreneur</th>
-                                        <th>Code SAP</th>
-                                        <th>Commentaires</th>
-                                        <th>Date Demande</th>
-                                        <th>Relance 1</th>
-                                        <th>Relance 2</th>
-                                        <th>Relance 3</th>
-                                        <th>Date Réception</th>
-                                        <th>N° Soumission</th>
-                                        <th>Documents</th>
+                                        <th style="width: 140px;">Entrepreneur</th>
+                                        <th style="width: 90px;">Code SAP</th>
+                                        <th style="min-width: 200px;">Commentaires</th>
+                                        <th style="width: 110px;">Date Demande</th>
+                                        <th style="width: 100px;">Relance 1</th>
+                                        <th style="width: 100px;">Relance 2</th>
+                                        <th style="width: 100px;">Relance 3</th>
+                                        <th style="width: 110px;">Date Réception</th>
+                                        <th style="width: 100px;">N° Soumission</th>
+                                        <th style="width: 80px;">Documents</th>
                                         <th style="width: 60px;">Actions</th>
                                     </tr>
                                 </thead>
@@ -2086,10 +2086,10 @@ const ScreenPreparation = {
                            onchange="ScreenPreparation.updateSoumission(${index}, 'codeSAP', this.value)"
                            placeholder="Code SAP">
                 </td>
-                <td>
-                    <input type="text" class="da-input" value="${soumission.commentaires || ''}"
-                           onchange="ScreenPreparation.updateSoumission(${index}, 'commentaires', this.value)"
-                           placeholder="Commentaires">
+                <td class="td-commentaire">
+                    <textarea class="da-input da-textarea" rows="2"
+                              onchange="ScreenPreparation.updateSoumission(${index}, 'commentaires', this.value)"
+                              placeholder="Commentaires">${soumission.commentaires || ''}</textarea>
                 </td>
                 <td>
                     <input type="date" class="da-input da-input-date" value="${soumission.dateDemande || ''}"

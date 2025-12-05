@@ -3959,6 +3959,19 @@ tr.clickable:hover {
     max-width: 100px;
 }
 
+.da-textarea {
+    min-height: 50px;
+    max-height: 120px;
+    resize: vertical;
+    font-family: inherit;
+    line-height: 1.4;
+}
+
+.td-commentaire {
+    min-width: 200px;
+    vertical-align: top;
+}
+
 .da-input-date {
     max-width: 130px;
     font-size: 12px;
