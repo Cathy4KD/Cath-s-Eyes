@@ -16,6 +16,9 @@ const Screens = {
         // Calculer les stats kitting
         const kittingStats = this.getKittingStats();
 
+        // Calculer les rappels de réunions
+        const reunionsRappel = this.getReunionsRappel();
+
         return `
             <div class="stats-grid">
                 <div class="stat-card">
@@ -123,6 +126,46 @@ const Screens = {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📅 Rappel Réunions</h3>
+                    <button class="btn btn-outline btn-sm" onclick="App.navigate('reunions')">Voir tout</button>
+                </div>
+                ${reunionsRappel.length === 0 ? `
+                    <div style="text-align: center; padding: 20px; color: var(--text-light);">
+                        ${reunionsRappel.noDateArret ?
+                            '<p>⚠️ Date d\'arrêt non définie. <a href="#" onclick="App.navigate(\'preparation\'); return false;">Définir dans D1.0</a></p>' :
+                            '<p>✓ Aucune réunion à venir</p>'
+                        }
+                    </div>
+                ` : `
+                    <div class="table-container" style="max-height: 300px;">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 100px;">Date butoir</th>
+                                    <th>Réunion</th>
+                                    <th style="width: 120px;">Responsable</th>
+                                    <th style="width: 100px;">Statut</th>
+                                    <th style="width: 80px;">Urgence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${reunionsRappel.map(r => `
+                                    <tr class="${r.urgence}" style="cursor: pointer;" onclick="Screens.ouvrirReunion('${r.id}'); App.navigate('reunions');">
+                                        <td class="center"><strong>${r.dateButoir}</strong></td>
+                                        <td>${r.nom}</td>
+                                        <td>${r.responsable}</td>
+                                        <td><span class="badge ${r.statutClass}">${r.statutLabel}</span></td>
+                                        <td class="center">${r.urgenceIcon}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `}
             </div>
         `;
     },
@@ -1141,6 +1184,74 @@ const Screens = {
             piecesRecues,
             totalPieces
         };
+    },
+
+    // === RAPPEL RÉUNIONS DASHBOARD ===
+    getReunionsRappel() {
+        const dateArret = DataManager.data.processus?.definitionArret?.dateDebut;
+
+        // Si pas de date d'arrêt, retourner un tableau vide avec flag
+        if (!dateArret) {
+            const result = [];
+            result.noDateArret = true;
+            return result;
+        }
+
+        const reunionsConfig = this.getReunionsConfig();
+        const reunionsData = DataManager.data.processus?.reunions || {};
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Filtrer les réunions non terminées et calculer leur date butoir
+        const reunionsAVenir = reunionsConfig
+            .map(r => {
+                const data = reunionsData[r.id] || {};
+                const statut = data.statut || 'non_commence';
+
+                // Ignorer les réunions terminées
+                if (statut === 'termine') return null;
+
+                // Calculer la date butoir
+                const dateButoir = new Date(dateArret);
+                dateButoir.setDate(dateButoir.getDate() + (r.semaine * 7));
+
+                // Calculer l'urgence (jours restants)
+                const joursRestants = Math.ceil((dateButoir - today) / (1000 * 60 * 60 * 24));
+
+                let urgence = '';
+                let urgenceIcon = '';
+                if (joursRestants < 0) {
+                    urgence = 'reunion-retard';
+                    urgenceIcon = '🔴 Retard';
+                } else if (joursRestants <= 7) {
+                    urgence = 'reunion-urgent';
+                    urgenceIcon = '🟠 Cette semaine';
+                } else if (joursRestants <= 14) {
+                    urgence = 'reunion-proche';
+                    urgenceIcon = '🟡 2 semaines';
+                } else {
+                    urgenceIcon = '🟢 OK';
+                }
+
+                return {
+                    ...r,
+                    statut,
+                    statutClass: statut === 'en_cours' ? 'badge-warning' : 'badge-secondary',
+                    statutLabel: statut === 'en_cours' ? 'En cours' : 'Non commencé',
+                    dateButoir: dateButoir.toLocaleDateString('fr-CA'),
+                    dateButorObj: dateButoir,
+                    joursRestants,
+                    urgence,
+                    urgenceIcon
+                };
+            })
+            .filter(r => r !== null)
+            // Trier par date butoir (plus proche en premier)
+            .sort((a, b) => a.dateButorObj - b.dateButorObj)
+            // Limiter à 8 réunions pour le dashboard
+            .slice(0, 8);
+
+        return reunionsAVenir;
     },
 
     // === AVIS SYNDICAUX ===

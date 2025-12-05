@@ -4217,6 +4217,34 @@ tr.clickable:hover {
     vertical-align: middle;
 }
 
+/* Urgence réunions dashboard */
+tr.reunion-retard {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border-left: 3px solid #ef4444;
+}
+
+tr.reunion-retard:hover {
+    background: rgba(239, 68, 68, 0.15) !important;
+}
+
+tr.reunion-urgent {
+    background: rgba(249, 115, 22, 0.1) !important;
+    border-left: 3px solid #f97316;
+}
+
+tr.reunion-urgent:hover {
+    background: rgba(249, 115, 22, 0.15) !important;
+}
+
+tr.reunion-proche {
+    background: rgba(234, 179, 8, 0.1) !important;
+    border-left: 3px solid #eab308;
+}
+
+tr.reunion-proche:hover {
+    background: rgba(234, 179, 8, 0.15) !important;
+}
+
 .mini-progress {
     width: 60px;
     height: 6px;
