@@ -744,6 +744,9 @@ const Screens = {
             parEquipement[equip].push(t);
         });
 
+        const planConfig = DataManager.data.processus?.planConfig || {};
+        const hasPlan = planConfig.imageData;
+
         return `
             <div class="card">
                 <div class="card-header">
@@ -751,18 +754,32 @@ const Screens = {
                     <button class="btn btn-sm btn-outline" onclick="Screens.showConfigPlan()">⚙️ Configurer plan</button>
                 </div>
                 <div class="plan-container">
-                    <div class="plan-placeholder">
-                        <p>📍 Plan de l'usine à configurer</p>
-                        <p style="font-size: 0.9rem; color: var(--text-light);">
-                            Importez une image du plan et positionnez les équipements
-                        </p>
-                        <button class="btn btn-primary" onclick="Screens.showConfigPlan()">
-                            Configurer le plan
-                        </button>
-                    </div>
+                    ${hasPlan ? `
+                        <div class="plan-view">
+                            <div class="plan-canvas-view" id="planViewCanvas">
+                                <img src="${planConfig.imageData}" alt="Plan de l'usine">
+                                ${this.renderPlanMarkersWithStats(planConfig.positions || {}, parEquipement)}
+                            </div>
+                            <div class="plan-legend">
+                                <div class="legend-item"><span class="legend-dot completed"></span> Terminés</div>
+                                <div class="legend-item"><span class="legend-dot in-progress"></span> En cours</div>
+                                <div class="legend-item"><span class="legend-dot pending"></span> Non démarrés</div>
+                            </div>
+                        </div>
+                    ` : `
+                        <div class="plan-placeholder">
+                            <p>📍 Plan de l'usine à configurer</p>
+                            <p style="font-size: 0.9rem; color: var(--text-light);">
+                                Importez une image du plan et positionnez les équipements
+                            </p>
+                            <button class="btn btn-primary" onclick="Screens.showConfigPlan()">
+                                Configurer le plan
+                            </button>
+                        </div>
+                    `}
                 </div>
 
-                <!-- Liste par équipement en attendant le plan -->
+                <!-- Liste par équipement -->
                 <div class="card-header" style="margin-top: 20px;">
                     <h3 class="card-title">Par équipement</h3>
                 </div>
@@ -789,8 +806,303 @@ const Screens = {
         `;
     },
 
+    renderPlanMarkersWithStats(positions, parEquipement) {
+        return Object.entries(positions).map(([equip, pos]) => {
+            const travaux = parEquipement[equip] || [];
+            const total = travaux.length;
+            const termines = travaux.filter(t => t.execution?.statutExec === 'Terminé').length;
+            const enCours = travaux.filter(t => t.execution?.statutExec === 'En cours').length;
+
+            // Déterminer la couleur du marqueur
+            let markerClass = 'pending';
+            if (total > 0) {
+                if (termines === total) markerClass = 'completed';
+                else if (enCours > 0 || termines > 0) markerClass = 'in-progress';
+            }
+
+            return `
+                <div class="plan-marker-view ${markerClass}"
+                     style="left: ${pos.x}%; top: ${pos.y}%"
+                     onclick="Screens.showEquipementDetail('${equip}')"
+                     title="${equip}: ${termines}/${total} terminés">
+                    <span class="marker-count">${total}</span>
+                    <div class="marker-tooltip">
+                        <strong>${equip}</strong>
+                        <div class="marker-stats">
+                            <span>✅ ${termines}</span>
+                            <span>⚡ ${enCours}</span>
+                            <span>⏳ ${total - termines - enCours}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    },
+
+    showEquipementDetail(equipement) {
+        const travaux = DataManager.getTravaux().filter(t => t.equipement === equipement);
+
+        const html = `
+            <div class="modal-overlay" id="equipDetailModal" onclick="if(event.target === this) this.remove()">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>🔧 ${equipement}</h3>
+                        <button class="modal-close" onclick="document.getElementById('equipDetailModal').remove()">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="equip-detail-stats">
+                            <div class="stat-mini">
+                                <span class="stat-value">${travaux.length}</span>
+                                <span class="stat-label">Total</span>
+                            </div>
+                            <div class="stat-mini green">
+                                <span class="stat-value">${travaux.filter(t => t.execution?.statutExec === 'Terminé').length}</span>
+                                <span class="stat-label">Terminés</span>
+                            </div>
+                            <div class="stat-mini orange">
+                                <span class="stat-value">${travaux.filter(t => t.execution?.statutExec === 'En cours').length}</span>
+                                <span class="stat-label">En cours</span>
+                            </div>
+                        </div>
+                        <div class="equip-travaux-list">
+                            ${travaux.map(t => `
+                                <div class="travail-row" onclick="TravailDetail.show('${t.ot}')">
+                                    <span class="ot-number">${t.ot}</span>
+                                    <span class="travail-desc">${t.description?.substring(0, 50) || 'Sans description'}...</span>
+                                    <span class="badge ${t.execution?.statutExec === 'Terminé' ? 'badge-success' : t.execution?.statutExec === 'En cours' ? 'badge-warning' : 'badge-secondary'}">
+                                        ${t.execution?.statutExec || 'Non démarré'}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+    },
+
     showConfigPlan() {
-        App.showToast('Configuration du plan à venir', 'info');
+        // Créer le modal de configuration
+        const planConfig = DataManager.data.processus?.planConfig || {};
+
+        const modalHtml = `
+            <div class="modal-overlay" id="planConfigModal" onclick="if(event.target === this) Screens.closePlanConfig()">
+                <div class="modal-content modal-large">
+                    <div class="modal-header">
+                        <h3>🗺️ Configuration du plan</h3>
+                        <button class="modal-close" onclick="Screens.closePlanConfig()">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="plan-config-section">
+                            <h4>1. Importer l'image du plan</h4>
+                            <div class="plan-upload-area" id="planUploadArea">
+                                ${planConfig.imageData ? `
+                                    <img src="${planConfig.imageData}" alt="Plan" class="plan-preview">
+                                    <button class="btn btn-sm btn-danger" onclick="Screens.removePlanImage()">Supprimer l'image</button>
+                                ` : `
+                                    <input type="file" id="planImageInput" accept="image/*" onchange="Screens.handlePlanImageUpload(event)" style="display:none">
+                                    <div class="upload-placeholder" onclick="document.getElementById('planImageInput').click()">
+                                        <span class="upload-icon">📁</span>
+                                        <p>Cliquez pour sélectionner une image</p>
+                                        <small>PNG, JPG, GIF (max 5MB)</small>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
+
+                        ${planConfig.imageData ? `
+                            <div class="plan-config-section">
+                                <h4>2. Positionner les équipements</h4>
+                                <p class="config-hint">Cliquez sur le plan pour positionner un équipement, puis sélectionnez-le dans la liste.</p>
+                                <div class="plan-editor">
+                                    <div class="plan-canvas-container" id="planCanvasContainer">
+                                        <img src="${planConfig.imageData}" alt="Plan" id="planEditorImage" onclick="Screens.handlePlanClick(event)">
+                                        ${this.renderEquipementMarkers(planConfig.positions || {})}
+                                    </div>
+                                    <div class="equipements-panel">
+                                        <h5>Équipements</h5>
+                                        <div class="equipements-list-config">
+                                            ${this.getEquipementsList().map(eq => `
+                                                <div class="equip-config-item ${planConfig.positions?.[eq] ? 'positioned' : ''}"
+                                                     onclick="Screens.selectEquipementToPosition('${eq}')">
+                                                    <span class="equip-name">${eq}</span>
+                                                    ${planConfig.positions?.[eq] ? '<span class="positioned-badge">✓</span>' : ''}
+                                                </div>
+                                            `).join('')}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="Screens.closePlanConfig()">Fermer</button>
+                        <button class="btn btn-primary" onclick="Screens.savePlanConfig()">💾 Sauvegarder</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        // Ajouter le modal au DOM
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    },
+
+    closePlanConfig() {
+        const modal = document.getElementById('planConfigModal');
+        if (modal) modal.remove();
+    },
+
+    handlePlanImageUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Vérifier la taille (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            App.showToast('Image trop volumineuse (max 5MB)', 'error');
+            return;
+        }
+
+        // Convertir en base64
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (!DataManager.data.processus) DataManager.data.processus = {};
+            if (!DataManager.data.processus.planConfig) DataManager.data.processus.planConfig = {};
+
+            DataManager.data.processus.planConfig.imageData = e.target.result;
+            DataManager.saveToStorage();
+
+            // Rafraîchir le modal
+            this.closePlanConfig();
+            this.showConfigPlan();
+            App.showToast('Image importée!', 'success');
+        };
+        reader.readAsDataURL(file);
+    },
+
+    removePlanImage() {
+        if (confirm('Supprimer l\'image du plan?')) {
+            if (DataManager.data.processus?.planConfig) {
+                DataManager.data.processus.planConfig.imageData = null;
+                DataManager.data.processus.planConfig.positions = {};
+                DataManager.saveToStorage();
+            }
+            this.closePlanConfig();
+            this.showConfigPlan();
+            App.showToast('Image supprimée', 'info');
+        }
+    },
+
+    selectedEquipement: null,
+
+    selectEquipementToPosition(equipement) {
+        this.selectedEquipement = equipement;
+        // Mettre à jour la sélection visuelle
+        document.querySelectorAll('.equip-config-item').forEach(el => el.classList.remove('selected'));
+        event.target.closest('.equip-config-item')?.classList.add('selected');
+        App.showToast(`Cliquez sur le plan pour positionner: ${equipement}`, 'info');
+    },
+
+    handlePlanClick(event) {
+        if (!this.selectedEquipement) {
+            App.showToast('Sélectionnez d\'abord un équipement dans la liste', 'warning');
+            return;
+        }
+
+        const img = event.target;
+        const rect = img.getBoundingClientRect();
+
+        // Calculer la position en pourcentage
+        const x = ((event.clientX - rect.left) / rect.width * 100).toFixed(2);
+        const y = ((event.clientY - rect.top) / rect.height * 100).toFixed(2);
+
+        // Sauvegarder la position
+        if (!DataManager.data.processus.planConfig.positions) {
+            DataManager.data.processus.planConfig.positions = {};
+        }
+        DataManager.data.processus.planConfig.positions[this.selectedEquipement] = { x, y };
+
+        // Ajouter le marqueur visuellement
+        this.addMarkerToCanvas(this.selectedEquipement, x, y);
+
+        // Marquer comme positionné dans la liste
+        document.querySelectorAll('.equip-config-item').forEach(el => {
+            if (el.textContent.includes(this.selectedEquipement)) {
+                el.classList.add('positioned');
+                el.classList.remove('selected');
+            }
+        });
+
+        App.showToast(`${this.selectedEquipement} positionné!`, 'success');
+        this.selectedEquipement = null;
+    },
+
+    addMarkerToCanvas(equipement, x, y) {
+        const container = document.getElementById('planCanvasContainer');
+        if (!container) return;
+
+        // Supprimer l'ancien marqueur s'il existe
+        const existingMarker = container.querySelector(`[data-equip="${equipement}"]`);
+        if (existingMarker) existingMarker.remove();
+
+        // Créer le nouveau marqueur
+        const marker = document.createElement('div');
+        marker.className = 'plan-marker';
+        marker.setAttribute('data-equip', equipement);
+        marker.style.left = x + '%';
+        marker.style.top = y + '%';
+        marker.innerHTML = `<span class="marker-label">${equipement}</span>`;
+        marker.onclick = (e) => {
+            e.stopPropagation();
+            if (confirm(`Supprimer le positionnement de ${equipement}?`)) {
+                delete DataManager.data.processus.planConfig.positions[equipement];
+                marker.remove();
+                document.querySelectorAll('.equip-config-item').forEach(el => {
+                    if (el.textContent.includes(equipement)) {
+                        el.classList.remove('positioned');
+                    }
+                });
+            }
+        };
+        container.appendChild(marker);
+    },
+
+    renderEquipementMarkers(positions) {
+        return Object.entries(positions).map(([equip, pos]) => `
+            <div class="plan-marker" data-equip="${equip}" style="left: ${pos.x}%; top: ${pos.y}%"
+                 onclick="event.stopPropagation(); Screens.removeEquipPosition('${equip}', this)">
+                <span class="marker-label">${equip}</span>
+            </div>
+        `).join('');
+    },
+
+    removeEquipPosition(equip, markerEl) {
+        if (confirm(`Supprimer le positionnement de ${equip}?`)) {
+            delete DataManager.data.processus.planConfig.positions[equip];
+            markerEl.remove();
+            document.querySelectorAll('.equip-config-item').forEach(el => {
+                if (el.textContent.includes(equip)) {
+                    el.classList.remove('positioned');
+                }
+            });
+        }
+    },
+
+    getEquipementsList() {
+        const travaux = DataManager.getTravaux();
+        const equipements = [...new Set(travaux.map(t => t.equipement).filter(Boolean))];
+        return equipements.sort();
+    },
+
+    savePlanConfig() {
+        DataManager.saveToStorage(true); // Sync immédiate
+        App.showToast('Configuration du plan sauvegardée!', 'success');
+        this.closePlanConfig();
+        // Rafraîchir la vue du plan
+        if (this.realisationView === 'plan') {
+            this.setRealisationView('plan');
+        }
     },
 
     // === JOURNAL DE BORD (Points de presse) ===
