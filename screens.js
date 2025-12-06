@@ -250,9 +250,9 @@ const Screens = {
                     <td><span class="badge ${this.getPrioriteBadge(t.priorite)}">${t.priorite}</span></td>
                     <td>${t.entreprise || '-'}</td>
                     <td>${revision}</td>
-                    <td class="commentaire-cell">
+                    <td class="commentaire-cell" title="${(t.commentaire || '').replace(/"/g, '&quot;')}">
                         <div class="commentaire-wrapper">
-                            <span class="commentaire-text">${(t.commentaire || '').substring(0, 20)}${(t.commentaire || '').length > 20 ? '...' : ''}</span>
+                            <span class="commentaire-text">${(t.commentaire || '-').substring(0, 30)}${(t.commentaire || '').length > 30 ? '...' : ''}</span>
                             <button class="btn-icon btn-edit-comment" onclick="event.stopPropagation(); Screens.editCommentaireTravail(${index})" title="Modifier le commentaire">✏️</button>
                         </div>
                     </td>
@@ -1802,9 +1802,26 @@ const Screens = {
     // État de l'écran réunions
     reunionSelectionnee: null,
 
+    // Liste des entreprises externes (pour réunions par entité)
+    getEntreprisesExternes() {
+        const entreprises = DataManager.getEntreprises();
+        const externes = entreprises.filter(e => {
+            if (!e) return false;
+            const nom = e.toUpperCase();
+            // Entreprises externes: MECEXT*, HYDEP, ORTEC, VEOLIA, A91CS, AEROVAC
+            return nom.startsWith('MECEXT') ||
+                   nom === 'HYDEP' ||
+                   nom === 'ORTEC' ||
+                   nom === 'VEOLIA' ||
+                   nom === 'A91CS' ||
+                   nom === 'AEROVAC';
+        });
+        return [...new Set(externes)].sort();
+    },
+
     // Liste des réunions prédéfinies
     getReunionsConfig() {
-        return [
+        const reunionsBase = [
             // Réunions Principales
             { id: 'R1', categorie: 'Principales', semaine: -26, nom: 'Convoquer rencontre de définition et concertation de l\'arrêt', responsable: 'Planificateur Long terme' },
             { id: 'R2', categorie: 'Principales', semaine: -20, nom: 'Rencontre de définition d\'arrêt', responsable: 'Planificateur Long terme' },
@@ -1813,7 +1830,7 @@ const Screens = {
             { id: 'R5', categorie: 'Principales', semaine: 0, nom: 'Simulation d\'une rencontre de shutdown', responsable: 'PL' },
             // Réunions Entrepreneurs
             { id: 'R6', categorie: 'Entrepreneurs', semaine: -4, nom: 'Rencontre syndicale pour présentation travaux sous-traitance', responsable: 'SE' },
-            { id: 'R7', categorie: 'Entrepreneurs', semaine: 0, nom: 'Faire rencontre général pour les entrepreneurs', responsable: 'PL' },
+            // R7 est maintenant généré dynamiquement par entreprise externe
             // Réunions Sécurité
             { id: 'R8', categorie: 'Sécurité', semaine: -14, nom: 'Faire rencontre pour les travaux des tours de refroidissement', responsable: 'Planificateur Long terme' },
             { id: 'R9', categorie: 'Sécurité', semaine: -1, nom: 'Planifier rencontre sécurité pour employés (3 tableaux de bord) + pool', responsable: 'CE' },
@@ -1825,6 +1842,34 @@ const Screens = {
             { id: 'R13', categorie: 'Autres', semaine: -4, nom: 'Établir horaire des rencontres (N3) de shut down', responsable: 'CE' },
             { id: 'R14', categorie: 'Autres', semaine: -1, nom: 'Envoyer convocation pour rencontre de suivi de l\'arrêt (exécution)', responsable: 'PL' }
         ];
+
+        // Générer les réunions entrepreneurs (R7) par entreprise externe
+        const entreprisesExternes = this.getEntreprisesExternes();
+        entreprisesExternes.forEach((entreprise, index) => {
+            reunionsBase.push({
+                id: `R7-${entreprise}`,
+                categorie: 'Entrepreneurs',
+                semaine: 0,
+                nom: `Rencontre entrepreneur: ${entreprise}`,
+                responsable: 'PL',
+                entreprise: entreprise,
+                isEntrepreneur: true
+            });
+        });
+
+        // Si aucune entreprise externe, ajouter une réunion générique
+        if (entreprisesExternes.length === 0) {
+            reunionsBase.push({
+                id: 'R7',
+                categorie: 'Entrepreneurs',
+                semaine: 0,
+                nom: 'Faire rencontre général pour les entrepreneurs',
+                responsable: 'PL',
+                noEntreprises: true
+            });
+        }
+
+        return reunionsBase;
     },
 
     getCategorieIcon(categorie) {
@@ -1935,11 +1980,13 @@ const Screens = {
                                         const statutLabel = statut === 'termine' ? 'Terminé' : statut === 'en_cours' ? 'En cours' : 'Non commencé';
 
                                         return `
-                                            <tr class="${statut === 'termine' ? 'row-success' : ''}" style="cursor: pointer;" onclick="Screens.ouvrirReunion('${r.id}')">
+                                            <tr class="${statut === 'termine' ? 'row-success' : ''}${r.isEntrepreneur ? ' row-entrepreneur' : ''}" style="cursor: pointer;" onclick="Screens.ouvrirReunion('${r.id}')">
                                                 <td class="center"><strong>${r.semaine >= 0 ? '' : ''}${r.semaine} sem</strong></td>
                                                 <td>
                                                     ${r.nom}
                                                     ${r.recurrent ? '<span class="badge badge-info" style="margin-left: 5px;">♻️ Hebdo</span>' : ''}
+                                                    ${r.isEntrepreneur ? '<span class="badge badge-entrepreneur" style="margin-left: 5px;">🏗️ Externe</span>' : ''}
+                                                    ${r.noEntreprises ? '<span class="badge badge-warning" style="margin-left: 5px;">⚠️ Importer travaux</span>' : ''}
                                                 </td>
                                                 <td class="center">${dateButoir || '-'}</td>
                                                 <td>${r.responsable}</td>
