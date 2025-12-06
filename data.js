@@ -206,16 +206,92 @@ const DataManager = {
         }
     },
 
+    // Afficher l'overlay de synchronisation
+    showSyncOverlay() {
+        // Créer l'overlay s'il n'existe pas
+        let overlay = document.getElementById('syncOverlay');
+        if (!overlay) {
+            overlay = document.createElement('div');
+            overlay.id = 'syncOverlay';
+            overlay.innerHTML = `
+                <div class="sync-overlay-content">
+                    <div class="sync-spinner"></div>
+                    <p>Synchronisation en cours...</p>
+                    <small>Veuillez patienter</small>
+                </div>
+            `;
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 99999;
+            `;
+            const content = overlay.querySelector('.sync-overlay-content');
+            content.style.cssText = `
+                background: white;
+                padding: 40px 60px;
+                border-radius: 12px;
+                text-align: center;
+                box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            `;
+            const spinner = overlay.querySelector('.sync-spinner');
+            spinner.style.cssText = `
+                width: 50px;
+                height: 50px;
+                border: 4px solid #e2e8f0;
+                border-top-color: #3b82f6;
+                border-radius: 50%;
+                margin: 0 auto 20px;
+                animation: spin 1s linear infinite;
+            `;
+            const p = overlay.querySelector('p');
+            p.style.cssText = `
+                font-size: 1.2rem;
+                font-weight: 600;
+                color: #1e293b;
+                margin: 0 0 5px 0;
+            `;
+            const small = overlay.querySelector('small');
+            small.style.cssText = `
+                color: #64748b;
+                font-size: 0.9rem;
+            `;
+            document.body.appendChild(overlay);
+        }
+        overlay.style.display = 'flex';
+    },
+
+    // Masquer l'overlay de synchronisation
+    hideSyncOverlay() {
+        const overlay = document.getElementById('syncOverlay');
+        if (overlay) {
+            overlay.style.display = 'none';
+        }
+    },
+
     // Configurer la synchronisation Firebase
     setupFirebaseSync() {
         // Sync automatique quand l'utilisateur quitte la page
         window.addEventListener('beforeunload', (e) => {
+            // Afficher l'overlay de synchronisation
+            this.showSyncOverlay();
+
             // Annuler le timer de debounce et forcer la sync immédiate
             if (this._syncTimer) {
                 clearTimeout(this._syncTimer);
             }
             // Utiliser sendBeacon pour une sync fiable à la fermeture
             this.syncBeforeUnload();
+
+            // Message standard du navigateur (pour donner le temps à la sync)
+            e.returnValue = 'Synchronisation en cours...';
+            return e.returnValue;
         });
 
         // Sync quand l'utilisateur change d'onglet ou minimise
