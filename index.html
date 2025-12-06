@@ -88,9 +88,10 @@
                     <span class="app-link-text">SAP</span>
                 </a>
             </div>
-            <div class="data-status" id="dataStatus">
+            <div class="data-status" id="dataStatus" onclick="DataManager.forceSyncFirebase()" title="Cliquer pour synchroniser">
                 <span class="status-dot offline"></span>
                 <span>Aucune donnée</span>
+                <span class="sync-icon">🔄</span>
             </div>
         </div>
     </nav>

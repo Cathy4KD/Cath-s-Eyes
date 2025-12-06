@@ -172,6 +172,40 @@ const DataManager = {
         }
     },
 
+    // Forcer la synchronisation (appelé par le bouton sync)
+    async forceSyncFirebase() {
+        const statusEl = document.getElementById('dataStatus');
+        const syncIcon = statusEl?.querySelector('.sync-icon');
+
+        // Animation de rotation
+        if (syncIcon) {
+            syncIcon.style.animation = 'spin 1s linear infinite';
+        }
+
+        try {
+            // Sauvegarder en local d'abord
+            this.saveToLocalStorage();
+
+            // Sync vers Firebase
+            await this.syncToFirebase();
+
+            // Notification de succès
+            if (typeof App !== 'undefined' && App.showToast) {
+                App.showToast('Synchronisation réussie!', 'success');
+            }
+        } catch (e) {
+            console.error('Erreur sync forcée:', e);
+            if (typeof App !== 'undefined' && App.showToast) {
+                App.showToast('Erreur de synchronisation', 'error');
+            }
+        } finally {
+            // Arrêter l'animation
+            if (syncIcon) {
+                syncIcon.style.animation = '';
+            }
+        }
+    },
+
     // Configurer la synchronisation Firebase
     setupFirebaseSync() {
         // Sync automatique quand l'utilisateur quitte la page

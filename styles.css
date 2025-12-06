@@ -216,6 +216,32 @@ body {
 .status-dot.online { background: var(--success); }
 .status-dot.offline { background: var(--danger); }
 
+.data-status {
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.data-status:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+.sync-icon {
+    font-size: 1rem;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.data-status:hover .sync-icon {
+    opacity: 1;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 /* === MAIN CONTENT === */
 .main-content {
     margin-left: var(--sidebar-width);
