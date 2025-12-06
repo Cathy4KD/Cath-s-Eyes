@@ -6034,6 +6034,110 @@ tr:hover .btn-edit-comment {
     gap: 10px;
 }
 
+.journal-title-row {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.journal-saved-badge {
+    background: var(--success);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+/* Historique des journaux */
+.journal-history-panel {
+    background: var(--bg-light);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 10px;
+}
+
+.journal-history-panel h4 {
+    margin-bottom: 15px;
+    font-size: 1rem;
+}
+
+.journal-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.journal-history-item {
+    display: grid;
+    grid-template-columns: 180px 1fr auto;
+    gap: 15px;
+    align-items: center;
+    padding: 12px 15px;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    border-left: 3px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.journal-history-item:hover {
+    background: #f8fafc;
+    border-left-color: var(--primary);
+}
+
+.journal-history-item.active {
+    border-left-color: var(--primary);
+    background: rgba(26, 35, 126, 0.05);
+}
+
+.journal-history-item.has-incident {
+    border-left-color: var(--danger);
+}
+
+.history-date {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.history-date strong {
+    font-size: 0.9rem;
+}
+
+.incident-flag {
+    font-size: 0.9rem;
+}
+
+.history-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.8rem;
+    color: var(--text-light);
+    overflow: hidden;
+}
+
+.preview-upside, .preview-downside {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.history-stats {
+    display: flex;
+    gap: 10px;
+    font-size: 0.85rem;
+}
+
+.history-stats span {
+    padding: 2px 6px;
+    background: var(--bg-light);
+    border-radius: 4px;
+}
+
 .journal-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;

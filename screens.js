@@ -1501,16 +1501,28 @@ const Screens = {
         const journals = DataManager.data.processus?.journals || {};
         const journalDuJour = journals[this.journalDate] || this.getEmptyJournal();
 
+        // Obtenir la liste des dates avec des journaux sauvegardés
+        const journalDates = Object.keys(journals).filter(d => this.isJournalComplete(journals[d])).sort().reverse();
+
         return `
             <div class="journal-screen">
                 <div class="journal-header">
-                    <h3>📰 Journal de bord - Point de presse</h3>
+                    <div class="journal-title-row">
+                        <h3>📰 Journal de bord - Point de presse</h3>
+                        <button class="btn btn-sm ${this.showJournalHistory ? 'btn-primary' : 'btn-outline'}"
+                                onclick="Screens.toggleJournalHistory()">
+                            📚 Historique (${journalDates.length})
+                        </button>
+                    </div>
                     <div class="journal-date-nav">
                         <button class="btn btn-sm btn-outline" onclick="Screens.changeJournalDate(-1)">◀</button>
                         <input type="date" value="${this.journalDate}" onchange="Screens.setJournalDate(this.value)">
                         <button class="btn btn-sm btn-outline" onclick="Screens.changeJournalDate(1)">▶</button>
+                        ${journals[this.journalDate] ? '<span class="journal-saved-badge">✓ Sauvegardé</span>' : ''}
                     </div>
                 </div>
+
+                ${this.showJournalHistory ? this.renderJournalHistory(journals, journalDates) : ''}
 
                 <div class="journal-grid">
                     <!-- Upside / Downside -->
@@ -1616,6 +1628,65 @@ const Screens = {
             incident: 0,
             incidentDescription: ''
         };
+    },
+
+    showJournalHistory: false,
+
+    toggleJournalHistory() {
+        this.showJournalHistory = !this.showJournalHistory;
+        document.querySelector('.exec-content').innerHTML = this.renderJournalDeBord();
+    },
+
+    isJournalComplete(journal) {
+        if (!journal) return false;
+        // Un journal est considéré complet s'il a du contenu significatif
+        return journal.upside || journal.downside || journal.coutsComment ||
+               journal.incidentDescription || journal.quasi > 0 ||
+               journal.regleOr > 0 || journal.incident > 0 ||
+               (journal.cheminsCritiques && journal.cheminsCritiques.some(cc => cc.nom));
+    },
+
+    renderJournalHistory(journals, dates) {
+        if (dates.length === 0) {
+            return `
+                <div class="journal-history-panel">
+                    <div class="empty-state small">Aucun journal sauvegardé</div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="journal-history-panel">
+                <h4>📚 Historique des points de presse</h4>
+                <div class="journal-history-list">
+                    ${dates.map(date => {
+                        const j = journals[date];
+                        const dateFormatted = new Date(date).toLocaleDateString('fr-FR', {
+                            weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+                        });
+                        const hasIncident = j.incident > 0 || j.regleOr > 0;
+                        return `
+                            <div class="journal-history-item ${date === this.journalDate ? 'active' : ''} ${hasIncident ? 'has-incident' : ''}"
+                                 onclick="Screens.setJournalDate('${date}')">
+                                <div class="history-date">
+                                    <strong>${dateFormatted}</strong>
+                                    ${hasIncident ? '<span class="incident-flag">⚠️</span>' : ''}
+                                </div>
+                                <div class="history-preview">
+                                    ${j.upside ? `<span class="preview-upside">✅ ${j.upside.substring(0, 40)}...</span>` : ''}
+                                    ${j.downside ? `<span class="preview-downside">⚠️ ${j.downside.substring(0, 40)}...</span>` : ''}
+                                </div>
+                                <div class="history-stats">
+                                    <span title="Quasi-accidents">🔶 ${j.quasi || 0}</span>
+                                    <span title="Règles d'or">🟡 ${j.regleOr || 0}</span>
+                                    <span title="Incidents">🔴 ${j.incident || 0}</span>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
     },
 
     setJournalDate(date) {
