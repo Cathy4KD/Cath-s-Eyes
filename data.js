@@ -73,36 +73,50 @@ const DataManager = {
     },
 
     // Charger depuis Firebase (asynchrone)
-    // Toutes les données sont synchronisées vers Firebase
+    // Firebase est TOUJOURS la source de vérité
     async loadFromFirebase() {
         if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
             try {
                 const cloudData = await FirebaseManager.loadFromCloud();
                 if (cloudData) {
-                    // Fusionner les travaux - Firebase est la source de vérité
+                    // Firebase est la source de vérité pour TOUTES les données
                     if (cloudData.travaux && cloudData.travaux.length > 0) {
                         this.data.travaux = cloudData.travaux;
                     }
 
-                    // Fusionner les pièces (prendre Firebase si disponible)
                     if (cloudData.pieces && cloudData.pieces.length > 0) {
                         this.data.pieces = cloudData.pieces;
                     }
 
-                    // Fusionner les autres données
-                    if (cloudData.avis) this.data.avis = cloudData.avis;
-                    if (cloudData.postmortem) this.data.postmortem = cloudData.postmortem;
-                    if (cloudData.comments) this.data.comments = cloudData.comments;
+                    if (cloudData.avis && cloudData.avis.length > 0) {
+                        this.data.avis = cloudData.avis;
+                    }
 
-                    // Fusionner processus (date d'arrêt, etc.) - prendre Firebase si local est vide
-                    if (cloudData.processus && !this.data.processus) {
+                    if (cloudData.postmortem) {
+                        this.data.postmortem = cloudData.postmortem;
+                    }
+
+                    if (cloudData.comments) {
+                        this.data.comments = cloudData.comments;
+                    }
+
+                    if (cloudData.customFields) {
+                        this.data.customFields = cloudData.customFields;
+                    }
+
+                    // IMPORTANT: Firebase est TOUJOURS la source de vérité pour processus
+                    if (cloudData.processus) {
                         this.data.processus = cloudData.processus;
+                    }
+
+                    if (cloudData.metadata) {
+                        this.data.metadata = { ...this.data.metadata, ...cloudData.metadata };
                     }
 
                     // Sauvegarder en local pour avoir une copie à jour
                     this.saveToLocalStorage();
 
-                    console.log('Données Firebase fusionnées - Travaux:', this.data.travaux.length,
+                    console.log('Données Firebase chargées - Travaux:', this.data.travaux.length,
                         '- Pièces:', (this.data.pieces || []).length,
                         '- Processus:', this.data.processus ? 'oui' : 'non');
                 }
@@ -132,17 +146,23 @@ const DataManager = {
     _syncTimer: null,
 
     // Sauvegarder (localStorage + sync Firebase automatique avec debounce)
-    saveToStorage() {
+    saveToStorage(immediate = false) {
         this.saveToLocalStorage();
 
-        // Sync Firebase automatique avec debounce de 3 secondes
-        // pour éviter trop d'appels lors de modifications rapides
+        // Sync Firebase automatique
         if (this._syncTimer) {
             clearTimeout(this._syncTimer);
         }
-        this._syncTimer = setTimeout(() => {
+
+        if (immediate) {
+            // Sync immédiate pour les données critiques
             this.syncToFirebase();
-        }, 3000);
+        } else {
+            // Debounce de 1 seconde pour les modifications rapides
+            this._syncTimer = setTimeout(() => {
+                this.syncToFirebase();
+            }, 1000);
+        }
     },
 
     // Synchroniser vers Firebase
