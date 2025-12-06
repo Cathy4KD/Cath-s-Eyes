@@ -459,133 +459,626 @@ const Screens = {
     },
 
     // === EXÉCUTION ===
+    // Onglet actif de l'exécution
+    executionTab: 'realisation',
+    executionDate: new Date().toISOString().split('T')[0],
+    journalDate: new Date().toISOString().split('T')[0],
+
     renderExecution() {
         const stats = DataManager.getExecutionStats();
-        const travaux = DataManager.getTravaux();
 
         return `
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon green">🏁</div>
-                    <div class="stat-info">
-                        <h3>${stats.termine}</h3>
-                        <p>Terminés</p>
+            <div class="execution-screen">
+                <!-- Stats rapides -->
+                <div class="stats-grid stats-small">
+                    <div class="stat-card mini">
+                        <div class="stat-icon green">🏁</div>
+                        <div class="stat-info">
+                            <h3>${stats.termine}</h3>
+                            <p>Terminés</p>
+                        </div>
+                    </div>
+                    <div class="stat-card mini">
+                        <div class="stat-icon orange">⚡</div>
+                        <div class="stat-info">
+                            <h3>${stats.enCours}</h3>
+                            <p>En Cours</p>
+                        </div>
+                    </div>
+                    <div class="stat-card mini">
+                        <div class="stat-icon blue">📊</div>
+                        <div class="stat-info">
+                            <h3>${stats.pourcentage}%</h3>
+                            <p>Avancement</p>
+                        </div>
+                    </div>
+                    <div class="stat-card mini">
+                        <div class="stat-icon purple">⏱️</div>
+                        <div class="stat-info">
+                            <h3>${stats.heuresReelles.toLocaleString('fr-FR')}h</h3>
+                            <p>/ ${stats.heuresEstimees.toLocaleString('fr-FR')}h</p>
+                        </div>
                     </div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-icon orange">⚡</div>
-                    <div class="stat-info">
-                        <h3>${stats.enCours}</h3>
-                        <p>En Cours</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon red">⏸️</div>
-                    <div class="stat-info">
-                        <h3>${stats.nonDemarre}</h3>
-                        <p>Non Démarrés</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon blue">📊</div>
-                    <div class="stat-info">
-                        <h3>${stats.pourcentage}%</h3>
-                        <p>Avancement</p>
-                    </div>
-                </div>
-            </div>
 
-            <div class="grid-2">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Import Données Exécution</h3>
-                    </div>
-                    <p style="margin-bottom: 15px;">Importez les données d'avancement depuis votre fichier Excel d'exécution.</p>
-                    <button class="btn btn-primary" onclick="App.showImportExecution()">
-                        📥 Importer Excel Exécution
+                <!-- Onglets principaux -->
+                <div class="exec-tabs">
+                    <button class="exec-tab ${this.executionTab === 'realisation' ? 'active' : ''}"
+                            onclick="Screens.switchExecutionTab('realisation')">
+                        📍 Réalisation temps réel
+                    </button>
+                    <button class="exec-tab ${this.executionTab === 'journal' ? 'active' : ''}"
+                            onclick="Screens.switchExecutionTab('journal')">
+                        📰 Points de presse
+                    </button>
+                    <button class="exec-tab ${this.executionTab === 'demandes' ? 'active' : ''}"
+                            onclick="Screens.switchExecutionTab('demandes')">
+                        📋 Demandes quotidiennes
                     </button>
                 </div>
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">Heures</h3>
-                    </div>
-                    <div style="display: flex; gap: 30px;">
-                        <div>
-                            <div style="font-size: 1.5rem; font-weight: bold;">${stats.heuresEstimees.toLocaleString('fr-FR')}h</div>
-                            <div style="color: var(--text-light);">Estimées</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 1.5rem; font-weight: bold; color: ${stats.heuresReelles > stats.heuresEstimees ? 'var(--danger)' : 'var(--success)'}">
-                                ${stats.heuresReelles.toLocaleString('fr-FR')}h
-                            </div>
-                            <div style="color: var(--text-light);">Réelles</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Suivi Exécution</h3>
-                    <div>
-                        <select id="execFilter" onchange="App.filterExecution()">
-                            <option value="">Tous</option>
-                            <option value="Non démarré">Non démarré</option>
-                            <option value="En cours">En cours</option>
-                            <option value="Terminé">Terminé</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="table-container" style="max-height: calc(100vh - 450px);">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>OT</th>
-                                <th>Description</th>
-                                <th>Statut</th>
-                                <th>Date Début</th>
-                                <th>Date Fin</th>
-                                <th>Heures Est.</th>
-                                <th>Heures Réel.</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="executionTable">
-                            ${this.renderExecutionRows(travaux)}
-                        </tbody>
-                    </table>
+                <!-- Contenu de l'onglet -->
+                <div class="exec-content">
+                    ${this.renderExecutionTabContent()}
                 </div>
             </div>
         `;
     },
 
-    renderExecutionRows(travaux) {
-        return travaux.map(t => `
-            <tr>
-                <td><strong>${t.ot}</strong></td>
-                <td>${t.description.substring(0, 30)}...</td>
-                <td>
-                    <select class="form-control" style="width: 130px;"
-                            onchange="App.updateExecStatus('${t.id}', this.value)">
-                        <option value="Non démarré" ${t.execution.statutExec === 'Non démarré' ? 'selected' : ''}>Non démarré</option>
-                        <option value="En cours" ${t.execution.statutExec === 'En cours' ? 'selected' : ''}>En cours</option>
-                        <option value="Terminé" ${t.execution.statutExec === 'Terminé' ? 'selected' : ''}>Terminé</option>
-                        <option value="Bloqué" ${t.execution.statutExec === 'Bloqué' ? 'selected' : ''}>Bloqué</option>
+    switchExecutionTab(tab) {
+        this.executionTab = tab;
+        document.querySelector('.exec-content').innerHTML = this.renderExecutionTabContent();
+        // Mettre à jour les onglets actifs
+        document.querySelectorAll('.exec-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector(`.exec-tab[onclick*="${tab}"]`).classList.add('active');
+    },
+
+    renderExecutionTabContent() {
+        switch(this.executionTab) {
+            case 'realisation': return this.renderRealisationTempsReel();
+            case 'journal': return this.renderJournalDeBord();
+            case 'demandes': return this.renderDemandesQuotidiennes();
+            default: return this.renderRealisationTempsReel();
+        }
+    },
+
+    // === RÉALISATION TEMPS RÉEL ===
+    renderRealisationTempsReel() {
+        const travaux = DataManager.getTravaux();
+        const today = this.executionDate;
+
+        return `
+            <div class="realisation-screen">
+                <!-- Sous-navigation -->
+                <div class="realisation-nav">
+                    <button class="btn btn-sm ${this.realisationView === 'liste' ? 'btn-primary' : 'btn-outline'}"
+                            onclick="Screens.setRealisationView('liste')">📋 Liste du jour</button>
+                    <button class="btn btn-sm ${this.realisationView === 'calendrier' ? 'btn-primary' : 'btn-outline'}"
+                            onclick="Screens.setRealisationView('calendrier')">📅 Calendrier</button>
+                    <button class="btn btn-sm ${this.realisationView === 'plan' ? 'btn-primary' : 'btn-outline'}"
+                            onclick="Screens.setRealisationView('plan')">🗺️ Plan</button>
+                    <div class="date-selector">
+                        <input type="date" value="${today}" onchange="Screens.setExecutionDate(this.value)">
+                    </div>
+                </div>
+
+                <!-- Contenu selon la vue -->
+                <div class="realisation-content">
+                    ${this.renderRealisationView(travaux)}
+                </div>
+            </div>
+        `;
+    },
+
+    realisationView: 'liste',
+
+    setRealisationView(view) {
+        this.realisationView = view;
+        const content = document.querySelector('.realisation-content');
+        if (content) {
+            content.innerHTML = this.renderRealisationView(DataManager.getTravaux());
+        }
+        // Mettre à jour boutons
+        document.querySelectorAll('.realisation-nav .btn').forEach(b => {
+            b.classList.remove('btn-primary');
+            b.classList.add('btn-outline');
+        });
+        document.querySelector(`.realisation-nav .btn[onclick*="${view}"]`)?.classList.replace('btn-outline', 'btn-primary');
+    },
+
+    setExecutionDate(date) {
+        this.executionDate = date;
+        this.setRealisationView(this.realisationView);
+    },
+
+    renderRealisationView(travaux) {
+        switch(this.realisationView) {
+            case 'liste': return this.renderListeJour(travaux);
+            case 'calendrier': return this.renderCalendrier(travaux);
+            case 'plan': return this.renderPlanVisuel(travaux);
+            default: return this.renderListeJour(travaux);
+        }
+    },
+
+    // Liste du jour
+    renderListeJour(travaux) {
+        // Filtrer les travaux du jour (en cours ou prévus pour cette date)
+        const travauxJour = travaux.filter(t => {
+            const dateDebut = t.execution?.dateDebut?.split('T')[0];
+            const dateFin = t.execution?.dateFin?.split('T')[0];
+            const datePrevue = t.datePrevue?.split('T')[0];
+            const statut = t.execution?.statutExec;
+
+            // Travaux en cours ou prévus pour ce jour
+            return statut === 'En cours' ||
+                   dateDebut === this.executionDate ||
+                   datePrevue === this.executionDate ||
+                   (dateDebut && dateFin && dateDebut <= this.executionDate && dateFin >= this.executionDate);
+        });
+
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📋 Travaux du ${new Date(this.executionDate).toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'})}</h3>
+                    <span class="badge badge-primary">${travauxJour.length} travaux</span>
+                </div>
+                ${travauxJour.length === 0 ? `
+                    <div class="empty-state">
+                        <p>Aucun travail prévu ou en cours pour cette date</p>
+                    </div>
+                ` : `
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:80px">OT</th>
+                                    <th>Description</th>
+                                    <th style="width:120px">Équipement</th>
+                                    <th style="width:100px">Statut</th>
+                                    <th style="width:80px">Heures</th>
+                                    <th style="width:100px">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${travauxJour.map(t => `
+                                    <tr class="${t.execution?.statutExec === 'Terminé' ? 'row-success' : t.execution?.statutExec === 'Bloqué' ? 'row-danger' : ''}">
+                                        <td><strong>${t.ot}</strong></td>
+                                        <td>${t.description.substring(0, 50)}${t.description.length > 50 ? '...' : ''}</td>
+                                        <td>${t.equipement || '-'}</td>
+                                        <td>
+                                            <select class="form-control form-control-sm"
+                                                    onchange="Screens.updateExecStatut('${t.id}', this.value)">
+                                                <option value="Non démarré" ${t.execution?.statutExec === 'Non démarré' ? 'selected' : ''}>Non démarré</option>
+                                                <option value="En cours" ${t.execution?.statutExec === 'En cours' ? 'selected' : ''}>En cours</option>
+                                                <option value="Terminé" ${t.execution?.statutExec === 'Terminé' ? 'selected' : ''}>Terminé</option>
+                                                <option value="Bloqué" ${t.execution?.statutExec === 'Bloqué' ? 'selected' : ''}>Bloqué</option>
+                                            </select>
+                                        </td>
+                                        <td>${t.execution?.heuresReelles || 0}h / ${t.estimationHeures || 0}h</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline" onclick="App.showDetail('${t.id}')">Détail</button>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `}
+            </div>
+        `;
+    },
+
+    updateExecStatut(travailId, statut) {
+        const travail = DataManager.getTravail(travailId);
+        if (travail) {
+            travail.execution.statutExec = statut;
+            if (statut === 'En cours' && !travail.execution.dateDebut) {
+                travail.execution.dateDebut = new Date().toISOString();
+            }
+            if (statut === 'Terminé' && !travail.execution.dateFin) {
+                travail.execution.dateFin = new Date().toISOString();
+            }
+            DataManager.saveToStorage();
+            App.showToast('Statut mis à jour', 'success');
+        }
+    },
+
+    // Calendrier (vue semaine)
+    renderCalendrier(travaux) {
+        const startDate = new Date(this.executionDate);
+        startDate.setDate(startDate.getDate() - startDate.getDay() + 1); // Lundi
+
+        const jours = [];
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(startDate);
+            date.setDate(date.getDate() + i);
+            jours.push(date);
+        }
+
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📅 Semaine du ${jours[0].toLocaleDateString('fr-FR')} au ${jours[6].toLocaleDateString('fr-FR')}</h3>
+                </div>
+                <div class="calendrier-semaine">
+                    ${jours.map(jour => {
+                        const jourStr = jour.toISOString().split('T')[0];
+                        const isToday = jourStr === new Date().toISOString().split('T')[0];
+                        const isSelected = jourStr === this.executionDate;
+                        const travauxJour = travaux.filter(t => {
+                            const dateDebut = t.execution?.dateDebut?.split('T')[0];
+                            return dateDebut === jourStr || t.datePrevue?.split('T')[0] === jourStr;
+                        });
+
+                        return `
+                            <div class="calendrier-jour ${isToday ? 'today' : ''} ${isSelected ? 'selected' : ''}"
+                                 onclick="Screens.setExecutionDate('${jourStr}'); Screens.setRealisationView('liste')">
+                                <div class="jour-header">
+                                    <span class="jour-nom">${jour.toLocaleDateString('fr-FR', {weekday: 'short'})}</span>
+                                    <span class="jour-num">${jour.getDate()}</span>
+                                </div>
+                                <div class="jour-travaux">
+                                    ${travauxJour.slice(0, 3).map(t => `
+                                        <div class="travail-mini ${t.execution?.statutExec === 'Terminé' ? 'done' : t.execution?.statutExec === 'En cours' ? 'progress' : ''}">
+                                            ${t.ot}
+                                        </div>
+                                    `).join('')}
+                                    ${travauxJour.length > 3 ? `<div class="travail-more">+${travauxJour.length - 3} autres</div>` : ''}
+                                </div>
+                                <div class="jour-count">${travauxJour.length} travaux</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        `;
+    },
+
+    // Plan visuel (placeholder - à compléter avec le plan de l'usine)
+    renderPlanVisuel(travaux) {
+        // Grouper les travaux par équipement/localisation
+        const parEquipement = {};
+        travaux.forEach(t => {
+            const equip = t.equipement || 'Non assigné';
+            if (!parEquipement[equip]) parEquipement[equip] = [];
+            parEquipement[equip].push(t);
+        });
+
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🗺️ Plan - Localisation des travaux</h3>
+                    <button class="btn btn-sm btn-outline" onclick="Screens.showConfigPlan()">⚙️ Configurer plan</button>
+                </div>
+                <div class="plan-container">
+                    <div class="plan-placeholder">
+                        <p>📍 Plan de l'usine à configurer</p>
+                        <p style="font-size: 0.9rem; color: var(--text-light);">
+                            Importez une image du plan et positionnez les équipements
+                        </p>
+                        <button class="btn btn-primary" onclick="Screens.showConfigPlan()">
+                            Configurer le plan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Liste par équipement en attendant le plan -->
+                <div class="card-header" style="margin-top: 20px;">
+                    <h3 class="card-title">Par équipement</h3>
+                </div>
+                <div class="equipements-grid">
+                    ${Object.entries(parEquipement).map(([equip, trav]) => `
+                        <div class="equipement-card">
+                            <div class="equip-header">
+                                <strong>${equip}</strong>
+                                <span class="badge badge-primary">${trav.length}</span>
+                            </div>
+                            <div class="equip-travaux">
+                                ${trav.slice(0, 5).map(t => `
+                                    <div class="travail-item ${t.execution?.statutExec === 'Terminé' ? 'done' : t.execution?.statutExec === 'En cours' ? 'progress' : ''}">
+                                        <span class="ot">${t.ot}</span>
+                                        <span class="statut-dot ${t.execution?.statutExec?.toLowerCase().replace(' ', '-') || 'non-demarre'}"></span>
+                                    </div>
+                                `).join('')}
+                                ${trav.length > 5 ? `<div class="more">+${trav.length - 5} autres</div>` : ''}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    },
+
+    showConfigPlan() {
+        App.showToast('Configuration du plan à venir', 'info');
+    },
+
+    // === JOURNAL DE BORD (Points de presse) ===
+    renderJournalDeBord() {
+        const journals = DataManager.data.processus?.journals || {};
+        const journalDuJour = journals[this.journalDate] || this.getEmptyJournal();
+
+        return `
+            <div class="journal-screen">
+                <div class="journal-header">
+                    <h3>📰 Journal de bord - Point de presse</h3>
+                    <div class="journal-date-nav">
+                        <button class="btn btn-sm btn-outline" onclick="Screens.changeJournalDate(-1)">◀</button>
+                        <input type="date" value="${this.journalDate}" onchange="Screens.setJournalDate(this.value)">
+                        <button class="btn btn-sm btn-outline" onclick="Screens.changeJournalDate(1)">▶</button>
+                    </div>
+                </div>
+
+                <div class="journal-grid">
+                    <!-- Upside / Downside -->
+                    <div class="card journal-card">
+                        <div class="card-header dual">
+                            <div class="upside-header">✅ Upside (Points positifs)</div>
+                            <div class="downside-header">⚠️ Downside (Points négatifs)</div>
+                        </div>
+                        <div class="updown-grid">
+                            <div class="upside-content">
+                                <textarea id="journalUpside" placeholder="Points positifs du jour..."
+                                          onchange="Screens.saveJournalField('upside', this.value)">${journalDuJour.upside || ''}</textarea>
+                            </div>
+                            <div class="downside-content">
+                                <textarea id="journalDownside" placeholder="Points négatifs / risques..."
+                                          onchange="Screens.saveJournalField('downside', this.value)">${journalDuJour.downside || ''}</textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Statut coûts -->
+                    <div class="card journal-card small">
+                        <div class="card-header">
+                            <h4>💰 Statut suivi coûts</h4>
+                        </div>
+                        <select id="journalCouts" class="form-control"
+                                onchange="Screens.saveJournalField('statutCouts', this.value)">
+                            <option value="favorable" ${journalDuJour.statutCouts === 'favorable' ? 'selected' : ''}>✅ Favorable</option>
+                            <option value="conforme" ${journalDuJour.statutCouts === 'conforme' ? 'selected' : ''}>🟡 Conforme</option>
+                            <option value="depassement" ${journalDuJour.statutCouts === 'depassement' ? 'selected' : ''}>🔴 Dépassement</option>
+                        </select>
+                        <textarea id="journalCoutsComment" placeholder="Commentaire coûts..."
+                                  onchange="Screens.saveJournalField('coutsComment', this.value)">${journalDuJour.coutsComment || ''}</textarea>
+                    </div>
+
+                    <!-- Chemins critiques -->
+                    <div class="card journal-card">
+                        <div class="card-header">
+                            <h4>🎯 État des chemins critiques</h4>
+                        </div>
+                        <div class="chemins-critiques">
+                            ${(journalDuJour.cheminsCritiques || [{nom: '', statut: ''}]).map((cc, i) => `
+                                <div class="chemin-critique">
+                                    <input type="text" placeholder="Nom du chemin critique" value="${cc.nom}"
+                                           onchange="Screens.saveCheminCritique(${i}, 'nom', this.value)">
+                                    <input type="text" placeholder="Statut" value="${cc.statut}"
+                                           onchange="Screens.saveCheminCritique(${i}, 'statut', this.value)">
+                                </div>
+                            `).join('')}
+                            <button class="btn btn-sm btn-outline" onclick="Screens.addCheminCritique()">+ Ajouter chemin</button>
+                        </div>
+                    </div>
+
+                    <!-- Incidents / Sécurité -->
+                    <div class="card journal-card">
+                        <div class="card-header">
+                            <h4>🛡️ Sécurité - Incidents</h4>
+                        </div>
+                        <div class="securite-grid">
+                            <div class="securite-compteurs">
+                                <div class="compteur">
+                                    <label>Quasi (Danger observé)</label>
+                                    <input type="number" value="${journalDuJour.quasi || 0}" min="0"
+                                           onchange="Screens.saveJournalField('quasi', parseInt(this.value))">
+                                </div>
+                                <div class="compteur">
+                                    <label>Règle d'or</label>
+                                    <input type="number" value="${journalDuJour.regleOr || 0}" min="0"
+                                           onchange="Screens.saveJournalField('regleOr', parseInt(this.value))">
+                                </div>
+                                <div class="compteur">
+                                    <label>Incident</label>
+                                    <input type="number" value="${journalDuJour.incident || 0}" min="0"
+                                           onchange="Screens.saveJournalField('incident', parseInt(this.value))">
+                                </div>
+                            </div>
+                            <div class="incident-detail">
+                                <label>Description incident du jour</label>
+                                <textarea placeholder="Équipe, date/heure, description..."
+                                          onchange="Screens.saveJournalField('incidentDescription', this.value)">${journalDuJour.incidentDescription || ''}</textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="journal-actions">
+                    <button class="btn btn-outline" onclick="Screens.exportJournal()">📄 Exporter PDF</button>
+                    <button class="btn btn-primary" onclick="Screens.saveJournal()">💾 Sauvegarder</button>
+                </div>
+            </div>
+        `;
+    },
+
+    getEmptyJournal() {
+        return {
+            upside: '',
+            downside: '',
+            statutCouts: 'conforme',
+            coutsComment: '',
+            cheminsCritiques: [{nom: '', statut: ''}, {nom: '', statut: ''}, {nom: '', statut: ''}, {nom: '', statut: ''}],
+            quasi: 0,
+            regleOr: 0,
+            incident: 0,
+            incidentDescription: ''
+        };
+    },
+
+    setJournalDate(date) {
+        this.journalDate = date;
+        document.querySelector('.exec-content').innerHTML = this.renderJournalDeBord();
+    },
+
+    changeJournalDate(delta) {
+        const date = new Date(this.journalDate);
+        date.setDate(date.getDate() + delta);
+        this.setJournalDate(date.toISOString().split('T')[0]);
+    },
+
+    saveJournalField(field, value) {
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.journals) DataManager.data.processus.journals = {};
+        if (!DataManager.data.processus.journals[this.journalDate]) {
+            DataManager.data.processus.journals[this.journalDate] = this.getEmptyJournal();
+        }
+        DataManager.data.processus.journals[this.journalDate][field] = value;
+        DataManager.saveToStorage();
+    },
+
+    saveCheminCritique(index, field, value) {
+        if (!DataManager.data.processus?.journals?.[this.journalDate]) {
+            this.saveJournalField('cheminsCritiques', this.getEmptyJournal().cheminsCritiques);
+        }
+        const journal = DataManager.data.processus.journals[this.journalDate];
+        if (!journal.cheminsCritiques) journal.cheminsCritiques = [];
+        if (!journal.cheminsCritiques[index]) journal.cheminsCritiques[index] = {nom: '', statut: ''};
+        journal.cheminsCritiques[index][field] = value;
+        DataManager.saveToStorage();
+    },
+
+    addCheminCritique() {
+        if (!DataManager.data.processus?.journals?.[this.journalDate]) {
+            this.saveJournalField('cheminsCritiques', []);
+        }
+        DataManager.data.processus.journals[this.journalDate].cheminsCritiques.push({nom: '', statut: ''});
+        DataManager.saveToStorage();
+        document.querySelector('.exec-content').innerHTML = this.renderJournalDeBord();
+    },
+
+    saveJournal() {
+        DataManager.saveToStorage(true); // Sync immédiate
+        App.showToast('Journal sauvegardé', 'success');
+    },
+
+    exportJournal() {
+        App.showToast('Export PDF à venir', 'info');
+    },
+
+    // === DEMANDES QUOTIDIENNES ===
+    renderDemandesQuotidiennes() {
+        const demandes = DataManager.data.processus?.demandes || {};
+        const demandesJour = demandes[this.executionDate] || {grues: [], echafauds: [], verrouillages: []};
+
+        return `
+            <div class="demandes-screen">
+                <div class="demandes-header">
+                    <h3>📋 Demandes quotidiennes</h3>
+                    <input type="date" value="${this.executionDate}" onchange="Screens.setExecutionDate(this.value); Screens.switchExecutionTab('demandes')">
+                </div>
+
+                <div class="demandes-grid">
+                    <!-- Grues -->
+                    <div class="card demande-card">
+                        <div class="card-header">
+                            <h4>🏗️ Grues</h4>
+                            <button class="btn btn-sm btn-primary" onclick="Screens.addDemande('grues')">+ Ajouter</button>
+                        </div>
+                        <div class="demandes-list" id="gruesList">
+                            ${this.renderDemandesList(demandesJour.grues, 'grues')}
+                        </div>
+                    </div>
+
+                    <!-- Échafauds -->
+                    <div class="card demande-card">
+                        <div class="card-header">
+                            <h4>🪜 Échafauds</h4>
+                            <button class="btn btn-sm btn-primary" onclick="Screens.addDemande('echafauds')">+ Ajouter</button>
+                        </div>
+                        <div class="demandes-list" id="echafaudsList">
+                            ${this.renderDemandesList(demandesJour.echafauds, 'echafauds')}
+                        </div>
+                    </div>
+
+                    <!-- Verrouillages -->
+                    <div class="card demande-card">
+                        <div class="card-header">
+                            <h4>🔒 Verrouillages</h4>
+                            <button class="btn btn-sm btn-primary" onclick="Screens.addDemande('verrouillages')">+ Ajouter</button>
+                        </div>
+                        <div class="demandes-list" id="verrouillagesList">
+                            ${this.renderDemandesList(demandesJour.verrouillages, 'verrouillages')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    renderDemandesList(demandes, type) {
+        if (!demandes || demandes.length === 0) {
+            return `<div class="empty-state small">Aucune demande</div>`;
+        }
+
+        return demandes.map((d, i) => `
+            <div class="demande-item ${d.statut || ''}">
+                <div class="demande-info">
+                    <strong>${d.description || 'Sans description'}</strong>
+                    <span class="demande-ot">${d.ot ? 'OT: ' + d.ot : ''}</span>
+                    <span class="demande-lieu">${d.lieu || ''}</span>
+                </div>
+                <div class="demande-actions">
+                    <select class="form-control form-control-sm" onchange="Screens.updateDemandeStatut('${type}', ${i}, this.value)">
+                        <option value="demande" ${d.statut === 'demande' ? 'selected' : ''}>Demandé</option>
+                        <option value="approuve" ${d.statut === 'approuve' ? 'selected' : ''}>Approuvé</option>
+                        <option value="enplace" ${d.statut === 'enplace' ? 'selected' : ''}>En place</option>
+                        <option value="termine" ${d.statut === 'termine' ? 'selected' : ''}>Terminé</option>
                     </select>
-                </td>
-                <td>${t.execution.dateDebut ? new Date(t.execution.dateDebut).toLocaleDateString('fr-FR') : '-'}</td>
-                <td>${t.execution.dateFin ? new Date(t.execution.dateFin).toLocaleDateString('fr-FR') : '-'}</td>
-                <td>${t.estimationHeures}h</td>
-                <td>
-                    <input type="number" class="form-control" style="width: 80px;"
-                           value="${t.execution.heuresReelles}"
-                           onchange="App.updateExecHeures('${t.id}', this.value)">
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-outline" onclick="App.showDetail('${t.id}')">Détail</button>
-                </td>
-            </tr>
+                    <button class="btn btn-sm btn-danger" onclick="Screens.removeDemande('${type}', ${i})">✕</button>
+                </div>
+            </div>
         `).join('');
+    },
+
+    addDemande(type) {
+        const description = prompt(`Description de la demande (${type}):`);
+        if (!description) return;
+
+        const ot = prompt('OT lié (optionnel):') || '';
+        const lieu = prompt('Lieu / Localisation:') || '';
+
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.demandes) DataManager.data.processus.demandes = {};
+        if (!DataManager.data.processus.demandes[this.executionDate]) {
+            DataManager.data.processus.demandes[this.executionDate] = {grues: [], echafauds: [], verrouillages: []};
+        }
+
+        DataManager.data.processus.demandes[this.executionDate][type].push({
+            description,
+            ot,
+            lieu,
+            statut: 'demande',
+            dateCreation: new Date().toISOString()
+        });
+
+        DataManager.saveToStorage();
+        document.querySelector('.exec-content').innerHTML = this.renderDemandesQuotidiennes();
+        App.showToast('Demande ajoutée', 'success');
+    },
+
+    updateDemandeStatut(type, index, statut) {
+        if (DataManager.data.processus?.demandes?.[this.executionDate]?.[type]?.[index]) {
+            DataManager.data.processus.demandes[this.executionDate][type][index].statut = statut;
+            DataManager.saveToStorage();
+        }
+    },
+
+    removeDemande(type, index) {
+        if (confirm('Supprimer cette demande ?')) {
+            DataManager.data.processus.demandes[this.executionDate][type].splice(index, 1);
+            DataManager.saveToStorage();
+            document.querySelector('.exec-content').innerHTML = this.renderDemandesQuotidiennes();
+        }
     },
 
     // === POST-MORTEM ===

@@ -5748,3 +5748,565 @@ tr:hover .btn-edit-comment {
     cursor: pointer;
     accent-color: #3b82f6;
 }
+
+/* === SECTION EXÉCUTION === */
+.execution-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.stats-small .stat-card.mini {
+    padding: 12px 15px;
+}
+
+.stats-small .stat-card.mini .stat-info h3 {
+    font-size: 1.3rem;
+}
+
+.stats-small .stat-card.mini .stat-info p {
+    font-size: 0.75rem;
+}
+
+.stat-icon.purple {
+    background: rgba(139, 92, 246, 0.1);
+    color: #7c3aed;
+}
+
+/* Onglets exécution */
+.exec-tabs {
+    display: flex;
+    gap: 10px;
+    background: white;
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+}
+
+.exec-tab {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    background: #f1f5f9;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.exec-tab:hover {
+    background: #e2e8f0;
+}
+
+.exec-tab.active {
+    background: var(--primary);
+    color: white;
+}
+
+.exec-content {
+    min-height: 400px;
+}
+
+/* Réalisation temps réel */
+.realisation-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.realisation-nav {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.realisation-nav .date-selector {
+    margin-left: auto;
+}
+
+.realisation-nav input[type="date"] {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.9rem;
+}
+
+/* Calendrier semaine */
+.calendrier-semaine {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    padding: 15px;
+}
+
+.calendrier-jour {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 10px;
+    min-height: 120px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.calendrier-jour:hover {
+    background: #f1f5f9;
+    transform: translateY(-2px);
+}
+
+.calendrier-jour.today {
+    border-color: var(--primary);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.calendrier-jour.selected {
+    background: rgba(37, 99, 235, 0.1);
+}
+
+.jour-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid var(--border);
+}
+
+.jour-nom {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+}
+
+.jour-num {
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.jour-travaux {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.travail-mini {
+    font-size: 0.75rem;
+    padding: 3px 6px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.travail-mini.done {
+    background: rgba(34, 197, 94, 0.2);
+    color: #16a34a;
+}
+
+.travail-mini.progress {
+    background: rgba(245, 158, 11, 0.2);
+    color: #d97706;
+}
+
+.travail-more {
+    font-size: 0.7rem;
+    color: var(--text-light);
+    font-style: italic;
+}
+
+.jour-count {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    color: var(--text-light);
+    text-align: center;
+}
+
+/* Plan visuel */
+.plan-container {
+    min-height: 300px;
+    background: #f8fafc;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.plan-placeholder {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-light);
+}
+
+.plan-placeholder p {
+    margin-bottom: 10px;
+}
+
+.equipements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+    padding: 15px;
+}
+
+.equipement-card {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.equip-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.equip-travaux {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.travail-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: 4px 0;
+}
+
+.travail-item .ot {
+    font-weight: 500;
+}
+
+.statut-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #cbd5e1;
+}
+
+.statut-dot.terminé, .statut-dot.termine {
+    background: var(--success);
+}
+
+.statut-dot.en-cours {
+    background: var(--warning);
+}
+
+.statut-dot.bloqué {
+    background: var(--danger);
+}
+
+.equip-travaux .more {
+    font-size: 0.75rem;
+    color: var(--text-light);
+    font-style: italic;
+}
+
+/* Journal de bord */
+.journal-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.journal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.journal-header h3 {
+    font-size: 1.2rem;
+}
+
+.journal-date-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.journal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.journal-card {
+    padding: 15px;
+}
+
+.journal-card.small {
+    grid-column: span 1;
+}
+
+.card-header.dual {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.upside-header {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.downside-header {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+.updown-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.upside-content textarea,
+.downside-content textarea {
+    width: 100%;
+    min-height: 100px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+.upside-content textarea {
+    border-left: 3px solid var(--success);
+}
+
+.downside-content textarea {
+    border-left: 3px solid var(--danger);
+}
+
+.journal-card h4 {
+    margin-bottom: 10px;
+    font-size: 1rem;
+}
+
+.journal-card select {
+    margin-bottom: 10px;
+}
+
+.journal-card textarea {
+    width: 100%;
+    min-height: 60px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    font-family: inherit;
+    resize: vertical;
+}
+
+/* Chemins critiques */
+.chemins-critiques {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chemin-critique {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.chemin-critique input {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+}
+
+/* Sécurité */
+.securite-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.securite-compteurs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.compteur {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.compteur label {
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.compteur input {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 1.2rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.incident-detail label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-bottom: 5px;
+}
+
+.journal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+/* Demandes quotidiennes */
+.demandes-screen {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.demandes-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.demandes-header h3 {
+    font-size: 1.2rem;
+}
+
+.demandes-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.demande-card {
+    min-height: 300px;
+}
+
+.demandes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+.demande-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    gap: 10px;
+    border-left: 3px solid #cbd5e1;
+}
+
+.demande-item.demande {
+    border-left-color: var(--warning);
+}
+
+.demande-item.approuve {
+    border-left-color: var(--info);
+}
+
+.demande-item.enplace {
+    border-left-color: var(--primary);
+}
+
+.demande-item.termine {
+    border-left-color: var(--success);
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.demande-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+}
+
+.demande-info strong {
+    font-size: 0.9rem;
+}
+
+.demande-ot, .demande-lieu {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.demande-actions {
+    display: flex;
+    gap: 5px;
+    align-items: flex-start;
+}
+
+.demande-actions select {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+}
+
+.empty-state.small {
+    padding: 20px;
+    text-align: center;
+    color: var(--text-light);
+    font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .demandes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .journal-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .calendrier-semaine {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .exec-tabs {
+        flex-direction: column;
+    }
+
+    .calendrier-semaine {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .securite-compteurs {
+        grid-template-columns: 1fr;
+    }
+
+    .chemin-critique {
+        grid-template-columns: 1fr;
+    }
+
+    .updown-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .card-header.dual {
+        grid-template-columns: 1fr;
+    }
+}
