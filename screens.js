@@ -746,24 +746,44 @@ const Screens = {
 
         const planConfig = DataManager.data.processus?.planConfig || {};
         const hasPlan = planConfig.imageData;
+        const vuesDetail = planConfig.vuesDetail || [];
 
         return `
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">🗺️ Plan - Localisation des travaux</h3>
-                    <button class="btn btn-sm btn-outline" onclick="Screens.showConfigPlan()">⚙️ Configurer plan</button>
+                    <div class="plan-header-actions">
+                        ${hasPlan ? `
+                            <select class="vue-select" id="vueSelect" onchange="Screens.loadVueDetail(this.value)">
+                                <option value="">Vue complète</option>
+                                ${vuesDetail.map((v, i) => `<option value="${i}">${v.nom}</option>`).join('')}
+                            </select>
+                            <button class="btn btn-sm btn-outline" onclick="Screens.saveCurrentVue()" title="Sauvegarder cette vue">💾</button>
+                        ` : ''}
+                        <button class="btn btn-sm btn-outline" onclick="Screens.showConfigPlan()">⚙️ Configurer</button>
+                    </div>
                 </div>
                 <div class="plan-container">
                     ${hasPlan ? `
                         <div class="plan-view">
-                            <div class="plan-canvas-view" id="planViewCanvas">
-                                <img src="${planConfig.imageData}" alt="Plan de l'usine">
-                                ${this.renderPlanMarkersWithStats(planConfig.positions || {}, parEquipement)}
+                            <div class="plan-zoom-controls">
+                                <button class="zoom-btn" onclick="Screens.zoomPlan(0.2)" title="Zoom +">+</button>
+                                <button class="zoom-btn" onclick="Screens.zoomPlan(-0.2)" title="Zoom -">−</button>
+                                <button class="zoom-btn" onclick="Screens.resetZoom()" title="Réinitialiser">⟲</button>
+                            </div>
+                            <div class="plan-canvas-wrapper" id="planWrapper">
+                                <div class="plan-canvas-view" id="planViewCanvas"
+                                     onmousedown="Screens.startPan(event)"
+                                     onwheel="Screens.wheelZoom(event)">
+                                    <img src="${planConfig.imageData}" alt="Plan de l'usine" draggable="false">
+                                    ${this.renderPlanMarkersWithStats(planConfig.positions || {}, parEquipement)}
+                                </div>
                             </div>
                             <div class="plan-legend">
                                 <div class="legend-item"><span class="legend-dot completed"></span> Terminés</div>
                                 <div class="legend-item"><span class="legend-dot in-progress"></span> En cours</div>
                                 <div class="legend-item"><span class="legend-dot pending"></span> Non démarrés</div>
+                                <span class="zoom-indicator" id="zoomIndicator">100%</span>
                             </div>
                         </div>
                     ` : `
@@ -881,6 +901,121 @@ const Screens = {
         `;
 
         document.body.insertAdjacentHTML('beforeend', html);
+    },
+
+    // === ZOOM ET PAN DU PLAN ===
+    planZoom: 1,
+    planPanX: 0,
+    planPanY: 0,
+    isPanning: false,
+    panStartX: 0,
+    panStartY: 0,
+
+    zoomPlan(delta) {
+        this.planZoom = Math.max(0.5, Math.min(4, this.planZoom + delta));
+        this.applyPlanTransform();
+    },
+
+    wheelZoom(event) {
+        event.preventDefault();
+        const delta = event.deltaY > 0 ? -0.1 : 0.1;
+        this.planZoom = Math.max(0.5, Math.min(4, this.planZoom + delta));
+        this.applyPlanTransform();
+    },
+
+    resetZoom() {
+        this.planZoom = 1;
+        this.planPanX = 0;
+        this.planPanY = 0;
+        this.applyPlanTransform();
+    },
+
+    applyPlanTransform() {
+        const canvas = document.getElementById('planViewCanvas');
+        if (canvas) {
+            canvas.style.transform = `scale(${this.planZoom}) translate(${this.planPanX}px, ${this.planPanY}px)`;
+        }
+        const indicator = document.getElementById('zoomIndicator');
+        if (indicator) {
+            indicator.textContent = Math.round(this.planZoom * 100) + '%';
+        }
+    },
+
+    startPan(event) {
+        if (event.target.closest('.plan-marker-view')) return; // Ne pas panner si on clique sur un marqueur
+        this.isPanning = true;
+        this.panStartX = event.clientX - this.planPanX * this.planZoom;
+        this.panStartY = event.clientY - this.planPanY * this.planZoom;
+
+        const canvas = document.getElementById('planViewCanvas');
+        if (canvas) canvas.style.cursor = 'grabbing';
+
+        const moveHandler = (e) => {
+            if (!this.isPanning) return;
+            this.planPanX = (e.clientX - this.panStartX) / this.planZoom;
+            this.planPanY = (e.clientY - this.panStartY) / this.planZoom;
+            this.applyPlanTransform();
+        };
+
+        const upHandler = () => {
+            this.isPanning = false;
+            if (canvas) canvas.style.cursor = 'grab';
+            document.removeEventListener('mousemove', moveHandler);
+            document.removeEventListener('mouseup', upHandler);
+        };
+
+        document.addEventListener('mousemove', moveHandler);
+        document.addEventListener('mouseup', upHandler);
+    },
+
+    // === VUES DÉTAIL ===
+    saveCurrentVue() {
+        const nom = prompt('Nom de cette vue (ex: Zone Four, Secteur Nord...)');
+        if (!nom) return;
+
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.planConfig) DataManager.data.processus.planConfig = {};
+        if (!DataManager.data.processus.planConfig.vuesDetail) DataManager.data.processus.planConfig.vuesDetail = [];
+
+        DataManager.data.processus.planConfig.vuesDetail.push({
+            nom,
+            zoom: this.planZoom,
+            panX: this.planPanX,
+            panY: this.planPanY
+        });
+
+        DataManager.saveToStorage(true);
+        App.showToast(`Vue "${nom}" sauvegardée!`, 'success');
+
+        // Rafraîchir pour mettre à jour le select
+        this.setRealisationView('plan');
+    },
+
+    loadVueDetail(index) {
+        if (index === '') {
+            this.resetZoom();
+            return;
+        }
+
+        const vues = DataManager.data.processus?.planConfig?.vuesDetail || [];
+        const vue = vues[parseInt(index)];
+        if (vue) {
+            this.planZoom = vue.zoom;
+            this.planPanX = vue.panX;
+            this.planPanY = vue.panY;
+            this.applyPlanTransform();
+        }
+    },
+
+    deleteVueDetail(index) {
+        if (!confirm('Supprimer cette vue?')) return;
+
+        const vues = DataManager.data.processus?.planConfig?.vuesDetail;
+        if (vues) {
+            vues.splice(index, 1);
+            DataManager.saveToStorage(true);
+            this.setRealisationView('plan');
+        }
     },
 
     showConfigPlan() {
