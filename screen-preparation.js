@@ -317,8 +317,14 @@ const ScreenPreparation = {
         if (etapeId === 'PL12.0') {
             return this.renderDetailEspaceClos();
         }
+        if (etapeId === 'PL16.0') {
+            return this.renderDetailGazCO();
+        }
         if (etapeId === 'PL17.0') {
             return this.renderDetailPlanAmenagement();
+        }
+        if (etapeId === 'PR9.0') {
+            return this.renderDetailCognibox();
         }
 
         // Trouver l'étape et la phase
@@ -377,11 +383,14 @@ const ScreenPreparation = {
                                     </select>
                                 </div>
                                 <div class="form-group">
-                                    <label>Avancement: <span id="pctLabel">${etat?.pourcentage || 0}%</span></label>
-                                    <input type="range" id="detailPourcentage" class="form-control-range"
-                                           min="0" max="100" step="10" value="${etat?.pourcentage || 0}"
-                                           oninput="document.getElementById('pctLabel').textContent = this.value + '%'"
-                                           onchange="ScreenPreparation.savePourcentageDetail()">
+                                    <label>Avancement</label>
+                                    <div class="progress-auto">
+                                        <div class="progress-bar-auto">
+                                            <div class="progress-fill-auto" style="width: ${etat?.pourcentage || 0}%"></div>
+                                        </div>
+                                        <span id="pctLabel">${etat?.pourcentage || 0}%</span>
+                                        <small class="progress-hint">(automatique selon statut)</small>
+                                    </div>
                                 </div>
                                 <div class="form-group">
                                     <label>Responsable</label>
@@ -488,10 +497,10 @@ const ScreenPreparation = {
                     </div>
                     <div class="info-box">
                         <label>Avancement</label>
-                        <div class="range-group">
-                            <input type="range" id="modalPourcentage" min="0" max="100" step="10"
-                                   value="${etat?.pourcentage || 0}"
-                                   onchange="ScreenPreparation.savePourcentage('${etape.id}')">
+                        <div class="progress-auto-modal">
+                            <div class="progress-bar-auto">
+                                <div class="progress-fill-auto-modal" style="width: ${etat?.pourcentage || 0}%"></div>
+                            </div>
                             <span id="pourcentageLabel">${etat?.pourcentage || 0}%</span>
                         </div>
                     </div>
@@ -624,14 +633,17 @@ const ScreenPreparation = {
     saveStatut(etapeId) {
         const value = document.getElementById('modalStatut').value;
         ProcessusArret.updateStatut(etapeId, value);
+
+        // Mettre à jour l'affichage du pourcentage automatique
+        const pourcentageAuto = { 'non_demarre': 0, 'en_cours': 50, 'termine': 100, 'bloque': 25 };
+        const pct = pourcentageAuto[value] || 0;
+        const pctLabel = document.getElementById('pourcentageLabel');
+        const progressFill = document.querySelector('.progress-fill-auto-modal');
+        if (pctLabel) pctLabel.textContent = pct + '%';
+        if (progressFill) progressFill.style.width = pct + '%';
+
         this.updatePhaseStats();
         App.showToast('Statut enregistré', 'success');
-    },
-
-    savePourcentage(etapeId) {
-        const value = parseInt(document.getElementById('modalPourcentage').value);
-        document.getElementById('pourcentageLabel').textContent = value + '%';
-        ProcessusArret.updateEtatEtape(etapeId, { pourcentage: value });
     },
 
     saveResponsable(etapeId) {
@@ -656,12 +668,16 @@ const ScreenPreparation = {
     saveStatutDetail() {
         const value = document.getElementById('detailStatut').value;
         ProcessusArret.updateStatut(this.currentEtape, value);
-        App.showToast('Statut enregistré', 'success');
-    },
 
-    savePourcentageDetail() {
-        const value = parseInt(document.getElementById('detailPourcentage').value);
-        ProcessusArret.updateEtatEtape(this.currentEtape, { pourcentage: value });
+        // Mettre à jour l'affichage du pourcentage automatique
+        const pourcentageAuto = { 'non_demarre': 0, 'en_cours': 50, 'termine': 100, 'bloque': 25 };
+        const pct = pourcentageAuto[value] || 0;
+        const pctLabel = document.getElementById('pctLabel');
+        const progressFill = document.querySelector('.progress-fill-auto');
+        if (pctLabel) pctLabel.textContent = pct + '%';
+        if (progressFill) progressFill.style.width = pct + '%';
+
+        App.showToast('Statut enregistré', 'success');
     },
 
     saveResponsableDetail() {
@@ -3913,13 +3929,19 @@ const ScreenPreparation = {
             .map(t => t.entreprise)
             .filter(e => e))].sort();
 
-        // Stats (sur les données non filtrées)
+        // Stats (sur les données non filtrées) - utiliser uniqueId pour chaque travail
         const allTPAA = travaux.filter(t => t.description && t.description.toUpperCase().includes('TPAA'));
+        const allTPAAWithIds = allTPAA.map(t => {
+            const travailIndex = travaux.findIndex(tr => tr === t);
+            const uniqueId = `${t.ot}_${travailIndex}`;
+            return { ...t, uniqueId };
+        });
         const stats = {
             total: allTPAA.length,
-            aFaire: allTPAA.filter(t => this.getTPAAStatut(t.ot, tpaaData) === 'a_faire').length,
-            enCours: allTPAA.filter(t => this.getTPAAStatut(t.ot, tpaaData) === 'en_cours').length,
-            termine: allTPAA.filter(t => this.getTPAAStatut(t.ot, tpaaData) === 'termine').length
+            aFaire: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'a_faire').length,
+            enCours: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'en_cours').length,
+            termine: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'termine').length,
+            annule: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'annule').length
         };
 
         return `
@@ -3953,6 +3975,10 @@ const ScreenPreparation = {
                             <div class="resume-stat">
                                 <span class="stat-value">${stats.termine}</span>
                                 <span class="stat-label">Terminés</span>
+                            </div>
+                            <div class="resume-stat">
+                                <span class="stat-value">${stats.annule}</span>
+                                <span class="stat-label">Annulés</span>
                             </div>
                         </div>
                     </div>
@@ -3994,17 +4020,20 @@ const ScreenPreparation = {
                                         <th>Date prévue</th>
                                         <th>Entreprise</th>
                                         <th>Statut</th>
+                                        <th style="width: 50px; text-align: center;">SAP</th>
                                         <th>Commentaire</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     ${travauxAvecDates.length === 0 ? `
-                                        <tr><td colspan="7" class="empty-msg">${this.tpaaFiltre ? 'Aucun résultat pour cette recherche' : 'Aucun travail avec "TPAA" dans la description'}</td></tr>
+                                        <tr><td colspan="8" class="empty-msg">${this.tpaaFiltre ? 'Aucun résultat pour cette recherche' : 'Aucun travail avec "TPAA" dans la description'}</td></tr>
                                     ` : travauxAvecDates.map((t) => {
                                         const statut = t.tpaaInfo.statut || 'a_faire';
+                                        const sapChecked = t.tpaaInfo.sap || false;
+                                        const rowClass = statut === 'termine' ? 'row-success' : (statut === 'annule' ? 'row-cancelled' : '');
 
                                         return `
-                                        <tr class="${statut === 'termine' ? 'row-success' : ''}" data-unique-id="${t.uniqueId}">
+                                        <tr class="${rowClass}" data-unique-id="${t.uniqueId}">
                                             <td><strong>${t.ot || '-'}</strong></td>
                                             <td title="${t.description || ''}">${(t.description || '-').substring(0, 40)}${(t.description || '').length > 40 ? '...' : ''}</td>
                                             <td>${t.operation || '-'}</td>
@@ -4020,11 +4049,17 @@ const ScreenPreparation = {
                                             </td>
                                             <td>${t.entreprise || '-'}</td>
                                             <td>
-                                                <select class="mini-select" onchange="ScreenPreparation.updateTPAAStatut('${t.uniqueId}', this.value)">
+                                                <select class="mini-select ${statut === 'annule' ? 'statut-annule' : ''}" onchange="ScreenPreparation.updateTPAAStatut('${t.uniqueId}', this.value)">
                                                     <option value="a_faire" ${statut === 'a_faire' ? 'selected' : ''}>À faire</option>
                                                     <option value="en_cours" ${statut === 'en_cours' ? 'selected' : ''}>En cours</option>
                                                     <option value="termine" ${statut === 'termine' ? 'selected' : ''}>Terminé</option>
+                                                    <option value="annule" ${statut === 'annule' ? 'selected' : ''}>Annulé</option>
                                                 </select>
+                                            </td>
+                                            <td style="text-align: center;">
+                                                <input type="checkbox" class="sap-checkbox" ${sapChecked ? 'checked' : ''}
+                                                       onchange="ScreenPreparation.updateTPAASap('${t.uniqueId}', this.checked)"
+                                                       title="Cocher si mis à jour dans SAP">
                                             </td>
                                             <td class="commentaire-cell">
                                                 <div class="commentaire-wrapper">
@@ -4134,6 +4169,18 @@ const ScreenPreparation = {
         DataManager.data.processus.tpaa[uniqueId].statut = statut;
         DataManager.saveToStorage();
         this.refresh();
+    },
+
+    updateTPAASap(uniqueId, checked) {
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.tpaa) DataManager.data.processus.tpaa = {};
+
+        if (!DataManager.data.processus.tpaa[uniqueId]) {
+            DataManager.data.processus.tpaa[uniqueId] = {};
+        }
+
+        DataManager.data.processus.tpaa[uniqueId].sap = checked;
+        DataManager.saveToStorage();
     },
 
     // ==========================================
@@ -6585,6 +6632,393 @@ Cordialement</textarea>
     editEspaceComment(uniqueId) {
         const data = DataManager.data.processus?.espaceClos?.[uniqueId] || {};
         this.showCommentModal('espaceClos', uniqueId, data.commentaire || '', 'Commentaire espace clos');
+    },
+
+    // ==========================================
+    // PL16.0 - GAZ CO
+    // ==========================================
+
+    renderDetailGazCO() {
+        const gazCoData = DataManager.data.processus?.gazCO || {};
+        const fichierRef = gazCoData.fichierReference || null;
+        const comptesRendus = gazCoData.comptesRendus || [];
+        const dateLimite = gazCoData.dateLimite || '';
+
+        // Calcul jours restants
+        let joursRestants = null;
+        let urgenceClass = '';
+        if (dateLimite) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const limite = new Date(dateLimite);
+            const diff = Math.ceil((limite - today) / (1000 * 60 * 60 * 24));
+            joursRestants = diff;
+            if (diff < 0) urgenceClass = 'urgence-depasse';
+            else if (diff <= 3) urgenceClass = 'urgence-critique';
+            else if (diff <= 7) urgenceClass = 'urgence-attention';
+            else urgenceClass = 'urgence-ok';
+        }
+
+        return `
+            <div class="detail-screen planifier-screen">
+                ${this.renderPlanifierHeader('PL16.0', 'GAZ CO')}
+
+                <div class="detail-body planifier-body">
+                    <div class="detail-card planifier-card info-card">
+                        <p class="info-text">
+                            <strong>GAZ CO</strong> - Gestion des procédures et suivi des opérations liées au monoxyde de carbone.
+                        </p>
+                    </div>
+
+                    <!-- Section Date Limite -->
+                    <div class="detail-card planifier-card">
+                        <h3>📅 Date limite de réalisation</h3>
+                        <div class="gazco-deadline-section">
+                            <div class="form-group-inline">
+                                <label>Date butoir :</label>
+                                <input type="date" class="da-input da-input-date" value="${dateLimite}"
+                                       onchange="ScreenPreparation.updateGazCODateLimite(this.value)">
+                                ${joursRestants !== null ? `
+                                    <span class="deadline-badge ${urgenceClass}">
+                                        ${joursRestants < 0 ? `Dépassé de ${Math.abs(joursRestants)} jour(s)` :
+                                          joursRestants === 0 ? 'Aujourd\'hui !' :
+                                          `${joursRestants} jour(s) restant(s)`}
+                                    </span>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Section Fichier Référence -->
+                    <div class="detail-card planifier-card">
+                        <h3>📄 Mode opératoire (Fichier de référence)</h3>
+                        <div class="gazco-file-section">
+                            ${fichierRef ? `
+                                <div class="fichier-reference-info">
+                                    <div class="fichier-icon">📎</div>
+                                    <div class="fichier-details">
+                                        <span class="fichier-nom">${fichierRef.nom}</span>
+                                        <span class="fichier-date">Ajouté le ${fichierRef.dateAjout || 'N/A'}</span>
+                                    </div>
+                                    <div class="fichier-actions">
+                                        <button class="btn btn-sm btn-outline" onclick="ScreenPreparation.viewGazCOFile()">
+                                            👁 Voir
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" onclick="ScreenPreparation.deleteGazCOFile()">
+                                            🗑 Supprimer
+                                        </button>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div class="upload-zone" id="gazcoUploadZone"
+                                     onclick="document.getElementById('gazcoFileInput').click()"
+                                     ondragover="event.preventDefault(); this.classList.add('drag-over')"
+                                     ondragleave="this.classList.remove('drag-over')"
+                                     ondrop="ScreenPreparation.handleGazCOFileDrop(event)">
+                                    <div class="upload-icon">📁</div>
+                                    <div class="upload-text">Cliquez ou glissez un fichier ici</div>
+                                    <div class="upload-hint">PDF, Word, Excel ou image</div>
+                                </div>
+                                <input type="file" id="gazcoFileInput" style="display: none;"
+                                       accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                       onchange="ScreenPreparation.handleGazCOFileSelect(event)">
+                            `}
+                        </div>
+                    </div>
+
+                    <!-- Section Comptes Rendus -->
+                    <div class="detail-card planifier-card">
+                        <div class="card-header-flex">
+                            <h3>📝 Comptes rendus de réunion (${comptesRendus.length})</h3>
+                            <button class="btn btn-sm btn-primary" onclick="ScreenPreparation.addGazCOCompteRendu()">
+                                + Ajouter un compte rendu
+                            </button>
+                        </div>
+
+                        <div class="comptes-rendus-list">
+                            ${comptesRendus.length === 0 ? `
+                                <div class="empty-comptes-rendus">
+                                    <p>Aucun compte rendu de réunion.</p>
+                                    <p class="hint">Cliquez sur "+ Ajouter un compte rendu" pour en créer un.</p>
+                                </div>
+                            ` : comptesRendus.map((cr, i) => `
+                                <div class="compte-rendu-item" data-index="${i}">
+                                    <div class="cr-header">
+                                        <div class="cr-info">
+                                            <input type="date" class="da-input da-input-date cr-date"
+                                                   value="${cr.date || ''}"
+                                                   onchange="ScreenPreparation.updateGazCOCompteRendu(${i}, 'date', this.value)">
+                                            <input type="text" class="da-input cr-titre"
+                                                   value="${cr.titre || ''}"
+                                                   placeholder="Titre de la réunion"
+                                                   onchange="ScreenPreparation.updateGazCOCompteRendu(${i}, 'titre', this.value)">
+                                        </div>
+                                        <button class="btn-icon danger" onclick="ScreenPreparation.deleteGazCOCompteRendu(${i})" title="Supprimer">✕</button>
+                                    </div>
+                                    <div class="cr-body">
+                                        <textarea class="da-textarea cr-contenu" rows="5"
+                                                  placeholder="Contenu du compte rendu..."
+                                                  onchange="ScreenPreparation.updateGazCOCompteRendu(${i}, 'contenu', this.value)">${cr.contenu || ''}</textarea>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    ${this.renderPlanifierStatut('PL16.0')}
+                </div>
+            </div>
+        `;
+    },
+
+    updateGazCODateLimite(value) {
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.gazCO) DataManager.data.processus.gazCO = {};
+        DataManager.data.processus.gazCO.dateLimite = value;
+        DataManager.saveToStorage();
+        this.refresh();
+    },
+
+    handleGazCOFileDrop(event) {
+        event.preventDefault();
+        event.target.classList.remove('drag-over');
+        const files = event.dataTransfer.files;
+        if (files.length > 0) {
+            this.processGazCOFile(files[0]);
+        }
+    },
+
+    handleGazCOFileSelect(event) {
+        const files = event.target.files;
+        if (files.length > 0) {
+            this.processGazCOFile(files[0]);
+        }
+    },
+
+    processGazCOFile(file) {
+        const allowedTypes = ['application/pdf', 'application/msword',
+                              'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                              'application/vnd.ms-excel',
+                              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                              'image/png', 'image/jpeg', 'image/jpg'];
+
+        if (!allowedTypes.includes(file.type) && !file.name.match(/\.(pdf|doc|docx|xls|xlsx|png|jpg|jpeg)$/i)) {
+            App.showToast('Type de fichier non supporté', 'error');
+            return;
+        }
+
+        // Convertir en base64 pour stockage
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            if (!DataManager.data.processus) DataManager.data.processus = {};
+            if (!DataManager.data.processus.gazCO) DataManager.data.processus.gazCO = {};
+
+            DataManager.data.processus.gazCO.fichierReference = {
+                nom: file.name,
+                type: file.type,
+                data: e.target.result,
+                dateAjout: new Date().toLocaleDateString('fr-CA')
+            };
+
+            DataManager.saveToStorage();
+            this.refresh();
+            App.showToast('Fichier ajouté avec succès', 'success');
+        };
+        reader.readAsDataURL(file);
+    },
+
+    viewGazCOFile() {
+        const fichier = DataManager.data.processus?.gazCO?.fichierReference;
+        if (!fichier || !fichier.data) {
+            App.showToast('Fichier non trouvé', 'error');
+            return;
+        }
+
+        // Ouvrir dans un nouvel onglet
+        const newWindow = window.open();
+        if (fichier.type.startsWith('image/')) {
+            newWindow.document.write(`
+                <html><head><title>${fichier.nom}</title></head>
+                <body style="margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh; background:#333;">
+                    <img src="${fichier.data}" style="max-width:100%; max-height:100vh;">
+                </body></html>
+            `);
+        } else if (fichier.type === 'application/pdf') {
+            newWindow.document.write(`
+                <html><head><title>${fichier.nom}</title></head>
+                <body style="margin:0;">
+                    <iframe src="${fichier.data}" style="width:100%; height:100vh; border:none;"></iframe>
+                </body></html>
+            `);
+        } else {
+            // Pour les autres types, télécharger
+            const link = document.createElement('a');
+            link.href = fichier.data;
+            link.download = fichier.nom;
+            link.click();
+            newWindow.close();
+        }
+    },
+
+    deleteGazCOFile() {
+        if (confirm('Supprimer ce fichier de référence ?')) {
+            DataManager.data.processus.gazCO.fichierReference = null;
+            DataManager.saveToStorage();
+            this.refresh();
+            App.showToast('Fichier supprimé', 'success');
+        }
+    },
+
+    addGazCOCompteRendu() {
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.gazCO) DataManager.data.processus.gazCO = {};
+        if (!DataManager.data.processus.gazCO.comptesRendus) DataManager.data.processus.gazCO.comptesRendus = [];
+
+        DataManager.data.processus.gazCO.comptesRendus.unshift({
+            date: new Date().toISOString().split('T')[0],
+            titre: '',
+            contenu: ''
+        });
+
+        DataManager.saveToStorage();
+        this.refresh();
+        App.showToast('Compte rendu ajouté', 'success');
+    },
+
+    updateGazCOCompteRendu(index, field, value) {
+        if (DataManager.data.processus?.gazCO?.comptesRendus?.[index]) {
+            DataManager.data.processus.gazCO.comptesRendus[index][field] = value;
+            DataManager.saveToStorage();
+        }
+    },
+
+    deleteGazCOCompteRendu(index) {
+        if (confirm('Supprimer ce compte rendu ?')) {
+            DataManager.data.processus.gazCO.comptesRendus.splice(index, 1);
+            DataManager.saveToStorage();
+            this.refresh();
+            App.showToast('Compte rendu supprimé', 'success');
+        }
+    },
+
+    // ==========================================
+    // PR9.0 - Cognibox
+    // ==========================================
+
+    renderDetailCognibox() {
+        const cogniboxData = DataManager.data.processus?.cognibox || {};
+        const taches = cogniboxData.taches || [];
+
+        return `
+            <div class="detail-screen planifier-screen">
+                ${this.renderPlanifierHeader('PR9.0', 'Cognibox')}
+
+                <div class="detail-body planifier-body">
+                    <div class="detail-card planifier-card info-card">
+                        <p class="info-text">
+                            <strong>Cognibox</strong> - Validation des accès et conformité des entrepreneurs.
+                        </p>
+                    </div>
+
+                    <div class="detail-card planifier-card">
+                        <div class="card-header-flex">
+                            <h3>📋 Tâches Cognibox (${taches.length})</h3>
+                            <button class="btn btn-sm btn-primary" onclick="ScreenPreparation.addTacheCognibox()">
+                                + Ajouter
+                            </button>
+                        </div>
+
+                        <div class="da-table-container">
+                            <table class="da-table">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width: 150px;">Entreprise</th>
+                                        <th style="min-width: 150px;">Tâche Cognibox</th>
+                                        <th style="width: 120px;">Date début</th>
+                                        <th style="width: 120px;">Date fin</th>
+                                        <th style="min-width: 200px;">Description</th>
+                                        <th style="width: 60px;">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${taches.length === 0 ? `
+                                        <tr class="empty-row"><td colspan="6" class="empty-msg">Aucune tâche Cognibox. Cliquez sur "+ Ajouter" pour commencer.</td></tr>
+                                    ` : taches.map((t, i) => this.renderLigneTacheCognibox(t, i)).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    ${this.renderPlanifierStatut('PR9.0')}
+                </div>
+            </div>
+        `;
+    },
+
+    renderLigneTacheCognibox(tache, index) {
+        return `
+            <tr data-index="${index}">
+                <td>
+                    <input type="text" class="da-input" value="${tache.entreprise || ''}"
+                           onchange="ScreenPreparation.updateTacheCognibox(${index}, 'entreprise', this.value)"
+                           placeholder="Nom de l'entreprise">
+                </td>
+                <td>
+                    <input type="text" class="da-input" value="${tache.tacheCognibox || ''}"
+                           onchange="ScreenPreparation.updateTacheCognibox(${index}, 'tacheCognibox', this.value)"
+                           placeholder="Tâche Cognibox">
+                </td>
+                <td>
+                    <input type="date" class="da-input da-input-date" value="${tache.dateDebut || ''}"
+                           onchange="ScreenPreparation.updateTacheCognibox(${index}, 'dateDebut', this.value)">
+                </td>
+                <td>
+                    <input type="date" class="da-input da-input-date" value="${tache.dateFin || ''}"
+                           onchange="ScreenPreparation.updateTacheCognibox(${index}, 'dateFin', this.value)">
+                </td>
+                <td class="td-commentaire">
+                    <textarea class="da-input da-textarea" rows="2"
+                              onchange="ScreenPreparation.updateTacheCognibox(${index}, 'description', this.value)"
+                              placeholder="Description...">${tache.description || ''}</textarea>
+                </td>
+                <td class="actions-cell">
+                    <button class="btn-icon danger" onclick="ScreenPreparation.deleteTacheCognibox(${index})" title="Supprimer">✕</button>
+                </td>
+            </tr>
+        `;
+    },
+
+    addTacheCognibox() {
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.cognibox) DataManager.data.processus.cognibox = { taches: [] };
+
+        DataManager.data.processus.cognibox.taches.push({
+            entreprise: '',
+            tacheCognibox: '',
+            dateDebut: '',
+            dateFin: '',
+            description: ''
+        });
+
+        DataManager.saveToStorage();
+        this.refresh();
+        App.showToast('Tâche ajoutée', 'success');
+    },
+
+    updateTacheCognibox(index, field, value) {
+        if (DataManager.data.processus?.cognibox?.taches?.[index]) {
+            DataManager.data.processus.cognibox.taches[index][field] = value;
+            DataManager.saveToStorage();
+        }
+    },
+
+    deleteTacheCognibox(index) {
+        if (confirm('Supprimer cette tâche ?')) {
+            DataManager.data.processus.cognibox.taches.splice(index, 1);
+            DataManager.saveToStorage();
+            this.refresh();
+            App.showToast('Tâche supprimée', 'success');
+        }
     },
 
     // ==========================================

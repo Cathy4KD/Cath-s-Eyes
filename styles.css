@@ -1340,6 +1340,46 @@ tr.clickable:hover {
     min-width: 45px;
 }
 
+/* Progression automatique selon statut */
+.progress-auto,
+.progress-auto-modal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.progress-bar-auto {
+    flex: 1;
+    min-width: 100px;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill-auto,
+.progress-fill-auto-modal {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.progress-auto span,
+.progress-auto-modal span {
+    font-weight: 600;
+    min-width: 45px;
+    color: #1e293b;
+}
+
+.progress-hint {
+    width: 100%;
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-style: italic;
+}
+
 .info-extra {
     padding-top: 15px;
     border-top: 1px solid #e2e8f0;
@@ -5417,4 +5457,249 @@ tr:hover .btn-edit-comment {
 
 .kitting-incomplet:hover {
     background: linear-gradient(90deg, rgba(251, 191, 36, 0.25) 0%, rgba(251, 191, 36, 0.1) 100%) !important;
+}
+
+/* === PL16.0 - GAZ CO === */
+.gazco-deadline-section {
+    padding: 10px 0;
+}
+
+.form-group-inline {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.form-group-inline label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.deadline-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.deadline-badge.urgence-depasse {
+    background: #fee2e2;
+    color: #dc2626;
+    animation: pulse-urgence 1.5s infinite;
+}
+
+.deadline-badge.urgence-critique {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.deadline-badge.urgence-attention {
+    background: #fef9c3;
+    color: #ca8a04;
+}
+
+.deadline-badge.urgence-ok {
+    background: #d1fae5;
+    color: #059669;
+}
+
+@keyframes pulse-urgence {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.gazco-file-section {
+    padding: 10px 0;
+}
+
+.gazco-file-section .upload-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #f8fafc;
+}
+
+.gazco-file-section .upload-zone:hover,
+.gazco-file-section .upload-zone.drag-over {
+    border-color: #8b5cf6;
+    background: rgba(139, 92, 246, 0.05);
+}
+
+.gazco-file-section .upload-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.gazco-file-section .upload-text {
+    font-size: 1rem;
+    color: #4b5563;
+    margin-bottom: 5px;
+}
+
+.gazco-file-section .upload-hint {
+    font-size: 0.85rem;
+    color: #9ca3af;
+}
+
+.fichier-reference-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    background: #f1f5f9;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.fichier-icon {
+    font-size: 2rem;
+}
+
+.fichier-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.fichier-nom {
+    font-weight: 600;
+    color: #1f2937;
+    word-break: break-all;
+}
+
+.fichier-date {
+    font-size: 0.85rem;
+    color: #6b7280;
+}
+
+.fichier-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-danger {
+    background: #ef4444;
+    color: white;
+    border: none;
+}
+
+.btn-danger:hover {
+    background: #dc2626;
+}
+
+/* Comptes rendus */
+.comptes-rendus-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.empty-comptes-rendus {
+    text-align: center;
+    padding: 40px 20px;
+    background: #f8fafc;
+    border-radius: 10px;
+    color: #6b7280;
+}
+
+.empty-comptes-rendus .hint {
+    font-size: 0.85rem;
+    color: #9ca3af;
+    margin-top: 5px;
+}
+
+.compte-rendu-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.cr-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 15px;
+    background: #f1f5f9;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.cr-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.cr-date {
+    width: 140px !important;
+}
+
+.cr-titre {
+    flex: 1;
+    min-width: 200px;
+}
+
+.cr-body {
+    padding: 15px;
+}
+
+.cr-contenu {
+    width: 100%;
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Hint text pour indications */
+.hint-text {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin-top: 6px;
+    font-style: italic;
+}
+
+/* Commentaire principal */
+.commentaire-principal {
+    min-height: 80px;
+    background: #fffbeb;
+    border-color: #fcd34d;
+}
+
+.commentaire-principal:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+/* TPAA - Ligne annulée */
+.row-cancelled {
+    background: rgba(156, 163, 175, 0.15) !important;
+    text-decoration: line-through;
+    color: #9ca3af;
+}
+
+.row-cancelled td {
+    color: #9ca3af;
+}
+
+.row-cancelled .mini-select {
+    text-decoration: none;
+}
+
+.statut-annule {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+/* SAP Checkbox */
+.sap-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #3b82f6;
 }

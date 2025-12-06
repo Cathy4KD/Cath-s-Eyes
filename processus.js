@@ -436,19 +436,26 @@ const ProcessusArret = {
         return false;
     },
 
-    // Mettre à jour le statut d'une étape
-    updateStatut(etapeId, statut, pourcentage = null) {
-        const updates = { statut };
+    // Mettre à jour le statut d'une étape (pourcentage automatique selon statut)
+    updateStatut(etapeId, statut) {
+        // Pourcentages automatiques selon le statut
+        const pourcentageAuto = {
+            'non_demarre': 0,
+            'en_cours': 50,
+            'termine': 100,
+            'bloque': 25
+        };
+
+        const updates = {
+            statut,
+            pourcentage: pourcentageAuto[statut] ?? 0
+        };
 
         if (statut === 'en_cours' && !this.getEtatEtape(etapeId).dateDebut) {
             updates.dateDebut = new Date().toISOString();
         }
         if (statut === 'termine') {
-            updates.pourcentage = 100;
             updates.dateFin = new Date().toISOString();
-        }
-        if (pourcentage !== null) {
-            updates.pourcentage = pourcentage;
         }
 
         return this.updateEtatEtape(etapeId, updates);
