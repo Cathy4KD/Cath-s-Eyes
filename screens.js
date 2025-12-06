@@ -735,6 +735,9 @@ const Screens = {
     },
 
     // Plan visuel (placeholder - à compléter avec le plan de l'usine)
+    // Mode du plan: 'setup' ou 'live'
+    planMode: 'live',
+
     renderPlanVisuel(travaux) {
         // Grouper les travaux par équipement/localisation
         const parEquipement = {};
@@ -754,6 +757,12 @@ const Screens = {
                     <h3 class="card-title">🗺️ Plan - Localisation des travaux</h3>
                     <div class="plan-header-actions">
                         ${hasPlan ? `
+                            <div class="plan-mode-toggle">
+                                <button class="mode-btn ${this.planMode === 'live' ? 'active' : ''}"
+                                        onclick="Screens.setPlanMode('live')">📍 Live</button>
+                                <button class="mode-btn ${this.planMode === 'setup' ? 'active' : ''}"
+                                        onclick="Screens.setPlanMode('setup')">⚙️ Setup</button>
+                            </div>
                             <select class="vue-select" id="vueSelect" onchange="Screens.loadVueDetail(this.value)">
                                 <option value="">Vue complète</option>
                                 ${vuesDetail.map((v, i) => `<option value="${i}">${v.nom}</option>`).join('')}
@@ -776,15 +785,24 @@ const Screens = {
                                      onmousedown="Screens.startPan(event)"
                                      onwheel="Screens.wheelZoom(event)">
                                     <img src="${planConfig.imageData}" alt="Plan de l'usine" draggable="false">
-                                    ${this.renderPlanMarkersWithStats(planConfig.positions || {}, parEquipement)}
+                                    ${this.planMode === 'setup'
+                                        ? this.renderPlanMarkersWithStats(planConfig.positions || {}, parEquipement)
+                                        : this.renderLiveMarkers(planConfig.positions || {}, travaux)}
                                 </div>
                             </div>
-                            <div class="plan-legend">
-                                <div class="legend-item"><span class="legend-dot completed"></span> Terminés</div>
-                                <div class="legend-item"><span class="legend-dot in-progress"></span> En cours</div>
-                                <div class="legend-item"><span class="legend-dot pending"></span> Non démarrés</div>
-                                <span class="zoom-indicator" id="zoomIndicator">100%</span>
-                            </div>
+                            ${this.planMode === 'setup' ? `
+                                <div class="plan-legend">
+                                    <div class="legend-item"><span class="legend-dot completed"></span> Terminés</div>
+                                    <div class="legend-item"><span class="legend-dot in-progress"></span> En cours</div>
+                                    <div class="legend-item"><span class="legend-dot pending"></span> Non démarrés</div>
+                                    <span class="zoom-indicator" id="zoomIndicator">100%</span>
+                                </div>
+                            ` : `
+                                <div class="plan-legend live-legend">
+                                    ${this.renderEntrepriseLegend(travaux)}
+                                    <span class="zoom-indicator" id="zoomIndicator">100%</span>
+                                </div>
+                            `}
                         </div>
                     ` : `
                         <div class="plan-placeholder">
@@ -801,29 +819,185 @@ const Screens = {
 
                 <!-- Liste par équipement -->
                 <div class="card-header" style="margin-top: 20px;">
-                    <h3 class="card-title">Par équipement</h3>
+                    <h3 class="card-title">${this.planMode === 'live' ? 'Travaux en cours par équipement' : 'Tous les équipements'}</h3>
                 </div>
                 <div class="equipements-grid">
-                    ${Object.entries(parEquipement).map(([equip, trav]) => `
-                        <div class="equipement-card">
-                            <div class="equip-header">
-                                <strong>${equip}</strong>
-                                <span class="badge badge-primary">${trav.length}</span>
+                    ${Object.entries(parEquipement).map(([equip, trav]) => {
+                        const travauxAffiches = this.planMode === 'live'
+                            ? trav.filter(t => this.isTravauxActif(t))
+                            : trav;
+                        if (this.planMode === 'live' && travauxAffiches.length === 0) return '';
+                        return `
+                            <div class="equipement-card">
+                                <div class="equip-header">
+                                    <strong>${equip}</strong>
+                                    <span class="badge badge-primary">${travauxAffiches.length}</span>
+                                </div>
+                                <div class="equip-travaux">
+                                    ${travauxAffiches.slice(0, 5).map(t => `
+                                        <div class="travail-item ${t.execution?.statutExec === 'Terminé' ? 'done' : t.execution?.statutExec === 'En cours' ? 'progress' : ''}">
+                                            <span class="ot">${t.ot}</span>
+                                            <span class="entreprise-dot" style="background: ${this.getEntrepriseColor(t.entreprise)}"></span>
+                                            <span class="entreprise-name">${t.entreprise || 'Interne'}</span>
+                                        </div>
+                                    `).join('')}
+                                    ${travauxAffiches.length > 5 ? `<div class="more">+${travauxAffiches.length - 5} autres</div>` : ''}
+                                </div>
                             </div>
-                            <div class="equip-travaux">
-                                ${trav.slice(0, 5).map(t => `
-                                    <div class="travail-item ${t.execution?.statutExec === 'Terminé' ? 'done' : t.execution?.statutExec === 'En cours' ? 'progress' : ''}">
-                                        <span class="ot">${t.ot}</span>
-                                        <span class="statut-dot ${t.execution?.statutExec?.toLowerCase().replace(' ', '-') || 'non-demarre'}"></span>
-                                    </div>
-                                `).join('')}
-                                ${trav.length > 5 ? `<div class="more">+${trav.length - 5} autres</div>` : ''}
-                            </div>
-                        </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                 </div>
             </div>
         `;
+    },
+
+    setPlanMode(mode) {
+        this.planMode = mode;
+        this.setRealisationView('plan');
+    },
+
+    // Couleurs pour les entreprises
+    entrepriseColors: {},
+    colorPalette: [
+        '#e74c3c', '#3498db', '#2ecc71', '#f39c12', '#9b59b6',
+        '#1abc9c', '#e67e22', '#34495e', '#16a085', '#c0392b',
+        '#2980b9', '#27ae60', '#8e44ad', '#d35400', '#2c3e50'
+    ],
+
+    getEntrepriseColor(entreprise) {
+        if (!entreprise) return '#6c757d'; // Gris pour interne
+        if (!this.entrepriseColors[entreprise]) {
+            const usedColors = Object.values(this.entrepriseColors).length;
+            this.entrepriseColors[entreprise] = this.colorPalette[usedColors % this.colorPalette.length];
+        }
+        return this.entrepriseColors[entreprise];
+    },
+
+    // Vérifie si un travail est actif (en cours selon les dates)
+    isTravauxActif(travail) {
+        // Si terminé, ne pas afficher
+        if (travail.execution?.statutExec === 'Terminé') return false;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Vérifier les dates d'exécution
+        const dateDebut = travail.execution?.dateDebut ? new Date(travail.execution.dateDebut) : null;
+        const dateFin = travail.execution?.dateFin ? new Date(travail.execution.dateFin) : null;
+
+        // Si pas de dates, vérifier le statut
+        if (!dateDebut && !dateFin) {
+            return travail.execution?.statutExec === 'En cours';
+        }
+
+        // Vérifier si aujourd'hui est dans la plage
+        if (dateDebut && today < dateDebut) return false;
+        if (dateFin && today > dateFin) return false;
+
+        return true;
+    },
+
+    // Génère les marqueurs pour le mode Live
+    renderLiveMarkers(positions, travaux) {
+        const markers = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Grouper les travaux actifs par équipement et entreprise
+        const travauxActifs = travaux.filter(t => this.isTravauxActif(t));
+
+        // Pour chaque équipement positionné
+        Object.entries(positions).forEach(([equip, pos]) => {
+            const travauxEquip = travauxActifs.filter(t => t.equipement === equip);
+
+            if (travauxEquip.length === 0) return;
+
+            // Grouper par entreprise
+            const parEntreprise = {};
+            travauxEquip.forEach(t => {
+                const ent = t.entreprise || 'Interne';
+                if (!parEntreprise[ent]) parEntreprise[ent] = [];
+                parEntreprise[ent].push(t);
+            });
+
+            // Créer un marqueur par entreprise, légèrement décalé
+            const entreprises = Object.keys(parEntreprise);
+            entreprises.forEach((ent, idx) => {
+                const offset = entreprises.length > 1 ? (idx - (entreprises.length - 1) / 2) * 2.5 : 0;
+                const color = this.getEntrepriseColor(ent === 'Interne' ? null : ent);
+                const count = parEntreprise[ent].length;
+
+                markers.push(`
+                    <div class="plan-marker-live"
+                         style="left: calc(${pos.x}% + ${offset}px); top: ${pos.y}%; background: ${color}"
+                         onclick="Screens.showEquipementEntrepriseDetail('${equip}', '${ent}')"
+                         title="${equip} - ${ent}: ${count} travail(x)">
+                        <span class="marker-count">${count}</span>
+                        <div class="marker-tooltip">
+                            <strong>${equip}</strong>
+                            <div class="ent-name" style="color: ${color}">${ent}</div>
+                            <div class="marker-stats">
+                                <span>${count} travail(x) en cours</span>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            });
+        });
+
+        return markers.join('');
+    },
+
+    renderEntrepriseLegend(travaux) {
+        const entreprises = [...new Set(travaux.filter(t => this.isTravauxActif(t)).map(t => t.entreprise || 'Interne'))];
+
+        if (entreprises.length === 0) {
+            return '<span class="no-travaux">Aucun travail en cours</span>';
+        }
+
+        return entreprises.map(ent => `
+            <div class="legend-item">
+                <span class="legend-dot" style="background: ${this.getEntrepriseColor(ent === 'Interne' ? null : ent)}"></span>
+                ${ent}
+            </div>
+        `).join('');
+    },
+
+    showEquipementEntrepriseDetail(equipement, entreprise) {
+        const travaux = DataManager.getTravaux().filter(t =>
+            t.equipement === equipement &&
+            (t.entreprise || 'Interne') === entreprise &&
+            this.isTravauxActif(t)
+        );
+
+        const color = this.getEntrepriseColor(entreprise === 'Interne' ? null : entreprise);
+
+        const html = `
+            <div class="modal-overlay" id="equipDetailModal" onclick="if(event.target === this) this.remove()">
+                <div class="modal-content">
+                    <div class="modal-header" style="border-left: 4px solid ${color}">
+                        <h3>🔧 ${equipement}</h3>
+                        <button class="modal-close" onclick="document.getElementById('equipDetailModal').remove()">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="entreprise-badge" style="background: ${color}; color: white; padding: 8px 16px; border-radius: 20px; display: inline-block; margin-bottom: 15px;">
+                            ${entreprise}
+                        </div>
+                        <div class="equip-travaux-list">
+                            ${travaux.map(t => `
+                                <div class="travail-row" onclick="TravailDetail.show('${t.ot}')">
+                                    <span class="ot-number">${t.ot}</span>
+                                    <span class="travail-desc">${t.description?.substring(0, 50) || 'Sans description'}...</span>
+                                    <span class="badge badge-warning">${t.execution?.statutExec || 'En cours'}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
     },
 
     renderPlanMarkersWithStats(positions, parEquipement) {

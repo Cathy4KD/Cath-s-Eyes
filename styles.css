@@ -6666,6 +6666,38 @@ tr:hover .btn-edit-comment {
     display: flex;
     gap: 8px;
     align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Toggle Live/Setup */
+.plan-mode-toggle {
+    display: flex;
+    background: var(--bg-light);
+    border-radius: 8px;
+    padding: 3px;
+    gap: 2px;
+}
+
+.mode-btn {
+    padding: 6px 14px;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    color: var(--text-light);
+}
+
+.mode-btn:hover {
+    background: rgba(255,255,255,0.5);
+}
+
+.mode-btn.active {
+    background: white;
+    color: var(--primary);
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .vue-select {
@@ -6828,6 +6860,111 @@ tr:hover .btn-edit-comment {
     justify-content: center;
     gap: 12px;
     font-size: 0.85rem;
+}
+
+/* Marqueurs Live (par entreprise) */
+.plan-marker-live {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    transition: all 0.2s ease;
+    border: 2px solid rgba(255,255,255,0.9);
+    opacity: 0.85;
+}
+
+.plan-marker-live:hover {
+    transform: translate(-50%, -50%) scale(1.4);
+    z-index: 20;
+    opacity: 1;
+}
+
+.plan-marker-live .marker-count {
+    color: white;
+    font-weight: bold;
+    font-size: 10px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+
+.plan-marker-live .marker-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    min-width: 140px;
+    text-align: center;
+    z-index: 1000;
+}
+
+.plan-marker-live:hover .marker-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.plan-marker-live .marker-tooltip strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.plan-marker-live .marker-tooltip .ent-name {
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.plan-marker-live .marker-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 8px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+/* Dot entreprise dans la liste */
+.entreprise-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.entreprise-name {
+    font-size: 0.8rem;
+    color: var(--text-light);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 80px;
+}
+
+/* Légende Live */
+.live-legend {
+    flex-wrap: wrap;
+}
+
+.live-legend .legend-dot {
+    border: none;
+}
+
+.no-travaux {
+    color: var(--text-light);
+    font-style: italic;
 }
 
 /* Légende du plan */
