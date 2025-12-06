@@ -173,19 +173,55 @@ const DataManager = {
     },
 
     // Configurer la synchronisation Firebase
-    // OPTIMISATION: Pas de listeners temps réel pour économiser les requêtes
-    // Les données sont chargées au démarrage et sauvegardées à la demande
     setupFirebaseSync() {
-        // Les listeners temps réel ont été désactivés pour économiser le quota Firebase
-        // Les données sont synchronisées uniquement lors des modifications
-        console.log('Firebase sync configuré (mode économique - pas de listeners temps réel)');
+        // Sync automatique quand l'utilisateur quitte la page
+        window.addEventListener('beforeunload', (e) => {
+            // Annuler le timer de debounce et forcer la sync immédiate
+            if (this._syncTimer) {
+                clearTimeout(this._syncTimer);
+            }
+            // Utiliser sendBeacon pour une sync fiable à la fermeture
+            this.syncBeforeUnload();
+        });
+
+        // Sync quand l'utilisateur change d'onglet ou minimise
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                // L'utilisateur quitte l'onglet - sync immédiate
+                this.syncToFirebase();
+                console.log('Sync Firebase (onglet caché)');
+            }
+        });
+
+        // Sync quand l'utilisateur perd le focus sur la page
+        window.addEventListener('blur', () => {
+            this.syncToFirebase();
+        });
+
+        console.log('Firebase sync configuré (auto-sync à la fermeture)');
     },
 
-    // Auto-save localStorage uniquement (pas de sync Firebase automatique)
-    // OPTIMISATION: Firebase sync seulement lors des modifications utilisateur
+    // Synchronisation avant fermeture (utilise sendBeacon si possible)
+    syncBeforeUnload() {
+        if (typeof FirebaseManager !== 'undefined' && FirebaseManager.db) {
+            // Sauvegarder en local d'abord (synchrone)
+            this.saveToLocalStorage();
+            // Lancer la sync Firebase (peut ne pas finir mais on essaie)
+            FirebaseManager.syncToCloud();
+            console.log('Sync Firebase (fermeture page)');
+        }
+    },
+
+    // Auto-save localStorage + sync périodique Firebase
     setupAutoSave() {
         // Sauvegarde locale toutes les 30 secondes
         setInterval(() => this.saveToLocalStorage(), 30000);
+
+        // Sync Firebase toutes les 2 minutes (backup)
+        setInterval(() => {
+            this.syncToFirebase();
+            console.log('Sync Firebase périodique');
+        }, 120000);
     },
 
     // === GESTION DES TRAVAUX ===
