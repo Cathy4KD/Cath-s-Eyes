@@ -1224,11 +1224,24 @@ const Screens = {
                         ${planConfig.imageData ? `
                             <div class="plan-config-section">
                                 <h4>2. Positionner les équipements</h4>
-                                <p class="config-hint">Cliquez sur le plan pour positionner un équipement, puis sélectionnez-le dans la liste.</p>
+                                <p class="config-hint">Sélectionnez un équipement dans la liste, puis cliquez sur le plan pour le positionner. Utilisez la molette ou les boutons pour zoomer.</p>
                                 <div class="plan-editor">
-                                    <div class="plan-canvas-container" id="planCanvasContainer">
-                                        <img src="${planConfig.imageData}" alt="Plan" id="planEditorImage" onclick="Screens.handlePlanClick(event)">
-                                        ${this.renderEquipementMarkers(planConfig.positions || {})}
+                                    <div class="plan-editor-main">
+                                        <div class="config-zoom-controls">
+                                            <button class="zoom-btn" onclick="Screens.zoomConfigPlan(0.2)" title="Zoom +">+</button>
+                                            <button class="zoom-btn" onclick="Screens.zoomConfigPlan(-0.2)" title="Zoom -">−</button>
+                                            <button class="zoom-btn" onclick="Screens.resetConfigZoom()" title="Réinitialiser">⟲</button>
+                                            <span class="config-zoom-level" id="configZoomLevel">100%</span>
+                                        </div>
+                                        <div class="plan-canvas-wrapper-config" id="planConfigWrapper"
+                                             onwheel="Screens.wheelConfigZoom(event)">
+                                            <div class="plan-canvas-container" id="planCanvasContainer"
+                                                 onmousedown="Screens.startConfigPan(event)">
+                                                <img src="${planConfig.imageData}" alt="Plan" id="planEditorImage"
+                                                     onclick="Screens.handlePlanClick(event)" draggable="false">
+                                                ${this.renderEquipementMarkers(planConfig.positions || {})}
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="equipements-panel">
                                         <h5>Équipements</h5>
@@ -1261,6 +1274,75 @@ const Screens = {
     closePlanConfig() {
         const modal = document.getElementById('planConfigModal');
         if (modal) modal.remove();
+        // Reset zoom config
+        this.configZoom = 1;
+        this.configPanX = 0;
+        this.configPanY = 0;
+    },
+
+    // === ZOOM ET PAN POUR LA CONFIGURATION ===
+    configZoom: 1,
+    configPanX: 0,
+    configPanY: 0,
+    isConfigPanning: false,
+
+    zoomConfigPlan(delta) {
+        this.configZoom = Math.max(0.5, Math.min(4, this.configZoom + delta));
+        this.applyConfigTransform();
+    },
+
+    wheelConfigZoom(event) {
+        event.preventDefault();
+        const delta = event.deltaY > 0 ? -0.1 : 0.1;
+        this.configZoom = Math.max(0.5, Math.min(4, this.configZoom + delta));
+        this.applyConfigTransform();
+    },
+
+    resetConfigZoom() {
+        this.configZoom = 1;
+        this.configPanX = 0;
+        this.configPanY = 0;
+        this.applyConfigTransform();
+    },
+
+    applyConfigTransform() {
+        const container = document.getElementById('planCanvasContainer');
+        if (container) {
+            container.style.transform = `scale(${this.configZoom}) translate(${this.configPanX}px, ${this.configPanY}px)`;
+        }
+        const indicator = document.getElementById('configZoomLevel');
+        if (indicator) {
+            indicator.textContent = Math.round(this.configZoom * 100) + '%';
+        }
+    },
+
+    startConfigPan(event) {
+        // Ne pas panner si on clique sur un marqueur ou l'image pour positionner
+        if (event.target.closest('.plan-marker') || this.selectedEquipement) return;
+
+        this.isConfigPanning = true;
+        const startX = event.clientX - this.configPanX * this.configZoom;
+        const startY = event.clientY - this.configPanY * this.configZoom;
+
+        const container = document.getElementById('planCanvasContainer');
+        if (container) container.style.cursor = 'grabbing';
+
+        const moveHandler = (e) => {
+            if (!this.isConfigPanning) return;
+            this.configPanX = (e.clientX - startX) / this.configZoom;
+            this.configPanY = (e.clientY - startY) / this.configZoom;
+            this.applyConfigTransform();
+        };
+
+        const upHandler = () => {
+            this.isConfigPanning = false;
+            if (container) container.style.cursor = this.selectedEquipement ? 'crosshair' : 'grab';
+            document.removeEventListener('mousemove', moveHandler);
+            document.removeEventListener('mouseup', upHandler);
+        };
+
+        document.addEventListener('mousemove', moveHandler);
+        document.addEventListener('mouseup', upHandler);
     },
 
     handlePlanImageUpload(event) {
