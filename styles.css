@@ -6191,80 +6191,154 @@ tr:hover .btn-edit-comment {
     font-size: 1.2rem;
 }
 
-.demandes-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
+.demandes-sections {
+    display: flex;
+    flex-direction: column;
     gap: 20px;
 }
 
-.demande-card {
-    min-height: 300px;
+.demande-section {
+    overflow: hidden;
 }
 
-.demandes-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 10px 0;
+.demandes-table-wrapper {
+    overflow-x: auto;
 }
 
-.demande-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 12px;
-    background: #f8fafc;
-    border-radius: 8px;
-    gap: 10px;
-    border-left: 3px solid #cbd5e1;
-}
-
-.demande-item.demande {
-    border-left-color: var(--warning);
-}
-
-.demande-item.approuve {
-    border-left-color: var(--info);
-}
-
-.demande-item.enplace {
-    border-left-color: var(--primary);
-}
-
-.demande-item.termine {
-    border-left-color: var(--success);
-    background: rgba(34, 197, 94, 0.05);
-}
-
-.demande-info {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    flex: 1;
-}
-
-.demande-info strong {
+.demandes-table {
+    width: 100%;
+    border-collapse: collapse;
     font-size: 0.9rem;
 }
 
-.demande-ot, .demande-lieu {
-    font-size: 0.8rem;
-    color: var(--text-light);
+.demandes-table th {
+    background: var(--bg-light);
+    padding: 12px 10px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
 }
 
-.demande-actions {
+.demandes-table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.demandes-table .ot-cell {
+    font-family: monospace;
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.demandes-table .comment-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.demande-row {
+    transition: background 0.2s ease;
+}
+
+.demande-row:hover {
+    background: var(--bg-light);
+}
+
+.demande-row.demande {
+    border-left: 3px solid var(--warning);
+}
+
+.demande-row.approuve {
+    border-left: 3px solid var(--info);
+}
+
+.demande-row.enplace {
+    border-left: 3px solid var(--primary);
+}
+
+.demande-row.termine {
+    border-left: 3px solid var(--success);
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.statut-select {
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    background: white;
+}
+
+.statut-select.demande {
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+.statut-select.approuve {
+    border-color: var(--info);
+    color: var(--info);
+}
+
+.statut-select.enplace {
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.statut-select.termine {
+    border-color: var(--success);
+    color: var(--success);
+}
+
+.btn-icon {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
     display: flex;
-    gap: 5px;
-    align-items: flex-start;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
 }
 
-.demande-actions select {
-    font-size: 0.8rem;
-    padding: 4px 8px;
+.btn-icon.btn-danger {
+    background: rgba(220, 53, 69, 0.1);
+    color: var(--danger);
+}
+
+.btn-icon.btn-danger:hover {
+    background: var(--danger);
+    color: white;
+}
+
+/* Formulaire de demande */
+.demande-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.demande-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.demande-form label {
+    font-weight: 500;
+    font-size: 0.9rem;
 }
 
 .empty-state.small {
-    padding: 20px;
+    padding: 30px;
     text-align: center;
     color: var(--text-light);
     font-size: 0.9rem;
@@ -6272,7 +6346,7 @@ tr:hover .btn-edit-comment {
 
 /* Responsive */
 @media (max-width: 1200px) {
-    .demandes-grid {
+    .demande-form .form-row {
         grid-template-columns: 1fr;
     }
 

@@ -1680,75 +1680,146 @@ const Screens = {
                     <input type="date" value="${this.executionDate}" onchange="Screens.setExecutionDate(this.value); Screens.switchExecutionTab('demandes')">
                 </div>
 
-                <div class="demandes-grid">
+                <div class="demandes-sections">
                     <!-- Grues -->
-                    <div class="card demande-card">
+                    <div class="card demande-section">
                         <div class="card-header">
                             <h4>🏗️ Grues</h4>
-                            <button class="btn btn-sm btn-primary" onclick="Screens.addDemande('grues')">+ Ajouter</button>
+                            <button class="btn btn-sm btn-primary" onclick="Screens.showAddDemandeModal('grues')">+ Ajouter</button>
                         </div>
-                        <div class="demandes-list" id="gruesList">
-                            ${this.renderDemandesList(demandesJour.grues, 'grues')}
-                        </div>
+                        ${this.renderDemandesTable(demandesJour.grues, 'grues')}
                     </div>
 
                     <!-- Échafauds -->
-                    <div class="card demande-card">
+                    <div class="card demande-section">
                         <div class="card-header">
                             <h4>🪜 Échafauds</h4>
-                            <button class="btn btn-sm btn-primary" onclick="Screens.addDemande('echafauds')">+ Ajouter</button>
+                            <button class="btn btn-sm btn-primary" onclick="Screens.showAddDemandeModal('echafauds')">+ Ajouter</button>
                         </div>
-                        <div class="demandes-list" id="echafaudsList">
-                            ${this.renderDemandesList(demandesJour.echafauds, 'echafauds')}
-                        </div>
+                        ${this.renderDemandesTable(demandesJour.echafauds, 'echafauds')}
                     </div>
 
                     <!-- Verrouillages -->
-                    <div class="card demande-card">
+                    <div class="card demande-section">
                         <div class="card-header">
                             <h4>🔒 Verrouillages</h4>
-                            <button class="btn btn-sm btn-primary" onclick="Screens.addDemande('verrouillages')">+ Ajouter</button>
+                            <button class="btn btn-sm btn-primary" onclick="Screens.showAddDemandeModal('verrouillages')">+ Ajouter</button>
                         </div>
-                        <div class="demandes-list" id="verrouillagesList">
-                            ${this.renderDemandesList(demandesJour.verrouillages, 'verrouillages')}
-                        </div>
+                        ${this.renderDemandesTable(demandesJour.verrouillages, 'verrouillages')}
                     </div>
                 </div>
             </div>
         `;
     },
 
-    renderDemandesList(demandes, type) {
+    renderDemandesTable(demandes, type) {
         if (!demandes || demandes.length === 0) {
-            return `<div class="empty-state small">Aucune demande</div>`;
+            return `<div class="empty-state small">Aucune demande pour cette date</div>`;
         }
 
-        return demandes.map((d, i) => `
-            <div class="demande-item ${d.statut || ''}">
-                <div class="demande-info">
-                    <strong>${d.description || 'Sans description'}</strong>
-                    <span class="demande-ot">${d.ot ? 'OT: ' + d.ot : ''}</span>
-                    <span class="demande-lieu">${d.lieu || ''}</span>
-                </div>
-                <div class="demande-actions">
-                    <select class="form-control form-control-sm" onchange="Screens.updateDemandeStatut('${type}', ${i}, this.value)">
-                        <option value="demande" ${d.statut === 'demande' ? 'selected' : ''}>Demandé</option>
-                        <option value="approuve" ${d.statut === 'approuve' ? 'selected' : ''}>Approuvé</option>
-                        <option value="enplace" ${d.statut === 'enplace' ? 'selected' : ''}>En place</option>
-                        <option value="termine" ${d.statut === 'termine' ? 'selected' : ''}>Terminé</option>
-                    </select>
-                    <button class="btn btn-sm btn-danger" onclick="Screens.removeDemande('${type}', ${i})">✕</button>
-                </div>
+        return `
+            <div class="demandes-table-wrapper">
+                <table class="demandes-table">
+                    <thead>
+                        <tr>
+                            <th>Demandeur</th>
+                            <th>OT</th>
+                            <th>Date</th>
+                            <th>Localisation</th>
+                            <th>Commentaire</th>
+                            <th>Statut</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${demandes.map((d, i) => `
+                            <tr class="demande-row ${d.statut || 'demande'}">
+                                <td>${d.demandeur || '-'}</td>
+                                <td class="ot-cell">${d.ot || '-'}</td>
+                                <td>${d.dateDemande || '-'}</td>
+                                <td>${d.localisation || '-'}</td>
+                                <td class="comment-cell" title="${d.commentaire || ''}">${d.commentaire || '-'}</td>
+                                <td>
+                                    <select class="statut-select ${d.statut || 'demande'}" onchange="Screens.updateDemandeStatut('${type}', ${i}, this.value)">
+                                        <option value="demande" ${d.statut === 'demande' ? 'selected' : ''}>Demandé</option>
+                                        <option value="approuve" ${d.statut === 'approuve' ? 'selected' : ''}>Approuvé</option>
+                                        <option value="enplace" ${d.statut === 'enplace' ? 'selected' : ''}>En place</option>
+                                        <option value="termine" ${d.statut === 'termine' ? 'selected' : ''}>Terminé</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <button class="btn-icon btn-danger" onclick="Screens.removeDemande('${type}', ${i})" title="Supprimer">✕</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
             </div>
-        `).join('');
+        `;
     },
 
-    addDemande(type) {
-        const description = prompt(`Description de la demande (${type}):`);
-        if (!description) return;
+    showAddDemandeModal(type) {
+        const typeLabels = {grues: 'Grue', echafauds: 'Échafaud', verrouillages: 'Verrouillage'};
 
-        const ot = prompt('OT lié (optionnel):') || '';
-        const lieu = prompt('Lieu / Localisation:') || '';
+        const html = `
+            <div class="modal-overlay" id="addDemandeModal" onclick="if(event.target === this) this.remove()">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>➕ Nouvelle demande - ${typeLabels[type]}</h3>
+                        <button class="modal-close" onclick="document.getElementById('addDemandeModal').remove()">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="demandeForm" class="demande-form">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Demandeur *</label>
+                                    <input type="text" id="demandeDemandeur" class="form-control" required placeholder="Nom du demandeur">
+                                </div>
+                                <div class="form-group">
+                                    <label>OT</label>
+                                    <input type="text" id="demandeOT" class="form-control" placeholder="Numéro OT (optionnel)">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Date de la demande</label>
+                                    <input type="date" id="demandeDate" class="form-control" value="${this.executionDate}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Localisation *</label>
+                                    <input type="text" id="demandeLocalisation" class="form-control" required placeholder="Lieu / Équipement">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Commentaire</label>
+                                <textarea id="demandeCommentaire" class="form-control" rows="3" placeholder="Détails, instructions spéciales..."></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline" onclick="document.getElementById('addDemandeModal').remove()">Annuler</button>
+                        <button class="btn btn-primary" onclick="Screens.submitDemande('${type}')">Ajouter</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        document.getElementById('demandeDemandeur').focus();
+    },
+
+    submitDemande(type) {
+        const demandeur = document.getElementById('demandeDemandeur').value.trim();
+        const localisation = document.getElementById('demandeLocalisation').value.trim();
+
+        if (!demandeur || !localisation) {
+            App.showToast('Veuillez remplir les champs obligatoires', 'error');
+            return;
+        }
+
+        const ot = document.getElementById('demandeOT').value.trim();
+        const dateDemande = document.getElementById('demandeDate').value;
+        const commentaire = document.getElementById('demandeCommentaire').value.trim();
 
         if (!DataManager.data.processus) DataManager.data.processus = {};
         if (!DataManager.data.processus.demandes) DataManager.data.processus.demandes = {};
@@ -1757,14 +1828,17 @@ const Screens = {
         }
 
         DataManager.data.processus.demandes[this.executionDate][type].push({
-            description,
+            demandeur,
             ot,
-            lieu,
+            dateDemande,
+            localisation,
+            commentaire,
             statut: 'demande',
             dateCreation: new Date().toISOString()
         });
 
         DataManager.saveToStorage();
+        document.getElementById('addDemandeModal').remove();
         document.querySelector('.exec-content').innerHTML = this.renderDemandesQuotidiennes();
         App.showToast('Demande ajoutée', 'success');
     },
