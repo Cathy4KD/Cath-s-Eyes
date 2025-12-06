@@ -77,12 +77,21 @@ const ScreenPreparation = {
         const phase = ProcessusArret.structure[phaseId];
         const stats = ProcessusArret.getStatsPhase(phaseId);
         const isExpanded = this.expandedPhases[phaseId];
+        const datesPhase = ProcessusArret.getDatesPhase(phaseId);
 
         const colors = {
             definir: '#3b82f6',
             planifier: '#8b5cf6',
             preparer: '#ec4899'
         };
+
+        // Affichage des dates calculées si la date d'arrêt est définie
+        let timingDisplay = phase.periode;
+        if (datesPhase) {
+            const dateDebut = ProcessusArret.formatDateCourte(datesPhase.debut);
+            const dateFin = ProcessusArret.formatDateCourte(datesPhase.fin);
+            timingDisplay = `${phase.periode} <span class="phase-dates">(${dateDebut} → ${dateFin})</span>`;
+        }
 
         return `
             <div class="prep-phase ${isExpanded ? 'expanded' : ''}" data-phase="${phaseId}">
@@ -91,7 +100,7 @@ const ScreenPreparation = {
                         <span class="phase-icon">${phase.icone}</span>
                         <div class="phase-info">
                             <h3>${phase.nom}</h3>
-                            <span class="phase-timing">${phase.periode}</span>
+                            <span class="phase-timing">${timingDisplay}</span>
                         </div>
                     </div>
                     <div class="phase-right">

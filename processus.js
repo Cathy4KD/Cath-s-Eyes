@@ -629,6 +629,8 @@ const ProcessusArret = {
         const t0Date = new Date(t0);
 
         return {
+            't-26': new Date(t0Date.getTime() - 26 * 7 * 24 * 60 * 60 * 1000),
+            't-18': new Date(t0Date.getTime() - 18 * 7 * 24 * 60 * 60 * 1000),
             't-14': new Date(t0Date.getTime() - 14 * 7 * 24 * 60 * 60 * 1000),
             't-12': new Date(t0Date.getTime() - 12 * 7 * 24 * 60 * 60 * 1000),
             't-11': new Date(t0Date.getTime() - 11 * 7 * 24 * 60 * 60 * 1000),
@@ -642,6 +644,28 @@ const ProcessusArret = {
             't-1': new Date(t0Date.getTime() - 1 * 7 * 24 * 60 * 60 * 1000),
             't-0': t0Date
         };
+    },
+
+    // Obtenir les dates de début et fin d'une phase
+    getDatesPhase(phaseId) {
+        const dates = this.getDatesCibles();
+        if (!dates) return null;
+
+        const phaseDates = {
+            'definir': { debut: dates['t-26'], fin: dates['t-18'], debutLabel: 'T-26', finLabel: 'T-18' },
+            'planifier': { debut: dates['t-18'], fin: dates['t-12'], debutLabel: 'T-18', finLabel: 'T-12' },
+            'preparer': { debut: dates['t-4'], fin: dates['t-0'], debutLabel: 'T-4', finLabel: 'T-0' }
+        };
+
+        return phaseDates[phaseId] || null;
+    },
+
+    // Formater une date en français (ex: "15 jan. 2025")
+    formatDateCourte(date) {
+        if (!date) return '';
+        const mois = ['jan.', 'fév.', 'mars', 'avr.', 'mai', 'juin', 'juil.', 'août', 'sept.', 'oct.', 'nov.', 'déc.'];
+        const d = new Date(date);
+        return `${d.getDate()} ${mois[d.getMonth()]} ${d.getFullYear()}`;
     },
 
     // Obtenir la phase actuelle basée sur les dates
