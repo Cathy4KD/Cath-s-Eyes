@@ -132,38 +132,38 @@ body {
     font-size: 0.95rem;
 }
 
-/* Préparation - Bleu */
+/* Préparation - Orange */
 .nav-preparation {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4);
-}
-
-.nav-preparation:hover {
-    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-    transform: translateX(3px);
-    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5);
-}
-
-.nav-preparation.active {
-    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
-    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.6);
-}
-
-/* Exécution - Orange */
-.nav-execution {
     background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
     box-shadow: 0 3px 10px rgba(249, 115, 22, 0.4);
 }
 
-.nav-execution:hover {
+.nav-preparation:hover {
     background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
     transform: translateX(3px);
     box-shadow: 0 4px 15px rgba(249, 115, 22, 0.5);
 }
 
-.nav-execution.active {
+.nav-preparation.active {
     background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
     box-shadow: 0 4px 20px rgba(249, 115, 22, 0.6);
+}
+
+/* Exécution - Bleu */
+.nav-execution {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4);
+}
+
+.nav-execution:hover {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    transform: translateX(3px);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5);
+}
+
+.nav-execution.active {
+    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.6);
 }
 
 /* Post-Mortem - Vert */
