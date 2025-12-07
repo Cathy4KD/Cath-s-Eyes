@@ -361,10 +361,9 @@ const App = {
     applyFilters() {
         const discipline = document.getElementById('filterDiscipline')?.value || '';
         const statut = document.getElementById('filterStatut')?.value || '';
-        const priorite = document.getElementById('filterPriorite')?.value || '';
         const search = document.getElementById('filterSearch')?.value || '';
 
-        const travaux = DataManager.getTravaux({ discipline, statut, priorite, search });
+        const travaux = DataManager.getTravaux({ discipline, statut, search });
 
         document.getElementById('travauxTable').innerHTML = Screens.renderTravauxRows(travaux);
         document.getElementById('travauxCount').textContent = `${travaux.length} travaux`;

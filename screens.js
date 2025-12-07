@@ -193,15 +193,6 @@ const Screens = {
                     </select>
                 </div>
                 <div class="filter-group">
-                    <label>Priorité:</label>
-                    <select id="filterPriorite" onchange="App.applyFilters()">
-                        <option value="">Toutes</option>
-                        <option value="Haute">Haute</option>
-                        <option value="Normale">Normale</option>
-                        <option value="Basse">Basse</option>
-                    </select>
-                </div>
-                <div class="filter-group">
                     <input type="text" id="filterSearch" placeholder="Rechercher OT, description..."
                            onkeyup="App.applyFilters()" style="width: 200px;">
                 </div>
@@ -218,7 +209,7 @@ const Screens = {
                                 <th>OT</th>
                                 <th>Description</th>
                                 <th>Équipement</th>
-                                <th>Priorité</th>
+                                <th>Date début</th>
                                 <th>Entreprise</th>
                                 <th>Révision</th>
                                 <th>Commentaire</th>
@@ -247,7 +238,7 @@ const Screens = {
                     <td><strong>${t.ot}</strong></td>
                     <td title="${t.description}">${t.description.substring(0, 60)}${t.description.length > 60 ? '...' : ''}</td>
                     <td>${t.equipement || '-'}</td>
-                    <td><span class="badge ${this.getPrioriteBadge(t.priorite)}">${t.priorite}</span></td>
+                    <td>${t.execution?.dateDebut ? new Date(t.execution.dateDebut).toLocaleDateString('fr-CA') : '-'}</td>
                     <td>${t.entreprise || '-'}</td>
                     <td>${revision}</td>
                     <td class="commentaire-cell" title="${(t.commentaire || '').replace(/"/g, '&quot;')}">
