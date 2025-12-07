@@ -103,6 +103,69 @@ body {
     margin: 15px 20px;
 }
 
+/* Titre de section dans le menu */
+.nav-section-title {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.4);
+    padding: 15px 20px 8px;
+    font-weight: 600;
+}
+
+/* Éléments principaux du menu (Préparation, Exécution, Post-Mortem) */
+.nav-item-main {
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.15) 0%, transparent 100%);
+    border-left: 3px solid rgba(37, 99, 235, 0.5);
+    margin: 4px 10px;
+    border-radius: 0 8px 8px 0;
+    padding: 14px 20px;
+    position: relative;
+}
+
+.nav-item-main:hover {
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.3) 0%, rgba(37, 99, 235, 0.1) 100%);
+    border-left-color: var(--primary);
+}
+
+.nav-item-main.active {
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.4) 0%, rgba(37, 99, 235, 0.15) 100%);
+    border-left-color: #60a5fa;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+}
+
+.nav-item-main .nav-icon {
+    font-size: 1.3rem;
+}
+
+.nav-item-main .nav-text {
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+/* Badge numéroté pour les phases */
+.nav-badge {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.15);
+    color: rgba(255,255,255,0.7);
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.nav-item-main.active .nav-badge {
+    background: var(--primary);
+    color: white;
+}
+
 .nav-icon {
     margin-right: 12px;
     font-size: 1.2rem;
@@ -5196,6 +5259,22 @@ tr:hover .btn-edit-comment {
     color: #065f46;
 }
 
+.row-warning {
+    background-color: rgba(245, 158, 11, 0.1) !important;
+}
+
+.row-warning td {
+    color: #92400e;
+}
+
+.entreprise-tag {
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    background: var(--bg-light);
+    border-radius: 4px;
+    display: inline-block;
+}
+
 /* ==========================================
    Styles pour TPAA - Filtres et tri
    ========================================== */
@@ -6670,7 +6749,7 @@ tr:hover .btn-edit-comment {
 }
 
 .plan-marker:hover {
-    transform: translate(-50%, -50%) scale(1.2);
+    transform: translate(-50%, -50%) scale(calc(var(--marker-scale, 1) * 1.2));
 }
 
 .plan-marker .marker-label {
@@ -7016,7 +7095,7 @@ tr:hover .btn-edit-comment {
 }
 
 .plan-marker-view:hover {
-    transform: translate(-50%, -50%) scale(1.5);
+    transform: translate(-50%, -50%) scale(calc(var(--marker-scale, 1) * 1.5));
     z-index: 20;
     opacity: 1;
 }
@@ -7092,7 +7171,7 @@ tr:hover .btn-edit-comment {
 }
 
 .plan-marker-live:hover {
-    transform: translate(-50%, -50%) scale(1.4);
+    transform: translate(-50%, -50%) scale(calc(var(--marker-scale, 1) * 1.4));
     z-index: 20;
     opacity: 1;
 }
@@ -7314,5 +7393,353 @@ tr:hover .btn-edit-comment {
 
     .equip-detail-stats {
         flex-wrap: wrap;
+    }
+}
+
+/* === POST-MORTEM REFONTE === */
+
+/* Navigation Post-Mortem */
+.pm-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 15px;
+    background: var(--bg-light);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.pm-nav-btn {
+    padding: 10px 16px;
+    border: none;
+    background: var(--bg-white);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    color: var(--text-dark);
+    box-shadow: var(--shadow);
+}
+
+.pm-nav-btn:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.pm-nav-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+.pm-badge {
+    background: var(--danger);
+    color: white;
+    font-size: 0.75rem;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-left: 4px;
+}
+
+/* Sections Post-Mortem */
+.pm-content {
+    animation: fadeIn 0.3s ease;
+}
+
+.pm-section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.pm-section:last-child {
+    border-bottom: none;
+}
+
+.pm-section h4 {
+    margin-bottom: 15px;
+    color: var(--text-dark);
+    font-size: 1.1rem;
+}
+
+/* Rating Stars */
+.pm-rating-group {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.pm-rating {
+    display: flex;
+    gap: 5px;
+}
+
+.pm-rating .star {
+    font-size: 1.5rem;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s, transform 0.2s;
+}
+
+.pm-rating .star:hover {
+    transform: scale(1.2);
+}
+
+.pm-rating .star.filled {
+    color: #f59e0b;
+}
+
+/* Checklist */
+.pm-checklist {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.pm-checklist label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 8px 12px;
+    background: var(--bg-light);
+    border-radius: 6px;
+    transition: background 0.2s;
+}
+
+.pm-checklist label:hover {
+    background: #e2e8f0;
+}
+
+.pm-checklist input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--primary);
+}
+
+/* Table Post-Mortem */
+.pm-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.pm-table th,
+.pm-table td {
+    padding: 12px;
+    border: 1px solid var(--border);
+    text-align: left;
+}
+
+.pm-table th {
+    background: var(--bg-light);
+    font-weight: 600;
+}
+
+.pm-table .form-control-sm {
+    padding: 6px 10px;
+    font-size: 0.9rem;
+}
+
+.ecart-cell {
+    text-align: center;
+    font-weight: 600;
+}
+
+.ecart-positif {
+    color: var(--success);
+}
+
+.ecart-negatif {
+    color: var(--danger);
+}
+
+/* Leçons Apprises */
+.pm-lecons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.pm-good {
+    border-left: 4px solid var(--success);
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.pm-bad {
+    border-left: 4px solid var(--danger);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.lecons-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 15px;
+    min-height: 100px;
+}
+
+.lecon-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--bg-white);
+    border-radius: 6px;
+    box-shadow: var(--shadow);
+}
+
+.lecon-text {
+    flex: 1;
+}
+
+.lecon-add {
+    display: flex;
+    gap: 10px;
+}
+
+.lecon-add .form-control {
+    flex: 1;
+}
+
+.empty-msg {
+    color: var(--text-light);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Actions Post-Mortem */
+.pm-actions {
+    display: flex;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid var(--border);
+    justify-content: flex-end;
+}
+
+/* Rapports de Quart */
+.quart-nav {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.quart-nav .form-control {
+    width: auto;
+}
+
+.quart-type-toggle {
+    display: flex;
+    gap: 5px;
+}
+
+.quart-history-panel {
+    background: var(--bg-light);
+    padding: 15px;
+    border-bottom: 1px solid var(--border);
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.quart-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.quart-history-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: var(--bg-white);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: var(--shadow);
+}
+
+.quart-history-item:hover {
+    transform: translateX(5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.quart-history-item.has-incidents {
+    border-left: 3px solid var(--danger);
+}
+
+.quart-history-date {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.quart-badge {
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+}
+
+.quart-badge.soir {
+    background: #fbbf24;
+    color: #1e293b;
+}
+
+.quart-badge.nuit {
+    background: #1e293b;
+    color: white;
+}
+
+.quart-history-info {
+    display: flex;
+    gap: 15px;
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+.incident-warning {
+    color: var(--danger);
+    font-size: 1.1rem;
+}
+
+/* Grilles additionnelles */
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+}
+
+.grid-4 {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+}
+
+@media (max-width: 768px) {
+    .pm-nav {
+        justify-content: center;
+    }
+
+    .pm-lecons-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .grid-3,
+    .grid-4 {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .quart-nav {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .quart-type-toggle {
+        justify-content: center;
     }
 }

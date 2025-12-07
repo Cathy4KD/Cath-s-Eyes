@@ -188,14 +188,24 @@ const ScreenTravailDetail = {
                             </div>
                         </div>
 
-                        <!-- Section Commentaires -->
+                        <!-- Section Commentaire Principal (lié à la liste des travaux) -->
                         <div class="detail-section">
-                            <div class="section-title">Commentaires</div>
+                            <div class="section-title">Commentaire</div>
+                            <textarea class="full-textarea commentaire-principal"
+                                      id="commentairePrincipal"
+                                      placeholder="Commentaire principal visible dans la liste des travaux..."
+                                      onchange="ScreenTravailDetail.updateCommentairePrincipal(this.value)">${travail.commentaire || ''}</textarea>
+                            <p class="hint-text">Ce commentaire apparaît dans la colonne "Commentaire" de la liste des travaux.</p>
+                        </div>
+
+                        <!-- Section Historique Commentaires -->
+                        <div class="detail-section">
+                            <div class="section-title">Historique des commentaires</div>
                             <div class="comments-box">
                                 ${this.renderCommentaires(travail)}
                             </div>
                             <div class="comment-add-inline">
-                                <textarea id="newCommentTravail" placeholder="Ajouter un commentaire..."></textarea>
+                                <textarea id="newCommentTravail" placeholder="Ajouter un commentaire avec horodatage..."></textarea>
                                 <button class="btn btn-primary btn-sm" onclick="ScreenTravailDetail.addComment()">Ajouter</button>
                             </div>
                         </div>
@@ -399,6 +409,15 @@ const ScreenTravailDetail = {
     },
 
     // === ACTIONS ===
+
+    updateCommentairePrincipal(value) {
+        const travail = DataManager.getTravail(this.currentTravailId);
+        if (!travail) return;
+
+        travail.commentaire = value;
+        DataManager.saveToStorage();
+        App.showToast('Commentaire enregistré', 'success');
+    },
 
     updateField(field, value) {
         const travail = DataManager.getTravail(this.currentTravailId);

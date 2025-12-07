@@ -602,68 +602,111 @@ const Screens = {
 
     // Liste du jour
     renderListeJour(travaux) {
-        // Filtrer les travaux du jour (en cours ou prévus pour cette date)
-        const travauxJour = travaux.filter(t => {
-            const dateDebut = t.execution?.dateDebut?.split('T')[0];
-            const dateFin = t.execution?.dateFin?.split('T')[0];
-            const datePrevue = t.datePrevue?.split('T')[0];
-            const statut = t.execution?.statutExec;
+        // Date du jour sélectionné et du lendemain
+        const dateJour = this.executionDate;
+        const dateDemain = new Date(dateJour);
+        dateDemain.setDate(dateDemain.getDate() + 1);
+        const dateDemainStr = dateDemain.toISOString().split('T')[0];
 
-            // Travaux en cours ou prévus pour ce jour
-            return statut === 'En cours' ||
-                   dateDebut === this.executionDate ||
-                   datePrevue === this.executionDate ||
-                   (dateDebut && dateFin && dateDebut <= this.executionDate && dateFin >= this.executionDate);
+        // Filtrer les travaux du jour
+        const travauxJour = travaux.filter(t => this.isTravauxPourDate(t, dateJour));
+
+        // Filtrer les travaux des prochaines 24h (demain)
+        const travauxDemain = travaux.filter(t => {
+            // Exclure ceux déjà dans aujourd'hui
+            if (this.isTravauxPourDate(t, dateJour)) return false;
+            return this.isTravauxPourDate(t, dateDemainStr);
         });
 
         return `
+            <!-- Travaux du jour -->
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">📋 Travaux du ${new Date(this.executionDate).toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'})}</h3>
+                    <h3 class="card-title">📋 Aujourd'hui - ${new Date(dateJour).toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'})}</h3>
                     <span class="badge badge-primary">${travauxJour.length} travaux</span>
                 </div>
-                ${travauxJour.length === 0 ? `
-                    <div class="empty-state">
-                        <p>Aucun travail prévu ou en cours pour cette date</p>
-                    </div>
-                ` : `
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th style="width:80px">OT</th>
-                                    <th>Description</th>
-                                    <th style="width:120px">Équipement</th>
-                                    <th style="width:100px">Statut</th>
-                                    <th style="width:80px">Heures</th>
-                                    <th style="width:100px">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${travauxJour.map(t => `
-                                    <tr class="${t.execution?.statutExec === 'Terminé' ? 'row-success' : t.execution?.statutExec === 'Bloqué' ? 'row-danger' : ''}">
-                                        <td><strong>${t.ot}</strong></td>
-                                        <td>${t.description.substring(0, 50)}${t.description.length > 50 ? '...' : ''}</td>
-                                        <td>${t.equipement || '-'}</td>
-                                        <td>
-                                            <select class="form-control form-control-sm"
-                                                    onchange="Screens.updateExecStatut('${t.id}', this.value)">
-                                                <option value="Non démarré" ${t.execution?.statutExec === 'Non démarré' ? 'selected' : ''}>Non démarré</option>
-                                                <option value="En cours" ${t.execution?.statutExec === 'En cours' ? 'selected' : ''}>En cours</option>
-                                                <option value="Terminé" ${t.execution?.statutExec === 'Terminé' ? 'selected' : ''}>Terminé</option>
-                                                <option value="Bloqué" ${t.execution?.statutExec === 'Bloqué' ? 'selected' : ''}>Bloqué</option>
-                                            </select>
-                                        </td>
-                                        <td>${t.execution?.heuresReelles || 0}h / ${t.estimationHeures || 0}h</td>
-                                        <td>
-                                            <button class="btn btn-sm btn-outline" onclick="App.showDetail('${t.id}')">Détail</button>
-                                        </td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
-                `}
+                ${this.renderTravauxTable(travauxJour, 'Aucun travail prévu ou en cours pour aujourd\'hui')}
+            </div>
+
+            <!-- Travaux des prochaines 24h -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-header">
+                    <h3 class="card-title">⏰ Prochaines 24h - ${dateDemain.toLocaleDateString('fr-FR', {weekday: 'long', day: 'numeric', month: 'long'})}</h3>
+                    <span class="badge badge-secondary">${travauxDemain.length} travaux</span>
+                </div>
+                ${this.renderTravauxTable(travauxDemain, 'Aucun travail prévu pour demain')}
+            </div>
+        `;
+    },
+
+    isTravauxPourDate(travail, date) {
+        const dateDebut = travail.execution?.dateDebut?.split('T')[0];
+        const dateFin = travail.execution?.dateFin?.split('T')[0];
+        const datePrevue = travail.datePrevue?.split('T')[0];
+        const statut = travail.execution?.statutExec;
+
+        // Travaux terminés ne sont pas affichés
+        if (statut === 'Terminé') return false;
+
+        // Travaux en cours pour aujourd'hui seulement
+        if (statut === 'En cours' && date === this.executionDate) return true;
+
+        // Travaux avec date de début ou date prévue correspondante
+        if (dateDebut === date || datePrevue === date) return true;
+
+        // Travaux dans la plage de dates
+        if (dateDebut && dateFin && dateDebut <= date && dateFin >= date) return true;
+
+        return false;
+    },
+
+    renderTravauxTable(travaux, emptyMessage) {
+        if (travaux.length === 0) {
+            return `<div class="empty-state"><p>${emptyMessage}</p></div>`;
+        }
+
+        return `
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th style="width:80px">OT</th>
+                            <th>Description</th>
+                            <th style="width:100px">Entreprise</th>
+                            <th style="width:120px">Équipement</th>
+                            <th style="width:100px">Statut</th>
+                            <th style="width:80px">Heures</th>
+                            <th style="width:80px">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${travaux.map(t => `
+                            <tr class="${t.execution?.statutExec === 'Terminé' ? 'row-success' : t.execution?.statutExec === 'Bloqué' ? 'row-danger' : t.execution?.statutExec === 'En cours' ? 'row-warning' : ''}">
+                                <td><strong>${t.ot}</strong></td>
+                                <td>${(t.description || '').substring(0, 50)}${(t.description || '').length > 50 ? '...' : ''}</td>
+                                <td>
+                                    <span class="entreprise-tag" style="border-left: 3px solid ${this.getEntrepriseColor(t.entreprise)}">
+                                        ${t.entreprise || 'Interne'}
+                                    </span>
+                                </td>
+                                <td>${t.equipement || '-'}</td>
+                                <td>
+                                    <select class="form-control form-control-sm statut-${(t.execution?.statutExec || 'non-demarre').toLowerCase().replace(' ', '-')}"
+                                            onchange="Screens.updateExecStatut('${t.id}', this.value)">
+                                        <option value="Non démarré" ${t.execution?.statutExec === 'Non démarré' ? 'selected' : ''}>Non démarré</option>
+                                        <option value="En cours" ${t.execution?.statutExec === 'En cours' ? 'selected' : ''}>En cours</option>
+                                        <option value="Terminé" ${t.execution?.statutExec === 'Terminé' ? 'selected' : ''}>Terminé</option>
+                                        <option value="Bloqué" ${t.execution?.statutExec === 'Bloqué' ? 'selected' : ''}>Bloqué</option>
+                                    </select>
+                                </td>
+                                <td>${t.execution?.heuresReelles || 0}h / ${t.estimationHeures || 0}h</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline" onclick="TravailDetail.show('${t.ot}')">Détail</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
             </div>
         `;
     },
@@ -906,11 +949,19 @@ const Screens = {
         // Grouper les travaux actifs par équipement et entreprise
         const travauxActifs = travaux.filter(t => this.isTravauxActif(t));
 
+        // Calculer les offsets pour les équipements proches
+        const offsets = this.calculateMarkerOffsets(positions);
+
         // Pour chaque équipement positionné
         Object.entries(positions).forEach(([equip, pos]) => {
             const travauxEquip = travauxActifs.filter(t => t.equipement === equip);
 
             if (travauxEquip.length === 0) return;
+
+            // Appliquer l'offset pour les équipements proches
+            const equipOffset = offsets[equip] || { x: 0, y: 0 };
+            const baseX = parseFloat(pos.x) + equipOffset.x;
+            const baseY = parseFloat(pos.y) + equipOffset.y;
 
             // Grouper par entreprise
             const parEntreprise = {};
@@ -923,13 +974,13 @@ const Screens = {
             // Créer un marqueur par entreprise, légèrement décalé
             const entreprises = Object.keys(parEntreprise);
             entreprises.forEach((ent, idx) => {
-                const offset = entreprises.length > 1 ? (idx - (entreprises.length - 1) / 2) * 2.5 : 0;
+                const entOffset = entreprises.length > 1 ? (idx - (entreprises.length - 1) / 2) * 2.5 : 0;
                 const color = this.getEntrepriseColor(ent === 'Interne' ? null : ent);
                 const count = parEntreprise[ent].length;
 
                 markers.push(`
                     <div class="plan-marker-live"
-                         style="left: calc(${pos.x}% + ${offset}px); top: ${pos.y}%; background: ${color}"
+                         style="left: calc(${baseX}% + ${entOffset}px); top: ${baseY}%; background: ${color}"
                          onclick="Screens.showEquipementEntrepriseDetail('${equip}', '${ent}')"
                          title="${equip} - ${ent}: ${count} travail(x)">
                         <span class="marker-count">${count}</span>
@@ -1001,11 +1052,18 @@ const Screens = {
     },
 
     renderPlanMarkersWithStats(positions, parEquipement) {
+        const offsets = this.calculateMarkerOffsets(positions);
+
         return Object.entries(positions).map(([equip, pos]) => {
             const travaux = parEquipement[equip] || [];
             const total = travaux.length;
             const termines = travaux.filter(t => t.execution?.statutExec === 'Terminé').length;
             const enCours = travaux.filter(t => t.execution?.statutExec === 'En cours').length;
+
+            // Appliquer l'offset pour les équipements proches
+            const offset = offsets[equip] || { x: 0, y: 0 };
+            const finalX = parseFloat(pos.x) + offset.x;
+            const finalY = parseFloat(pos.y) + offset.y;
 
             // Déterminer la couleur du marqueur
             let markerClass = 'pending';
@@ -1016,7 +1074,7 @@ const Screens = {
 
             return `
                 <div class="plan-marker-view ${markerClass}"
-                     style="left: ${pos.x}%; top: ${pos.y}%"
+                     style="left: ${finalX}%; top: ${finalY}%"
                      onclick="Screens.showEquipementDetail('${equip}')"
                      title="${equip}: ${termines}/${total} terminés">
                     <span class="marker-count">${total}</span>
@@ -1108,6 +1166,14 @@ const Screens = {
         const canvas = document.getElementById('planViewCanvas');
         if (canvas) {
             canvas.style.transform = `scale(${this.planZoom}) translate(${this.planPanX}px, ${this.planPanY}px)`;
+
+            // Ajuster la taille des marqueurs pour compenser le zoom
+            const inverseScale = 1 / this.planZoom;
+            canvas.style.setProperty('--marker-scale', inverseScale);
+            const markers = canvas.querySelectorAll('.plan-marker-view, .plan-marker-live');
+            markers.forEach(marker => {
+                marker.style.transform = `translate(-50%, -50%) scale(${inverseScale})`;
+            });
         }
         const indicator = document.getElementById('zoomIndicator');
         if (indicator) {
@@ -1309,6 +1375,14 @@ const Screens = {
         const container = document.getElementById('planCanvasContainer');
         if (container) {
             container.style.transform = `scale(${this.configZoom}) translate(${this.configPanX}px, ${this.configPanY}px)`;
+
+            // Ajuster la taille des marqueurs pour compenser le zoom
+            const inverseScale = 1 / this.configZoom;
+            container.style.setProperty('--marker-scale', inverseScale);
+            const markers = container.querySelectorAll('.plan-marker');
+            markers.forEach(marker => {
+                marker.style.transform = `translate(-50%, -50%) scale(${inverseScale})`;
+            });
         }
         const indicator = document.getElementById('configZoomLevel');
         if (indicator) {
@@ -1430,42 +1504,117 @@ const Screens = {
     },
 
     addMarkerToCanvas(equipement, x, y) {
+        // Rafraîchir tous les marqueurs pour recalculer les offsets
+        this.refreshAllMarkers();
+    },
+
+    refreshAllMarkers() {
         const container = document.getElementById('planCanvasContainer');
         if (!container) return;
 
-        // Supprimer l'ancien marqueur s'il existe
-        const existingMarker = container.querySelector(`[data-equip="${equipement}"]`);
-        if (existingMarker) existingMarker.remove();
+        const positions = DataManager.data.processus?.planConfig?.positions || {};
 
-        // Créer le nouveau marqueur
-        const marker = document.createElement('div');
-        marker.className = 'plan-marker';
-        marker.setAttribute('data-equip', equipement);
-        marker.style.left = x + '%';
-        marker.style.top = y + '%';
-        marker.innerHTML = `<span class="marker-label">${equipement}</span>`;
-        marker.onclick = (e) => {
-            e.stopPropagation();
-            if (confirm(`Supprimer le positionnement de ${equipement}?`)) {
-                delete DataManager.data.processus.planConfig.positions[equipement];
-                marker.remove();
-                document.querySelectorAll('.equip-config-item').forEach(el => {
-                    if (el.textContent.includes(equipement)) {
-                        el.classList.remove('positioned');
-                    }
+        // Supprimer tous les marqueurs existants
+        container.querySelectorAll('.plan-marker').forEach(m => m.remove());
+
+        // Recalculer les offsets
+        const offsets = this.calculateMarkerOffsets(positions);
+
+        // Recréer tous les marqueurs avec leurs nouveaux offsets
+        Object.entries(positions).forEach(([equip, pos]) => {
+            const offset = offsets[equip] || { x: 0, y: 0 };
+            const finalX = parseFloat(pos.x) + offset.x;
+            const finalY = parseFloat(pos.y) + offset.y;
+
+            const marker = document.createElement('div');
+            marker.className = 'plan-marker';
+            marker.setAttribute('data-equip', equip);
+            marker.style.left = finalX + '%';
+            marker.style.top = finalY + '%';
+            marker.innerHTML = `<span class="marker-label">${equip}</span>`;
+            marker.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm(`Supprimer le positionnement de ${equip}?`)) {
+                    delete DataManager.data.processus.planConfig.positions[equip];
+                    this.refreshAllMarkers(); // Recalculer les offsets après suppression
+                    document.querySelectorAll('.equip-config-item').forEach(el => {
+                        if (el.textContent.includes(equip)) {
+                            el.classList.remove('positioned');
+                        }
+                    });
+                }
+            };
+            container.appendChild(marker);
+        });
+
+        // Réappliquer le zoom sur les marqueurs
+        this.applyConfigTransform();
+    },
+
+    // Calcule les offsets pour les marqueurs proches (en éventail)
+    calculateMarkerOffsets(positions) {
+        const entries = Object.entries(positions);
+        const offsets = {};
+        const threshold = 1.5; // Distance en % pour considérer des marqueurs comme "proches"
+        const offsetDistance = 1.2; // Distance de décalage en %
+
+        // Grouper les marqueurs proches
+        const groups = [];
+        const assigned = new Set();
+
+        entries.forEach(([equip, pos]) => {
+            if (assigned.has(equip)) return;
+
+            const group = [[equip, pos]];
+            assigned.add(equip);
+
+            entries.forEach(([otherEquip, otherPos]) => {
+                if (assigned.has(otherEquip)) return;
+                const dx = parseFloat(pos.x) - parseFloat(otherPos.x);
+                const dy = parseFloat(pos.y) - parseFloat(otherPos.y);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < threshold) {
+                    group.push([otherEquip, otherPos]);
+                    assigned.add(otherEquip);
+                }
+            });
+
+            groups.push(group);
+        });
+
+        // Calculer les offsets pour chaque groupe
+        groups.forEach(group => {
+            if (group.length === 1) {
+                offsets[group[0][0]] = { x: 0, y: 0 };
+            } else {
+                group.forEach(([equip], index) => {
+                    const angle = (2 * Math.PI * index) / group.length - Math.PI / 2;
+                    offsets[equip] = {
+                        x: Math.cos(angle) * offsetDistance,
+                        y: Math.sin(angle) * offsetDistance
+                    };
                 });
             }
-        };
-        container.appendChild(marker);
+        });
+
+        return offsets;
     },
 
     renderEquipementMarkers(positions) {
-        return Object.entries(positions).map(([equip, pos]) => `
-            <div class="plan-marker" data-equip="${equip}" style="left: ${pos.x}%; top: ${pos.y}%"
+        const offsets = this.calculateMarkerOffsets(positions);
+
+        return Object.entries(positions).map(([equip, pos]) => {
+            const offset = offsets[equip] || { x: 0, y: 0 };
+            const finalX = parseFloat(pos.x) + offset.x;
+            const finalY = parseFloat(pos.y) + offset.y;
+
+            return `
+            <div class="plan-marker" data-equip="${equip}" style="left: ${finalX}%; top: ${finalY}%"
                  onclick="event.stopPropagation(); Screens.removeEquipPosition('${equip}', this)">
                 <span class="marker-label">${equip}</span>
             </div>
-        `).join('');
+        `}).join('');
     },
 
     removeEquipPosition(equip, markerEl) {
@@ -1930,7 +2079,481 @@ const Screens = {
     },
 
     // === POST-MORTEM ===
+    postMortemView: 'preparation', // 'preparation', 'execution', 'couts', 'lecons', 'actions', 'quarts'
+
+    setPostMortemView(view) {
+        this.postMortemView = view;
+        document.querySelector('.pm-content').innerHTML = this.renderPostMortemContent();
+    },
+
     renderPostMortem() {
+        const actions = DataManager.getPostMortemActions();
+        const ouvertes = actions.filter(a => a.statut === 'Ouvert').length;
+        const fermees = actions.filter(a => a.statut === 'Fermé').length;
+
+        return `
+            <div class="pm-nav">
+                <button class="pm-nav-btn ${this.postMortemView === 'preparation' ? 'active' : ''}"
+                        onclick="Screens.setPostMortemView('preparation')">📋 Préparation</button>
+                <button class="pm-nav-btn ${this.postMortemView === 'execution' ? 'active' : ''}"
+                        onclick="Screens.setPostMortemView('execution')">⚡ Exécution</button>
+                <button class="pm-nav-btn ${this.postMortemView === 'couts' ? 'active' : ''}"
+                        onclick="Screens.setPostMortemView('couts')">💰 Coûts</button>
+                <button class="pm-nav-btn ${this.postMortemView === 'lecons' ? 'active' : ''}"
+                        onclick="Screens.setPostMortemView('lecons')">💡 Leçons Apprises</button>
+                <button class="pm-nav-btn ${this.postMortemView === 'actions' ? 'active' : ''}"
+                        onclick="Screens.setPostMortemView('actions')">
+                    ✅ Actions
+                    ${ouvertes > 0 ? `<span class="pm-badge">${ouvertes}</span>` : ''}
+                </button>
+                <button class="pm-nav-btn ${this.postMortemView === 'quarts' ? 'active' : ''}"
+                        onclick="Screens.setPostMortemView('quarts')">🌙 Rapports de Quart</button>
+            </div>
+
+            <div class="pm-content">
+                ${this.renderPostMortemContent()}
+            </div>
+        `;
+    },
+
+    renderPostMortemContent() {
+        switch(this.postMortemView) {
+            case 'preparation': return this.renderPMPreparation();
+            case 'execution': return this.renderPMExecution();
+            case 'couts': return this.renderPMCouts();
+            case 'lecons': return this.renderPMLecons();
+            case 'actions': return this.renderPMActions();
+            case 'quarts': return this.renderPMQuarts();
+            default: return this.renderPMPreparation();
+        }
+    },
+
+    // Évaluation de la Préparation
+    renderPMPreparation() {
+        const pm = DataManager.data.processus?.postMortem || {};
+        const prep = pm.preparation || {};
+
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">📋 Évaluation de la Préparation</h3>
+                    <button class="btn btn-primary btn-sm" onclick="Screens.savePMSection('preparation')">💾 Sauvegarder</button>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Qualité du Scope de Travail</h4>
+                    <div class="pm-rating-group">
+                        <label>Note globale:</label>
+                        <div class="pm-rating" id="prepScopeRating">
+                            ${this.renderRatingStars('prepScope', prep.scopeRating || 0)}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Commentaires sur le scope:</label>
+                        <textarea class="form-control" id="prepScopeComment" rows="2">${prep.scopeComment || ''}</textarea>
+                    </div>
+                    <div class="pm-checklist">
+                        <label><input type="checkbox" id="prepScopeComplete" ${prep.scopeComplete ? 'checked' : ''}> Scope complet et bien défini</label>
+                        <label><input type="checkbox" id="prepScopeReviewed" ${prep.scopeReviewed ? 'checked' : ''}> Revue du post-mortem précédent effectuée</label>
+                        <label><input type="checkbox" id="prepScopeValidated" ${prep.scopeValidated ? 'checked' : ''}> Évaluation terrain réalisée</label>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Planification</h4>
+                    <div class="pm-rating-group">
+                        <label>Note globale:</label>
+                        <div class="pm-rating" id="prepPlanRating">
+                            ${this.renderRatingStars('prepPlan', prep.planRating || 0)}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Commentaires sur la planification:</label>
+                        <textarea class="form-control" id="prepPlanComment" rows="2">${prep.planComment || ''}</textarea>
+                    </div>
+                    <div class="pm-checklist">
+                        <label><input type="checkbox" id="prepPlanRealistic" ${prep.planRealistic ? 'checked' : ''}> Calendrier réaliste</label>
+                        <label><input type="checkbox" id="prepPlanCritical" ${prep.planCritical ? 'checked' : ''}> Chemins critiques identifiés</label>
+                        <label><input type="checkbox" id="prepPlanContingency" ${prep.planContingency ? 'checked' : ''}> Marges de contingence prévues</label>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Ressources</h4>
+                    <div class="pm-rating-group">
+                        <label>Note globale:</label>
+                        <div class="pm-rating" id="prepResRating">
+                            ${this.renderRatingStars('prepRes', prep.resRating || 0)}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Commentaires sur les ressources:</label>
+                        <textarea class="form-control" id="prepResComment" rows="2">${prep.resComment || ''}</textarea>
+                    </div>
+                    <div class="pm-checklist">
+                        <label><input type="checkbox" id="prepResTeam" ${prep.resTeam ? 'checked' : ''}> Équipes suffisantes et qualifiées</label>
+                        <label><input type="checkbox" id="prepResTools" ${prep.resTools ? 'checked' : ''}> Outillage disponible</label>
+                        <label><input type="checkbox" id="prepResParts" ${prep.resParts ? 'checked' : ''}> Pièces de rechange commandées à temps</label>
+                        <label><input type="checkbox" id="prepResContractors" ${prep.resContractors ? 'checked' : ''}> Entrepreneurs externes confirmés</label>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Communication Pré-Arrêt</h4>
+                    <div class="pm-rating-group">
+                        <label>Note globale:</label>
+                        <div class="pm-rating" id="prepCommRating">
+                            ${this.renderRatingStars('prepComm', prep.commRating || 0)}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Commentaires:</label>
+                        <textarea class="form-control" id="prepCommComment" rows="2">${prep.commComment || ''}</textarea>
+                    </div>
+                    <div class="pm-checklist">
+                        <label><input type="checkbox" id="prepCommMeetings" ${prep.commMeetings ? 'checked' : ''}> Réunions de planification tenues</label>
+                        <label><input type="checkbox" id="prepCommStakeholders" ${prep.commStakeholders ? 'checked' : ''}> Parties prenantes informées</label>
+                        <label><input type="checkbox" id="prepCommDocs" ${prep.commDocs ? 'checked' : ''}> Documentation distribuée</label>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    renderRatingStars(prefix, rating) {
+        return [1, 2, 3, 4, 5].map(i => `
+            <span class="star ${i <= rating ? 'filled' : ''}"
+                  onclick="Screens.setRating('${prefix}', ${i})">★</span>
+        `).join('');
+    },
+
+    setRating(prefix, value) {
+        const container = document.getElementById(`${prefix}Rating`);
+        if (container) {
+            container.innerHTML = this.renderRatingStars(prefix, value);
+            container.dataset.rating = value;
+        }
+    },
+
+    // Évaluation de l'Exécution
+    renderPMExecution() {
+        const pm = DataManager.data.processus?.postMortem || {};
+        const exec = pm.execution || {};
+
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">⚡ Évaluation de l'Exécution</h3>
+                    <button class="btn btn-primary btn-sm" onclick="Screens.savePMSection('execution')">💾 Sauvegarder</button>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Respect du Calendrier</h4>
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label>Durée prévue (jours)</label>
+                            <input type="number" class="form-control" id="execDureePrevue" value="${exec.dureePrevue || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Durée réelle (jours)</label>
+                            <input type="number" class="form-control" id="execDureeReelle" value="${exec.dureeReelle || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Écart</label>
+                            <input type="text" class="form-control" id="execEcart" readonly
+                                   value="${exec.dureePrevue && exec.dureeReelle ? (exec.dureeReelle - exec.dureePrevue) + ' jours' : '-'}">
+                        </div>
+                    </div>
+                    <div class="pm-rating-group">
+                        <label>Note:</label>
+                        <div class="pm-rating" id="execCalRating">
+                            ${this.renderRatingStars('execCal', exec.calRating || 0)}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Commentaires:</label>
+                        <textarea class="form-control" id="execCalComment" rows="2">${exec.calComment || ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Sécurité (EHS)</h4>
+                    <div class="grid-4">
+                        <div class="form-group">
+                            <label>Quasi-incidents</label>
+                            <input type="number" class="form-control" id="execQuasi" value="${exec.quasi || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label>Règles d'or</label>
+                            <input type="number" class="form-control" id="execRegleOr" value="${exec.regleOr || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label>Incidents</label>
+                            <input type="number" class="form-control" id="execIncidents" value="${exec.incidents || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label>Accidents</label>
+                            <input type="number" class="form-control" id="execAccidents" value="${exec.accidents || 0}">
+                        </div>
+                    </div>
+                    <div class="pm-rating-group">
+                        <label>Note sécurité:</label>
+                        <div class="pm-rating" id="execSecuRating">
+                            ${this.renderRatingStars('execSecu', exec.secuRating || 0)}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Commentaires sécurité:</label>
+                        <textarea class="form-control" id="execSecuComment" rows="2">${exec.secuComment || ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Qualité des Travaux</h4>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Travaux complétés</label>
+                            <input type="number" class="form-control" id="execCompletes" value="${exec.completes || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Reprises nécessaires</label>
+                            <input type="number" class="form-control" id="execReprises" value="${exec.reprises || 0}">
+                        </div>
+                    </div>
+                    <div class="pm-rating-group">
+                        <label>Note qualité:</label>
+                        <div class="pm-rating" id="execQualRating">
+                            ${this.renderRatingStars('execQual', exec.qualRating || 0)}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Commentaires:</label>
+                        <textarea class="form-control" id="execQualComment" rows="2">${exec.qualComment || ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Coordination des Équipes</h4>
+                    <div class="pm-rating-group">
+                        <label>Note coordination:</label>
+                        <div class="pm-rating" id="execCoordRating">
+                            ${this.renderRatingStars('execCoord', exec.coordRating || 0)}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Commentaires:</label>
+                        <textarea class="form-control" id="execCoordComment" rows="2">${exec.coordComment || ''}</textarea>
+                    </div>
+                    <div class="pm-checklist">
+                        <label><input type="checkbox" id="execCoordDaily" ${exec.coordDaily ? 'checked' : ''}> Réunions quotidiennes efficaces</label>
+                        <label><input type="checkbox" id="execCoordShift" ${exec.coordShift ? 'checked' : ''}> Passation de quart fluide</label>
+                        <label><input type="checkbox" id="execCoordContractors" ${exec.coordContractors ? 'checked' : ''}> Bonne coordination entrepreneurs</label>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Gestion des Imprévus</h4>
+                    <div class="form-group">
+                        <label>Nombre de travaux imprévus ajoutés</label>
+                        <input type="number" class="form-control" id="execImprevus" value="${exec.imprevus || 0}" style="width: 150px;">
+                    </div>
+                    <div class="pm-rating-group">
+                        <label>Note gestion imprévus:</label>
+                        <div class="pm-rating" id="execImprevuRating">
+                            ${this.renderRatingStars('execImprevu', exec.imprevuRating || 0)}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Commentaires:</label>
+                        <textarea class="form-control" id="execImprevuComment" rows="2">${exec.imprevuComment || ''}</textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    // Analyse des Coûts
+    renderPMCouts() {
+        const pm = DataManager.data.processus?.postMortem || {};
+        const couts = pm.couts || {};
+
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">💰 Analyse des Coûts</h3>
+                    <button class="btn btn-primary btn-sm" onclick="Screens.savePMSection('couts')">💾 Sauvegarder</button>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Budget Global</h4>
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label>Budget prévu ($)</label>
+                            <input type="number" class="form-control" id="coutsBudgetPrevu" value="${couts.budgetPrevu || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Coût réel ($)</label>
+                            <input type="number" class="form-control" id="coutsBudgetReel" value="${couts.budgetReel || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Écart (%)</label>
+                            <input type="text" class="form-control" id="coutsEcart" readonly
+                                   value="${couts.budgetPrevu && couts.budgetReel ?
+                                       (((couts.budgetReel - couts.budgetPrevu) / couts.budgetPrevu) * 100).toFixed(1) + '%' : '-'}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Détail par Catégorie</h4>
+                    <table class="pm-table">
+                        <thead>
+                            <tr>
+                                <th>Catégorie</th>
+                                <th>Budget ($)</th>
+                                <th>Réel ($)</th>
+                                <th>Écart</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Main d'œuvre interne</td>
+                                <td><input type="number" class="form-control form-control-sm" id="coutsMOIPrevu" value="${couts.moiPrevu || ''}"></td>
+                                <td><input type="number" class="form-control form-control-sm" id="coutsMOIReel" value="${couts.moiReel || ''}"></td>
+                                <td class="ecart-cell">${this.calcEcart(couts.moiPrevu, couts.moiReel)}</td>
+                            </tr>
+                            <tr>
+                                <td>Entrepreneurs externes</td>
+                                <td><input type="number" class="form-control form-control-sm" id="coutsExtPrevu" value="${couts.extPrevu || ''}"></td>
+                                <td><input type="number" class="form-control form-control-sm" id="coutsExtReel" value="${couts.extReel || ''}"></td>
+                                <td class="ecart-cell">${this.calcEcart(couts.extPrevu, couts.extReel)}</td>
+                            </tr>
+                            <tr>
+                                <td>Pièces de rechange</td>
+                                <td><input type="number" class="form-control form-control-sm" id="coutsPiecesPrevu" value="${couts.piecesPrevu || ''}"></td>
+                                <td><input type="number" class="form-control form-control-sm" id="coutsPiecesReel" value="${couts.piecesReel || ''}"></td>
+                                <td class="ecart-cell">${this.calcEcart(couts.piecesPrevu, couts.piecesReel)}</td>
+                            </tr>
+                            <tr>
+                                <td>Location équipement</td>
+                                <td><input type="number" class="form-control form-control-sm" id="coutsLocPrevu" value="${couts.locPrevu || ''}"></td>
+                                <td><input type="number" class="form-control form-control-sm" id="coutsLocReel" value="${couts.locReel || ''}"></td>
+                                <td class="ecart-cell">${this.calcEcart(couts.locPrevu, couts.locReel)}</td>
+                            </tr>
+                            <tr>
+                                <td>Autres</td>
+                                <td><input type="number" class="form-control form-control-sm" id="coutsAutresPrevu" value="${couts.autresPrevu || ''}"></td>
+                                <td><input type="number" class="form-control form-control-sm" id="coutsAutresReel" value="${couts.autresReel || ''}"></td>
+                                <td class="ecart-cell">${this.calcEcart(couts.autresPrevu, couts.autresReel)}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="pm-section">
+                    <h4>Analyse des Dépassements</h4>
+                    <div class="form-group">
+                        <label>Principales causes de dépassement:</label>
+                        <textarea class="form-control" id="coutsCauses" rows="3">${couts.causes || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Opportunités d'économies identifiées:</label>
+                        <textarea class="form-control" id="coutsOpportunites" rows="3">${couts.opportunites || ''}</textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    calcEcart(prevu, reel) {
+        if (!prevu || !reel) return '-';
+        const ecart = ((reel - prevu) / prevu) * 100;
+        const classe = ecart > 0 ? 'ecart-negatif' : 'ecart-positif';
+        return `<span class="${classe}">${ecart > 0 ? '+' : ''}${ecart.toFixed(1)}%</span>`;
+    },
+
+    // Leçons Apprises
+    renderPMLecons() {
+        const pm = DataManager.data.processus?.postMortem || {};
+        const lecons = pm.lecons || { bonnes: [], mauvaises: [] };
+
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">💡 Leçons Apprises</h3>
+                    <button class="btn btn-primary btn-sm" onclick="Screens.savePMSection('lecons')">💾 Sauvegarder</button>
+                </div>
+
+                <div class="pm-lecons-grid">
+                    <div class="pm-section pm-good">
+                        <h4>✅ Ce qui a bien fonctionné</h4>
+                        <div class="lecons-list" id="leconsBonnes">
+                            ${lecons.bonnes.map((l, i) => `
+                                <div class="lecon-item">
+                                    <span class="lecon-text">${l}</span>
+                                    <button class="btn btn-sm btn-danger" onclick="Screens.removeLecon('bonnes', ${i})">×</button>
+                                </div>
+                            `).join('') || '<p class="empty-msg">Aucune leçon ajoutée</p>'}
+                        </div>
+                        <div class="lecon-add">
+                            <input type="text" class="form-control" id="newLeconBonne" placeholder="Ajouter une bonne pratique...">
+                            <button class="btn btn-success btn-sm" onclick="Screens.addLecon('bonnes')">+</button>
+                        </div>
+                    </div>
+
+                    <div class="pm-section pm-bad">
+                        <h4>❌ Ce qui n'a pas bien fonctionné</h4>
+                        <div class="lecons-list" id="leconsMauvaises">
+                            ${lecons.mauvaises.map((l, i) => `
+                                <div class="lecon-item">
+                                    <span class="lecon-text">${l}</span>
+                                    <button class="btn btn-sm btn-danger" onclick="Screens.removeLecon('mauvaises', ${i})">×</button>
+                                </div>
+                            `).join('') || '<p class="empty-msg">Aucune leçon ajoutée</p>'}
+                        </div>
+                        <div class="lecon-add">
+                            <input type="text" class="form-control" id="newLeconMauvaise" placeholder="Ajouter un problème rencontré...">
+                            <button class="btn btn-danger btn-sm" onclick="Screens.addLecon('mauvaises')">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pm-section" style="margin-top: 20px;">
+                    <h4>📝 Recommandations pour le prochain arrêt</h4>
+                    <div class="form-group">
+                        <textarea class="form-control" id="leconsRecommandations" rows="4">${lecons.recommandations || ''}</textarea>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    addLecon(type) {
+        const inputId = type === 'bonnes' ? 'newLeconBonne' : 'newLeconMauvaise';
+        const input = document.getElementById(inputId);
+        const text = input.value.trim();
+        if (!text) return;
+
+        if (!DataManager.data.processus.postMortem) {
+            DataManager.data.processus.postMortem = {};
+        }
+        if (!DataManager.data.processus.postMortem.lecons) {
+            DataManager.data.processus.postMortem.lecons = { bonnes: [], mauvaises: [] };
+        }
+        DataManager.data.processus.postMortem.lecons[type].push(text);
+        DataManager.saveToStorage();
+        input.value = '';
+        document.querySelector('.pm-content').innerHTML = this.renderPMLecons();
+    },
+
+    removeLecon(type, index) {
+        DataManager.data.processus.postMortem.lecons[type].splice(index, 1);
+        DataManager.saveToStorage();
+        document.querySelector('.pm-content').innerHTML = this.renderPMLecons();
+    },
+
+    // Actions (garde l'existant)
+    renderPMActions() {
         const actions = DataManager.getPostMortemActions();
         const ouvertes = actions.filter(a => a.statut === 'Ouvert').length;
         const fermees = actions.filter(a => a.statut === 'Fermé').length;
@@ -2051,6 +2674,391 @@ const Screens = {
                 </td>
             </tr>
         `).join('');
+    },
+
+    // Sauvegarde des sections Post-Mortem
+    savePMSection(section) {
+        if (!DataManager.data.processus.postMortem) {
+            DataManager.data.processus.postMortem = {};
+        }
+
+        switch(section) {
+            case 'preparation':
+                DataManager.data.processus.postMortem.preparation = {
+                    scopeRating: parseInt(document.getElementById('prepScopeRating')?.dataset?.rating) || 0,
+                    scopeComment: document.getElementById('prepScopeComment')?.value || '',
+                    scopeComplete: document.getElementById('prepScopeComplete')?.checked || false,
+                    scopeReviewed: document.getElementById('prepScopeReviewed')?.checked || false,
+                    scopeValidated: document.getElementById('prepScopeValidated')?.checked || false,
+                    planRating: parseInt(document.getElementById('prepPlanRating')?.dataset?.rating) || 0,
+                    planComment: document.getElementById('prepPlanComment')?.value || '',
+                    planRealistic: document.getElementById('prepPlanRealistic')?.checked || false,
+                    planCritical: document.getElementById('prepPlanCritical')?.checked || false,
+                    planContingency: document.getElementById('prepPlanContingency')?.checked || false,
+                    resRating: parseInt(document.getElementById('prepResRating')?.dataset?.rating) || 0,
+                    resComment: document.getElementById('prepResComment')?.value || '',
+                    resTeam: document.getElementById('prepResTeam')?.checked || false,
+                    resTools: document.getElementById('prepResTools')?.checked || false,
+                    resParts: document.getElementById('prepResParts')?.checked || false,
+                    resContractors: document.getElementById('prepResContractors')?.checked || false,
+                    commRating: parseInt(document.getElementById('prepCommRating')?.dataset?.rating) || 0,
+                    commComment: document.getElementById('prepCommComment')?.value || '',
+                    commMeetings: document.getElementById('prepCommMeetings')?.checked || false,
+                    commStakeholders: document.getElementById('prepCommStakeholders')?.checked || false,
+                    commDocs: document.getElementById('prepCommDocs')?.checked || false
+                };
+                break;
+
+            case 'execution':
+                DataManager.data.processus.postMortem.execution = {
+                    dureePrevue: parseInt(document.getElementById('execDureePrevue')?.value) || 0,
+                    dureeReelle: parseInt(document.getElementById('execDureeReelle')?.value) || 0,
+                    calRating: parseInt(document.getElementById('execCalRating')?.dataset?.rating) || 0,
+                    calComment: document.getElementById('execCalComment')?.value || '',
+                    quasi: parseInt(document.getElementById('execQuasi')?.value) || 0,
+                    regleOr: parseInt(document.getElementById('execRegleOr')?.value) || 0,
+                    incidents: parseInt(document.getElementById('execIncidents')?.value) || 0,
+                    accidents: parseInt(document.getElementById('execAccidents')?.value) || 0,
+                    secuRating: parseInt(document.getElementById('execSecuRating')?.dataset?.rating) || 0,
+                    secuComment: document.getElementById('execSecuComment')?.value || '',
+                    completes: parseInt(document.getElementById('execCompletes')?.value) || 0,
+                    reprises: parseInt(document.getElementById('execReprises')?.value) || 0,
+                    qualRating: parseInt(document.getElementById('execQualRating')?.dataset?.rating) || 0,
+                    qualComment: document.getElementById('execQualComment')?.value || '',
+                    coordRating: parseInt(document.getElementById('execCoordRating')?.dataset?.rating) || 0,
+                    coordComment: document.getElementById('execCoordComment')?.value || '',
+                    coordDaily: document.getElementById('execCoordDaily')?.checked || false,
+                    coordShift: document.getElementById('execCoordShift')?.checked || false,
+                    coordContractors: document.getElementById('execCoordContractors')?.checked || false,
+                    imprevus: parseInt(document.getElementById('execImprevus')?.value) || 0,
+                    imprevuRating: parseInt(document.getElementById('execImprevuRating')?.dataset?.rating) || 0,
+                    imprevuComment: document.getElementById('execImprevuComment')?.value || ''
+                };
+                break;
+
+            case 'couts':
+                DataManager.data.processus.postMortem.couts = {
+                    budgetPrevu: parseFloat(document.getElementById('coutsBudgetPrevu')?.value) || 0,
+                    budgetReel: parseFloat(document.getElementById('coutsBudgetReel')?.value) || 0,
+                    moiPrevu: parseFloat(document.getElementById('coutsMOIPrevu')?.value) || 0,
+                    moiReel: parseFloat(document.getElementById('coutsMOIReel')?.value) || 0,
+                    extPrevu: parseFloat(document.getElementById('coutsExtPrevu')?.value) || 0,
+                    extReel: parseFloat(document.getElementById('coutsExtReel')?.value) || 0,
+                    piecesPrevu: parseFloat(document.getElementById('coutsPiecesPrevu')?.value) || 0,
+                    piecesReel: parseFloat(document.getElementById('coutsPiecesReel')?.value) || 0,
+                    locPrevu: parseFloat(document.getElementById('coutsLocPrevu')?.value) || 0,
+                    locReel: parseFloat(document.getElementById('coutsLocReel')?.value) || 0,
+                    autresPrevu: parseFloat(document.getElementById('coutsAutresPrevu')?.value) || 0,
+                    autresReel: parseFloat(document.getElementById('coutsAutresReel')?.value) || 0,
+                    causes: document.getElementById('coutsCauses')?.value || '',
+                    opportunites: document.getElementById('coutsOpportunites')?.value || ''
+                };
+                break;
+
+            case 'lecons':
+                if (!DataManager.data.processus.postMortem.lecons) {
+                    DataManager.data.processus.postMortem.lecons = { bonnes: [], mauvaises: [] };
+                }
+                DataManager.data.processus.postMortem.lecons.recommandations =
+                    document.getElementById('leconsRecommandations')?.value || '';
+                break;
+        }
+
+        DataManager.saveToStorage();
+        App.showToast('Section sauvegardée', 'success');
+    },
+
+    // Rapports de Quart
+    quartDate: new Date().toISOString().split('T')[0],
+    quartType: 'soir', // 'soir' ou 'nuit'
+
+    renderPMQuarts() {
+        const pm = DataManager.data.processus?.postMortem || {};
+        const quarts = pm.quarts || {};
+        const quartKey = `${this.quartDate}_${this.quartType}`;
+        const currentQuart = quarts[quartKey] || {};
+
+        // Compter les rapports sauvegardés
+        const rapportsSauvegardes = Object.keys(quarts).length;
+
+        return `
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">🌙 Rapports de Quart</h3>
+                    <div class="quart-nav">
+                        <input type="date" class="form-control" id="quartDatePicker"
+                               value="${this.quartDate}" onchange="Screens.changeQuartDate(this.value)">
+                        <div class="quart-type-toggle">
+                            <button class="btn btn-sm ${this.quartType === 'soir' ? 'btn-primary' : 'btn-outline'}"
+                                    onclick="Screens.setQuartType('soir')">🌆 Soir</button>
+                            <button class="btn btn-sm ${this.quartType === 'nuit' ? 'btn-primary' : 'btn-outline'}"
+                                    onclick="Screens.setQuartType('nuit')">🌙 Nuit</button>
+                        </div>
+                        <button class="btn btn-sm btn-outline" onclick="Screens.toggleQuartHistory()">
+                            📜 Historique (${rapportsSauvegardes})
+                        </button>
+                    </div>
+                </div>
+
+                <div class="quart-history-panel" id="quartHistoryPanel" style="display: none;">
+                    ${this.renderQuartHistory(quarts)}
+                </div>
+
+                <div class="pm-section">
+                    <h4>📋 Résumé du Quart - ${this.quartType === 'soir' ? 'Soir (16h-00h)' : 'Nuit (00h-08h)'}</h4>
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label>Superviseur de quart:</label>
+                            <input type="text" class="form-control" id="quartSuperviseur"
+                                   value="${currentQuart.superviseur || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre de personnes sur site:</label>
+                            <input type="number" class="form-control" id="quartEffectif"
+                                   value="${currentQuart.effectif || ''}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>⚠️ Sécurité</h4>
+                    <div class="grid-4">
+                        <div class="form-group">
+                            <label>Quasi-incidents</label>
+                            <input type="number" class="form-control" id="quartQuasi"
+                                   value="${currentQuart.quasi || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label>Règles d'or</label>
+                            <input type="number" class="form-control" id="quartRegleOr"
+                                   value="${currentQuart.regleOr || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label>Incidents</label>
+                            <input type="number" class="form-control" id="quartIncidents"
+                                   value="${currentQuart.incidents || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label>Premiers soins</label>
+                            <input type="number" class="form-control" id="quartPremiersSoins"
+                                   value="${currentQuart.premiersSoins || 0}">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Détails sécurité:</label>
+                        <textarea class="form-control" id="quartSecuDetails" rows="2">${currentQuart.secuDetails || ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>📊 Avancement des Travaux</h4>
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label>Travaux complétés</label>
+                            <input type="number" class="form-control" id="quartCompletes"
+                                   value="${currentQuart.completes || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label>Travaux en retard</label>
+                            <input type="number" class="form-control" id="quartRetards"
+                                   value="${currentQuart.retards || 0}">
+                        </div>
+                        <div class="form-group">
+                            <label>Travaux imprévus ajoutés</label>
+                            <input type="number" class="form-control" id="quartImprevus"
+                                   value="${currentQuart.imprevus || 0}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>🔴 Points Bloquants</h4>
+                    <div class="form-group">
+                        <textarea class="form-control" id="quartBloquants" rows="3"
+                                  placeholder="Décrire les problèmes rencontrés, équipements en panne, retards...">${currentQuart.bloquants || ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>✅ Travaux Majeurs Réalisés</h4>
+                    <div class="form-group">
+                        <textarea class="form-control" id="quartRealises" rows="3"
+                                  placeholder="Lister les travaux importants terminés durant ce quart...">${currentQuart.realises || ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>📌 À Transmettre au Quart Suivant</h4>
+                    <div class="form-group">
+                        <textarea class="form-control" id="quartTransmission" rows="3"
+                                  placeholder="Informations importantes pour le quart suivant...">${currentQuart.transmission || ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="pm-section">
+                    <h4>📝 Notes Générales</h4>
+                    <div class="form-group">
+                        <textarea class="form-control" id="quartNotes" rows="2">${currentQuart.notes || ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="pm-actions">
+                    <button class="btn btn-primary" onclick="Screens.saveQuartReport()">
+                        💾 Sauvegarder le Rapport
+                    </button>
+                    <button class="btn btn-outline" onclick="Screens.printQuartReport()">
+                        🖨️ Imprimer
+                    </button>
+                </div>
+            </div>
+        `;
+    },
+
+    changeQuartDate(date) {
+        this.quartDate = date;
+        document.querySelector('.pm-content').innerHTML = this.renderPMQuarts();
+    },
+
+    setQuartType(type) {
+        this.quartType = type;
+        document.querySelector('.pm-content').innerHTML = this.renderPMQuarts();
+    },
+
+    toggleQuartHistory() {
+        const panel = document.getElementById('quartHistoryPanel');
+        if (panel) {
+            panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+        }
+    },
+
+    renderQuartHistory(quarts) {
+        const entries = Object.entries(quarts).sort((a, b) => b[0].localeCompare(a[0]));
+
+        if (entries.length === 0) {
+            return '<p class="empty-msg">Aucun rapport de quart sauvegardé</p>';
+        }
+
+        return `
+            <div class="quart-history-list">
+                ${entries.map(([key, quart]) => {
+                    const [date, type] = key.split('_');
+                    const hasIncidents = (quart.quasi || 0) + (quart.regleOr || 0) +
+                                        (quart.incidents || 0) + (quart.premiersSoins || 0) > 0;
+                    return `
+                        <div class="quart-history-item ${hasIncidents ? 'has-incidents' : ''}"
+                             onclick="Screens.loadQuartReport('${date}', '${type}')">
+                            <div class="quart-history-date">
+                                <strong>${new Date(date).toLocaleDateString('fr-FR', {weekday: 'short', day: 'numeric', month: 'short'})}</strong>
+                                <span class="quart-badge ${type}">${type === 'soir' ? '🌆 Soir' : '🌙 Nuit'}</span>
+                            </div>
+                            <div class="quart-history-info">
+                                <span>👷 ${quart.superviseur || 'N/A'}</span>
+                                <span>✅ ${quart.completes || 0} terminés</span>
+                                ${hasIncidents ? '<span class="incident-warning">⚠️</span>' : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    },
+
+    loadQuartReport(date, type) {
+        this.quartDate = date;
+        this.quartType = type;
+        document.querySelector('.pm-content').innerHTML = this.renderPMQuarts();
+    },
+
+    saveQuartReport() {
+        if (!DataManager.data.processus.postMortem) {
+            DataManager.data.processus.postMortem = {};
+        }
+        if (!DataManager.data.processus.postMortem.quarts) {
+            DataManager.data.processus.postMortem.quarts = {};
+        }
+
+        const quartKey = `${this.quartDate}_${this.quartType}`;
+        DataManager.data.processus.postMortem.quarts[quartKey] = {
+            superviseur: document.getElementById('quartSuperviseur')?.value || '',
+            effectif: parseInt(document.getElementById('quartEffectif')?.value) || 0,
+            quasi: parseInt(document.getElementById('quartQuasi')?.value) || 0,
+            regleOr: parseInt(document.getElementById('quartRegleOr')?.value) || 0,
+            incidents: parseInt(document.getElementById('quartIncidents')?.value) || 0,
+            premiersSoins: parseInt(document.getElementById('quartPremiersSoins')?.value) || 0,
+            secuDetails: document.getElementById('quartSecuDetails')?.value || '',
+            completes: parseInt(document.getElementById('quartCompletes')?.value) || 0,
+            retards: parseInt(document.getElementById('quartRetards')?.value) || 0,
+            imprevus: parseInt(document.getElementById('quartImprevus')?.value) || 0,
+            bloquants: document.getElementById('quartBloquants')?.value || '',
+            realises: document.getElementById('quartRealises')?.value || '',
+            transmission: document.getElementById('quartTransmission')?.value || '',
+            notes: document.getElementById('quartNotes')?.value || '',
+            savedAt: new Date().toISOString()
+        };
+
+        DataManager.saveToStorage();
+        App.showToast('Rapport de quart sauvegardé', 'success');
+
+        // Rafraîchir pour mettre à jour l'historique
+        document.querySelector('.pm-content').innerHTML = this.renderPMQuarts();
+    },
+
+    printQuartReport() {
+        const printContent = `
+            <html>
+            <head>
+                <title>Rapport de Quart - ${this.quartDate} ${this.quartType}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 20px; }
+                    h1 { color: #1a237e; }
+                    h2 { color: #333; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+                    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+                    .section { margin-bottom: 20px; }
+                    .label { font-weight: bold; }
+                    .value { margin-left: 10px; }
+                </style>
+            </head>
+            <body>
+                <h1>Rapport de Quart - ${this.quartType === 'soir' ? 'Soir' : 'Nuit'}</h1>
+                <p><strong>Date:</strong> ${new Date(this.quartDate).toLocaleDateString('fr-FR')}</p>
+                <p><strong>Superviseur:</strong> ${document.getElementById('quartSuperviseur')?.value || 'N/A'}</p>
+                <p><strong>Effectif:</strong> ${document.getElementById('quartEffectif')?.value || 'N/A'} personnes</p>
+
+                <h2>Sécurité</h2>
+                <div class="grid">
+                    <p><span class="label">Quasi-incidents:</span><span class="value">${document.getElementById('quartQuasi')?.value || 0}</span></p>
+                    <p><span class="label">Règles d'or:</span><span class="value">${document.getElementById('quartRegleOr')?.value || 0}</span></p>
+                    <p><span class="label">Incidents:</span><span class="value">${document.getElementById('quartIncidents')?.value || 0}</span></p>
+                    <p><span class="label">Premiers soins:</span><span class="value">${document.getElementById('quartPremiersSoins')?.value || 0}</span></p>
+                </div>
+                <p>${document.getElementById('quartSecuDetails')?.value || ''}</p>
+
+                <h2>Avancement</h2>
+                <div class="grid">
+                    <p><span class="label">Complétés:</span><span class="value">${document.getElementById('quartCompletes')?.value || 0}</span></p>
+                    <p><span class="label">En retard:</span><span class="value">${document.getElementById('quartRetards')?.value || 0}</span></p>
+                    <p><span class="label">Imprévus:</span><span class="value">${document.getElementById('quartImprevus')?.value || 0}</span></p>
+                </div>
+
+                <h2>Points Bloquants</h2>
+                <p>${document.getElementById('quartBloquants')?.value || 'Aucun'}</p>
+
+                <h2>Travaux Réalisés</h2>
+                <p>${document.getElementById('quartRealises')?.value || '-'}</p>
+
+                <h2>Transmission au Quart Suivant</h2>
+                <p>${document.getElementById('quartTransmission')?.value || '-'}</p>
+
+                <h2>Notes</h2>
+                <p>${document.getElementById('quartNotes')?.value || '-'}</p>
+            </body>
+            </html>
+        `;
+
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+        printWindow.print();
     },
 
     // === IMPORT ===
