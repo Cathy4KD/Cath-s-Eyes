@@ -1436,12 +1436,12 @@ const Screens = {
             if (!DataManager.data.processus.planConfig) DataManager.data.processus.planConfig = {};
 
             DataManager.data.processus.planConfig.imageData = e.target.result;
-            DataManager.saveToStorage();
+            DataManager.saveToStorage(true); // Sync Firebase immédiate
 
             // Rafraîchir le modal
             this.closePlanConfig();
             this.showConfigPlan();
-            App.showToast('Image importée!', 'success');
+            App.showToast('Image importée et synchronisée!', 'success');
         };
         reader.readAsDataURL(file);
     },
@@ -1451,11 +1451,11 @@ const Screens = {
             if (DataManager.data.processus?.planConfig) {
                 DataManager.data.processus.planConfig.imageData = null;
                 DataManager.data.processus.planConfig.positions = {};
-                DataManager.saveToStorage();
+                DataManager.saveToStorage(true); // Sync Firebase immédiate
             }
             this.closePlanConfig();
             this.showConfigPlan();
-            App.showToast('Image supprimée', 'info');
+            App.showToast('Image supprimée et synchronisée', 'info');
         }
     },
 
@@ -1487,6 +1487,7 @@ const Screens = {
             DataManager.data.processus.planConfig.positions = {};
         }
         DataManager.data.processus.planConfig.positions[this.selectedEquipement] = { x, y };
+        DataManager.saveToStorage(true); // Sync Firebase immédiate
 
         // Ajouter le marqueur visuellement
         this.addMarkerToCanvas(this.selectedEquipement, x, y);
@@ -1536,6 +1537,7 @@ const Screens = {
                 e.stopPropagation();
                 if (confirm(`Supprimer le positionnement de ${equip}?`)) {
                     delete DataManager.data.processus.planConfig.positions[equip];
+                    DataManager.saveToStorage(true); // Sync Firebase immédiate
                     this.refreshAllMarkers(); // Recalculer les offsets après suppression
                     document.querySelectorAll('.equip-config-item').forEach(el => {
                         if (el.textContent.includes(equip)) {
