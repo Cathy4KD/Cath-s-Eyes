@@ -114,20 +114,6 @@ const FirebaseManager = {
         return this.cleanForFirestore(cleanPiece);
     },
 
-    // Nettoyer processus pour Firebase (enlever l'image du plan trop volumineuse)
-    cleanProcessusForFirebase(processus) {
-        if (!processus) return null;
-
-        const cleanProcessus = JSON.parse(JSON.stringify(processus));
-
-        // Exclure l'image du plan (trop volumineuse pour Firebase)
-        if (cleanProcessus.planConfig?.imageData) {
-            delete cleanProcessus.planConfig.imageData;
-        }
-
-        return this.cleanForFirestore(cleanProcessus);
-    },
-
     // Sauvegarder toutes les données vers Firebase
     // Travaux et Pièces stockés chacun dans un document unique
     async syncToCloud() {
@@ -136,11 +122,10 @@ const FirebaseManager = {
         this.syncInProgress = true;
         try {
             // Document metadata (léger) - inclut processus pour la date d'arrêt
-            // Note: l'image du plan est exclue car trop volumineuse (reste en localStorage)
             const metadataRef = this.db.collection('arretAnnuel').doc('metadata');
             await metadataRef.set({
                 metadata: this.cleanForFirestore(DataManager.data.metadata || {}),
-                processus: this.cleanProcessusForFirebase(DataManager.data.processus),
+                processus: this.cleanForFirestore(DataManager.data.processus || null),
                 postmortem: this.cleanForFirestore(DataManager.data.postmortem || []),
                 comments: this.cleanForFirestore(DataManager.data.comments || {}),
                 customFields: this.cleanForFirestore(DataManager.data.customFields || []),

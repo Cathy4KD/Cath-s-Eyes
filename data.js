@@ -105,18 +105,8 @@ const DataManager = {
                     }
 
                     // IMPORTANT: Firebase est TOUJOURS la source de vérité pour processus
-                    // SAUF pour l'image du plan qui reste en localStorage (trop volumineuse pour Firebase)
                     if (cloudData.processus) {
-                        // Préserver l'image du plan locale
-                        const localPlanImage = this.data.processus?.planConfig?.imageData;
                         this.data.processus = cloudData.processus;
-                        // Restaurer l'image locale si elle existe
-                        if (localPlanImage && this.data.processus) {
-                            if (!this.data.processus.planConfig) {
-                                this.data.processus.planConfig = {};
-                            }
-                            this.data.processus.planConfig.imageData = localPlanImage;
-                        }
                     }
 
                     if (cloudData.metadata) {

@@ -1423,27 +1423,89 @@ const Screens = {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Vérifier la taille (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-            App.showToast('Image trop volumineuse (max 5MB)', 'error');
+        // Vérifier la taille (max 10MB pour le fichier original)
+        if (file.size > 10 * 1024 * 1024) {
+            App.showToast('Image trop volumineuse (max 10MB)', 'error');
             return;
         }
 
-        // Convertir en base64
+        const maxSize = 800 * 1024; // 800KB max pour Firebase (base64 augmente ~33%)
+
+        // Charger l'image pour potentiellement la compresser
         const reader = new FileReader();
         reader.onload = (e) => {
-            if (!DataManager.data.processus) DataManager.data.processus = {};
-            if (!DataManager.data.processus.planConfig) DataManager.data.processus.planConfig = {};
+            const img = new Image();
+            img.onload = () => {
+                let imageData = e.target.result;
 
-            DataManager.data.processus.planConfig.imageData = e.target.result;
-            DataManager.saveToStorage(true); // Sync Firebase immédiate
+                // Si l'image est trop grande, la compresser
+                if (file.size > maxSize) {
+                    App.showToast('Compression de l\'image en cours...', 'info');
+                    imageData = this.compressImage(img, maxSize);
+                    App.showToast('Image compressée automatiquement', 'success');
+                }
 
-            // Rafraîchir le modal
-            this.closePlanConfig();
-            this.showConfigPlan();
-            App.showToast('Image importée et synchronisée!', 'success');
+                if (!DataManager.data.processus) DataManager.data.processus = {};
+                if (!DataManager.data.processus.planConfig) DataManager.data.processus.planConfig = {};
+
+                DataManager.data.processus.planConfig.imageData = imageData;
+                DataManager.saveToStorage(true); // Sync Firebase immédiate
+
+                // Rafraîchir le modal
+                this.closePlanConfig();
+                this.showConfigPlan();
+                App.showToast('Image importée et synchronisée!', 'success');
+            };
+            img.src = e.target.result;
         };
         reader.readAsDataURL(file);
+    },
+
+    // Compresser une image pour qu'elle soit sous la taille max
+    compressImage(img, maxSize) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Calculer les nouvelles dimensions (réduire si nécessaire)
+        let width = img.width;
+        let height = img.height;
+        const maxDimension = 2000; // Max 2000px de côté
+
+        if (width > maxDimension || height > maxDimension) {
+            if (width > height) {
+                height = Math.round(height * maxDimension / width);
+                width = maxDimension;
+            } else {
+                width = Math.round(width * maxDimension / height);
+                height = maxDimension;
+            }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Essayer différentes qualités jusqu'à être sous la limite
+        let quality = 0.8;
+        let result = canvas.toDataURL('image/jpeg', quality);
+
+        while (result.length > maxSize * 1.4 && quality > 0.3) { // 1.4 pour compenser base64
+            quality -= 0.1;
+            result = canvas.toDataURL('image/jpeg', quality);
+        }
+
+        // Si toujours trop grand, réduire les dimensions
+        if (result.length > maxSize * 1.4) {
+            width = Math.round(width * 0.7);
+            height = Math.round(height * 0.7);
+            canvas.width = width;
+            canvas.height = height;
+            ctx.drawImage(img, 0, 0, width, height);
+            result = canvas.toDataURL('image/jpeg', 0.7);
+        }
+
+        console.log(`Image compressée: ${Math.round(result.length / 1024)}KB (qualité: ${quality})`);
+        return result;
     },
 
     removePlanImage() {
