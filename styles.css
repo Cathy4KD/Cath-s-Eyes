@@ -115,27 +115,16 @@ body {
 
 /* Éléments principaux du menu (Préparation, Exécution, Post-Mortem) */
 .nav-item-main {
-    background: linear-gradient(90deg, rgba(37, 99, 235, 0.15) 0%, transparent 100%);
-    border-left: 3px solid rgba(37, 99, 235, 0.5);
-    margin: 4px 10px;
-    border-radius: 0 8px 8px 0;
-    padding: 14px 20px;
+    margin: 6px 12px;
+    border-radius: 10px;
+    padding: 14px 18px;
+    border-left: none;
     position: relative;
-}
-
-.nav-item-main:hover {
-    background: linear-gradient(90deg, rgba(37, 99, 235, 0.3) 0%, rgba(37, 99, 235, 0.1) 100%);
-    border-left-color: var(--primary);
-}
-
-.nav-item-main.active {
-    background: linear-gradient(90deg, rgba(37, 99, 235, 0.4) 0%, rgba(37, 99, 235, 0.15) 100%);
-    border-left-color: #60a5fa;
-    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+    transition: all 0.25s ease;
 }
 
 .nav-item-main .nav-icon {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
 }
 
 .nav-item-main .nav-text {
@@ -143,27 +132,55 @@ body {
     font-size: 0.95rem;
 }
 
-/* Badge numéroté pour les phases */
-.nav-badge {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(255,255,255,0.15);
-    color: rgba(255,255,255,0.7);
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    font-weight: bold;
+/* Préparation - Bleu */
+.nav-preparation {
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 3px 10px rgba(59, 130, 246, 0.4);
 }
 
-.nav-item-main.active .nav-badge {
-    background: var(--primary);
-    color: white;
+.nav-preparation:hover {
+    background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    transform: translateX(3px);
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.5);
+}
+
+.nav-preparation.active {
+    background: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.6);
+}
+
+/* Exécution - Orange */
+.nav-execution {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    box-shadow: 0 3px 10px rgba(249, 115, 22, 0.4);
+}
+
+.nav-execution:hover {
+    background: linear-gradient(135deg, #fb923c 0%, #f97316 100%);
+    transform: translateX(3px);
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.5);
+}
+
+.nav-execution.active {
+    background: linear-gradient(135deg, #fb923c 0%, #ea580c 100%);
+    box-shadow: 0 4px 20px rgba(249, 115, 22, 0.6);
+}
+
+/* Post-Mortem - Vert */
+.nav-postmortem {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    box-shadow: 0 3px 10px rgba(34, 197, 94, 0.4);
+}
+
+.nav-postmortem:hover {
+    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
+    transform: translateX(3px);
+    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.5);
+}
+
+.nav-postmortem.active {
+    background: linear-gradient(135deg, #4ade80 0%, #16a34a 100%);
+    box-shadow: 0 4px 20px rgba(34, 197, 94, 0.6);
 }
 
 .nav-icon {
