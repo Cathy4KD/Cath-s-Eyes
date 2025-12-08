@@ -1499,55 +1499,83 @@ const Screens = {
 
     // Traiter une image normale
     async handleImageUpload(file) {
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const img = new Image();
-            img.onload = async () => {
-                let imageData = e.target.result;
-                const maxSize = 2 * 1024 * 1024;
+        const self = this; // Conserver la référence à this
 
-                if (file.size > maxSize) {
-                    App.showToast('Compression de l\'image...', 'info');
-                    imageData = this.compressImage(img, maxSize);
-                }
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = async () => {
+                    try {
+                        let imageData = e.target.result;
+                        const maxSize = 2 * 1024 * 1024;
 
-                await this.savePlanImage(imageData);
+                        if (file.size > maxSize) {
+                            App.showToast('Compression de l\'image...', 'info');
+                            imageData = self.compressImage(img, maxSize);
+                        }
+
+                        await self.savePlanImage(imageData);
+                        resolve();
+                    } catch (error) {
+                        console.error('Erreur traitement image:', error);
+                        App.showToast('Erreur lors du traitement de l\'image', 'error');
+                        reject(error);
+                    }
+                };
+                img.onerror = () => {
+                    App.showToast('Erreur: fichier image invalide', 'error');
+                    reject(new Error('Image invalide'));
+                };
+                img.src = e.target.result;
             };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
+            reader.onerror = () => {
+                App.showToast('Erreur lors de la lecture du fichier', 'error');
+                reject(new Error('Erreur lecture fichier'));
+            };
+            reader.readAsDataURL(file);
+        });
     },
 
     // Sauvegarder l'image du plan (commune aux deux types)
     async savePlanImage(imageData) {
-        // Initialiser les données processus si nécessaire
-        if (!DataManager.data.processus) DataManager.data.processus = {};
-        if (!DataManager.data.processus.planConfig) DataManager.data.processus.planConfig = {};
+        try {
+            // Initialiser les données processus si nécessaire
+            if (!DataManager.data.processus) DataManager.data.processus = {};
+            if (!DataManager.data.processus.planConfig) DataManager.data.processus.planConfig = {};
 
-        // Upload vers Firebase Storage
-        if (typeof FirebaseManager !== 'undefined' && FirebaseManager.storage) {
-            const downloadURL = await FirebaseManager.uploadPlanImage(imageData);
-            if (downloadURL) {
-                DataManager.data.processus.planConfig.imageURL = downloadURL;
-                DataManager.data.processus.planConfig.imageData = null;
-                DataManager.saveToStorage(true);
-
-                this.closePlanConfig();
-                this.showConfigPlan();
-                App.showToast('Plan uploadé et synchronisé!', 'success');
-            } else {
-                DataManager.data.processus.planConfig.imageData = imageData;
-                DataManager.saveToStorage();
-                App.showToast('Plan sauvegardé localement (erreur cloud)', 'warning');
-                this.closePlanConfig();
-                this.showConfigPlan();
+            // Essayer d'uploader vers Firebase Storage
+            let uploadSuccess = false;
+            if (typeof FirebaseManager !== 'undefined' && FirebaseManager.storage) {
+                try {
+                    const downloadURL = await FirebaseManager.uploadPlanImage(imageData);
+                    if (downloadURL) {
+                        DataManager.data.processus.planConfig.imageURL = downloadURL;
+                        DataManager.data.processus.planConfig.imageData = null;
+                        uploadSuccess = true;
+                        App.showToast('Plan uploadé vers le cloud!', 'success');
+                    }
+                } catch (firebaseError) {
+                    console.error('Erreur Firebase Storage:', firebaseError);
+                }
             }
-        } else {
-            DataManager.data.processus.planConfig.imageData = imageData;
-            DataManager.saveToStorage();
-            App.showToast('Plan sauvegardé localement', 'info');
+
+            // Si Firebase échoue, sauvegarder en local
+            if (!uploadSuccess) {
+                DataManager.data.processus.planConfig.imageData = imageData;
+                DataManager.data.processus.planConfig.imageURL = null;
+                App.showToast('Plan sauvegardé localement', 'info');
+            }
+
+            DataManager.saveToStorage(uploadSuccess);
+
+            // Rafraîchir l'affichage
             this.closePlanConfig();
             this.showConfigPlan();
+
+        } catch (error) {
+            console.error('Erreur sauvegarde plan:', error);
+            App.showToast('Erreur lors de la sauvegarde du plan', 'error');
         }
     },
 
