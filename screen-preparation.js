@@ -3948,6 +3948,7 @@ const ScreenPreparation = {
         const stats = {
             total: allTPAA.length,
             aFaire: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'a_faire').length,
+            planifie: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'planifie').length,
             enCours: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'en_cours').length,
             termine: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'termine').length,
             annule: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'annule').length
@@ -3976,6 +3977,10 @@ const ScreenPreparation = {
                             <div class="resume-stat">
                                 <span class="stat-value">${stats.aFaire}</span>
                                 <span class="stat-label">À faire</span>
+                            </div>
+                            <div class="resume-stat">
+                                <span class="stat-value">${stats.planifie}</span>
+                                <span class="stat-label">Planifiés</span>
                             </div>
                             <div class="resume-stat">
                                 <span class="stat-value">${stats.enCours}</span>
@@ -4060,6 +4065,7 @@ const ScreenPreparation = {
                                             <td>
                                                 <select class="mini-select ${statut === 'annule' ? 'statut-annule' : ''}" onchange="ScreenPreparation.updateTPAAStatut('${t.uniqueId}', this.value)">
                                                     <option value="a_faire" ${statut === 'a_faire' ? 'selected' : ''}>À faire</option>
+                                                    <option value="planifie" ${statut === 'planifie' ? 'selected' : ''}>Planifié</option>
                                                     <option value="en_cours" ${statut === 'en_cours' ? 'selected' : ''}>En cours</option>
                                                     <option value="termine" ${statut === 'termine' ? 'selected' : ''}>Terminé</option>
                                                     <option value="annule" ${statut === 'annule' ? 'selected' : ''}>Annulé</option>
@@ -4071,10 +4077,11 @@ const ScreenPreparation = {
                                                        title="Cocher si mis à jour dans SAP">
                                             </td>
                                             <td class="commentaire-cell">
-                                                <div class="commentaire-wrapper">
-                                                    <span class="commentaire-text">${(t.commentaire || '').substring(0, 20)}${(t.commentaire || '').length > 20 ? '...' : ''}</span>
-                                                    <button class="btn-icon btn-edit-comment" onclick="ScreenPreparation.editCommentaireTravail(${t.travailIndex})" title="Modifier">✏️</button>
-                                                </div>
+                                                <input type="text" class="commentaire-input"
+                                                       value="${(t.tpaaInfo.commentaire || t.commentaire || '').replace(/"/g, '&quot;')}"
+                                                       placeholder="Commentaire..."
+                                                       onchange="ScreenPreparation.updateTPAACommentaire('${t.uniqueId}', this.value)"
+                                                       title="${t.tpaaInfo.commentaire || t.commentaire || ''}">
                                             </td>
                                         </tr>
                                     `}).join('')}
@@ -4189,6 +4196,18 @@ const ScreenPreparation = {
         }
 
         DataManager.data.processus.tpaa[uniqueId].sap = checked;
+        DataManager.saveToStorage();
+    },
+
+    updateTPAACommentaire(uniqueId, commentaire) {
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.tpaa) DataManager.data.processus.tpaa = {};
+
+        if (!DataManager.data.processus.tpaa[uniqueId]) {
+            DataManager.data.processus.tpaa[uniqueId] = {};
+        }
+
+        DataManager.data.processus.tpaa[uniqueId].commentaire = commentaire;
         DataManager.saveToStorage();
     },
 

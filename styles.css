@@ -5171,7 +5171,27 @@ tr.reunion-proche:hover {
 
 .commentaire-cell {
     min-width: 120px;
-    max-width: 180px;
+    max-width: 200px;
+}
+
+.commentaire-input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    background: white;
+    transition: border-color 0.2s;
+}
+
+.commentaire-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.commentaire-input::placeholder {
+    color: #94a3b8;
 }
 
 .commentaire-wrapper {
