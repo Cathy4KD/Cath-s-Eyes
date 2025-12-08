@@ -1473,20 +1473,29 @@ const Screens = {
                 viewport: viewport
             }).promise;
 
-            // Convertir en image JPEG
-            let imageData = canvas.toDataURL('image/jpeg', 0.9);
+            // Convertir en image JPEG - compresser pour Firestore (max ~500KB)
+            App.showToast('Compression de l\'image...', 'info');
+            const maxImageSize = 500 * 1024; // 500KB max pour Firestore
 
-            // Compresser si nécessaire
-            const maxImageSize = 2 * 1024 * 1024;
-            if (imageData.length > maxImageSize * 1.4) {
-                App.showToast('Compression de l\'image...', 'info');
-                // Réduire la qualité progressivement
-                let quality = 0.8;
-                while (imageData.length > maxImageSize * 1.4 && quality > 0.3) {
-                    quality -= 0.1;
-                    imageData = canvas.toDataURL('image/jpeg', quality);
-                }
+            let quality = 0.8;
+            let imageData = canvas.toDataURL('image/jpeg', quality);
+
+            // Réduire la qualité si nécessaire
+            while (imageData.length > maxImageSize * 1.4 && quality > 0.2) {
+                quality -= 0.1;
+                imageData = canvas.toDataURL('image/jpeg', quality);
             }
+
+            // Si toujours trop grand, réduire les dimensions
+            if (imageData.length > maxImageSize * 1.4) {
+                const scale = 0.7;
+                canvas.width = Math.round(viewport.width * scale);
+                canvas.height = Math.round(viewport.height * scale);
+                context.drawImage(canvas, 0, 0, canvas.width, canvas.height);
+                imageData = canvas.toDataURL('image/jpeg', 0.6);
+            }
+
+            console.log('Taille image PDF:', Math.round(imageData.length / 1024), 'KB');
 
             // Sauvegarder l'image
             await this.savePlanImage(imageData);
@@ -1507,13 +1516,12 @@ const Screens = {
                 const img = new Image();
                 img.onload = async () => {
                     try {
-                        let imageData = e.target.result;
-                        const maxSize = 2 * 1024 * 1024;
+                        // Toujours compresser pour Firestore (max 500KB)
+                        App.showToast('Compression de l\'image...', 'info');
+                        const maxSize = 500 * 1024; // 500KB pour Firestore
+                        const imageData = self.compressImage(img, maxSize);
 
-                        if (file.size > maxSize) {
-                            App.showToast('Compression de l\'image...', 'info');
-                            imageData = self.compressImage(img, maxSize);
-                        }
+                        console.log('Taille image:', Math.round(imageData.length / 1024), 'KB');
 
                         await self.savePlanImage(imageData);
                         resolve();
@@ -1544,30 +1552,15 @@ const Screens = {
             if (!DataManager.data.processus) DataManager.data.processus = {};
             if (!DataManager.data.processus.planConfig) DataManager.data.processus.planConfig = {};
 
-            // Essayer d'uploader vers Firebase Storage
-            let uploadSuccess = false;
-            if (typeof FirebaseManager !== 'undefined' && FirebaseManager.storage) {
-                try {
-                    const downloadURL = await FirebaseManager.uploadPlanImage(imageData);
-                    if (downloadURL) {
-                        DataManager.data.processus.planConfig.imageURL = downloadURL;
-                        DataManager.data.processus.planConfig.imageData = null;
-                        uploadSuccess = true;
-                        App.showToast('Plan uploadé vers le cloud!', 'success');
-                    }
-                } catch (firebaseError) {
-                    console.error('Erreur Firebase Storage:', firebaseError);
-                }
-            }
+            // Sauvegarder l'image en base64 directement
+            // (Firebase Storage a des problèmes CORS, on stocke en local + Firestore)
+            DataManager.data.processus.planConfig.imageData = imageData;
+            DataManager.data.processus.planConfig.imageURL = null;
 
-            // Si Firebase échoue, sauvegarder en local
-            if (!uploadSuccess) {
-                DataManager.data.processus.planConfig.imageData = imageData;
-                DataManager.data.processus.planConfig.imageURL = null;
-                App.showToast('Plan sauvegardé localement', 'info');
-            }
+            // Sauvegarder localement et synchroniser vers Firestore
+            DataManager.saveToStorage(true);
 
-            DataManager.saveToStorage(uploadSuccess);
+            App.showToast('Plan sauvegardé!', 'success');
 
             // Rafraîchir l'affichage
             this.closePlanConfig();

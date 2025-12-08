@@ -156,6 +156,16 @@ const FirebaseManager = {
                 lastSync: firebase.firestore.FieldValue.serverTimestamp()
             });
 
+            // Document séparé pour l'image du plan (peut être volumineux)
+            if (DataManager.data.processus?.planConfig?.imageData) {
+                const planImageRef = this.db.collection('arretAnnuel').doc('planImage');
+                await planImageRef.set({
+                    imageData: DataManager.data.processus.planConfig.imageData,
+                    lastSync: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                console.log('Image du plan synchronisée');
+            }
+
             console.log('Données synchronisées vers Firebase:', cleanTravaux.length, 'travaux,', cleanPieces.length, 'pièces');
             this.showToast('Synchronisé ☁️', 'success');
             return true;
@@ -179,13 +189,24 @@ const FirebaseManager = {
             const piecesDoc = await this.db.collection('arretAnnuel').doc('pieces').get();
             // Charger le document des travaux
             const travauxDoc = await this.db.collection('arretAnnuel').doc('travaux').get();
+            // Charger l'image du plan (document séparé)
+            const planImageDoc = await this.db.collection('arretAnnuel').doc('planImage').get();
 
             const metaData = metadataDoc.exists ? metadataDoc.data() : {};
             const piecesData = piecesDoc.exists ? piecesDoc.data() : {};
             const travauxData = travauxDoc.exists ? travauxDoc.data() : {};
+            const planImageData = planImageDoc.exists ? planImageDoc.data() : {};
+
+            // Fusionner l'image du plan avec processus si elle existe
+            let processus = metaData.processus || null;
+            if (processus && planImageData.imageData) {
+                if (!processus.planConfig) processus.planConfig = {};
+                processus.planConfig.imageData = planImageData.imageData;
+                console.log('Image du plan chargée depuis Firebase');
+            }
 
             console.log('Données chargées depuis Firebase:', (travauxData.travaux || []).length, 'travaux,',
-                (piecesData.pieces || []).length, 'pièces, processus:', metaData.processus ? 'oui' : 'non');
+                (piecesData.pieces || []).length, 'pièces, processus:', processus ? 'oui' : 'non');
 
             return {
                 travaux: travauxData.travaux || [],
@@ -195,7 +216,7 @@ const FirebaseManager = {
                 customFields: metaData.customFields || [],
                 pieces: piecesData.pieces || [],
                 avis: metaData.avis || [],
-                processus: metaData.processus || null,
+                processus: processus,
                 metadata: metaData.metadata || {
                     lastImportTravaux: null,
                     lastImportExecution: null,
