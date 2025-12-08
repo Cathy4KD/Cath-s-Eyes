@@ -16,6 +16,7 @@ const firebaseConfig = {
 // Module Firebase Manager
 const FirebaseManager = {
     db: null,
+    storage: null,
     isOnline: false,
     syncInProgress: false,
 
@@ -25,6 +26,7 @@ const FirebaseManager = {
             // Initialiser Firebase
             firebase.initializeApp(firebaseConfig);
             this.db = firebase.firestore();
+            this.storage = firebase.storage();
 
             // Activer la persistance hors ligne
             await this.db.enablePersistence({ synchronizeTabs: true }).catch(err => {
@@ -79,6 +81,7 @@ const FirebaseManager = {
     // === OPÉRATIONS FIRESTORE ===
 
     // Nettoyer les données pour Firestore (remplacer undefined par null)
+    // Exclut imageData (base64 trop volumineux) - utilise imageURL à la place
     cleanForFirestore(obj) {
         if (obj === undefined) return null;
         if (obj === null) return null;
@@ -89,6 +92,10 @@ const FirebaseManager = {
             const cleaned = {};
             for (const key in obj) {
                 if (obj.hasOwnProperty(key)) {
+                    // Exclure imageData (base64 volumineux) - on utilise imageURL (Firebase Storage)
+                    if (key === 'imageData') {
+                        continue;
+                    }
                     const value = obj[key];
                     if (value === undefined) {
                         cleaned[key] = null;
@@ -280,6 +287,87 @@ const FirebaseManager = {
             toast.classList.add('toast-fade');
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    },
+
+    // === FIREBASE STORAGE - Images du plan ===
+
+    // Uploader l'image du plan vers Firebase Storage
+    async uploadPlanImage(base64Data) {
+        if (!this.storage) {
+            console.error('Firebase Storage non initialisé');
+            return null;
+        }
+
+        try {
+            // Convertir base64 en blob
+            const response = await fetch(base64Data);
+            const blob = await response.blob();
+
+            // Référence dans Storage
+            const storageRef = this.storage.ref();
+            const planRef = storageRef.child('plans/plan-usine.jpg');
+
+            // Upload
+            console.log('Upload du plan vers Firebase Storage...');
+            const snapshot = await planRef.put(blob, {
+                contentType: 'image/jpeg',
+                cacheControl: 'public, max-age=31536000'
+            });
+
+            // Obtenir l'URL de téléchargement
+            const downloadURL = await snapshot.ref.getDownloadURL();
+            console.log('Plan uploadé avec succès:', downloadURL);
+
+            this.showToast('Plan synchronisé ☁️', 'success');
+            return downloadURL;
+        } catch (error) {
+            console.error('Erreur upload plan:', error);
+            this.showToast('Erreur upload du plan', 'error');
+            return null;
+        }
+    },
+
+    // Télécharger l'URL de l'image du plan depuis Firebase Storage
+    async getPlanImageURL() {
+        if (!this.storage) {
+            return null;
+        }
+
+        try {
+            const storageRef = this.storage.ref();
+            const planRef = storageRef.child('plans/plan-usine.jpg');
+            const url = await planRef.getDownloadURL();
+            console.log('URL du plan récupérée:', url);
+            return url;
+        } catch (error) {
+            if (error.code === 'storage/object-not-found') {
+                console.log('Aucun plan trouvé dans Firebase Storage');
+                return null;
+            }
+            console.error('Erreur récupération plan:', error);
+            return null;
+        }
+    },
+
+    // Supprimer l'image du plan de Firebase Storage
+    async deletePlanImage() {
+        if (!this.storage) {
+            return false;
+        }
+
+        try {
+            const storageRef = this.storage.ref();
+            const planRef = storageRef.child('plans/plan-usine.jpg');
+            await planRef.delete();
+            console.log('Plan supprimé de Firebase Storage');
+            return true;
+        } catch (error) {
+            if (error.code === 'storage/object-not-found') {
+                return true; // Déjà supprimé
+            }
+            console.error('Erreur suppression plan:', error);
+            return false;
+        }
     }
 };
 

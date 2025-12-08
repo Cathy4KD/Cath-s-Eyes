@@ -782,7 +782,8 @@ const Screens = {
         });
 
         const planConfig = DataManager.data.processus?.planConfig || {};
-        const hasPlan = planConfig.imageData;
+        const planImageSrc = planConfig.imageURL || planConfig.imageData;
+        const hasPlan = !!planImageSrc;
         const vuesDetail = planConfig.vuesDetail || [];
 
         return `
@@ -818,7 +819,7 @@ const Screens = {
                                 <div class="plan-canvas-view" id="planViewCanvas"
                                      onmousedown="Screens.startPan(event)"
                                      onwheel="Screens.wheelZoom(event)">
-                                    <img src="${planConfig.imageData}" alt="Plan de l'usine" draggable="false">
+                                    <img src="${planImageSrc}" alt="Plan de l'usine" draggable="false">
                                     ${this.planMode === 'setup'
                                         ? this.renderPlanMarkersWithStats(planConfig.positions || {}, parEquipement)
                                         : this.renderLiveMarkers(planConfig.positions || {}, travaux)}
@@ -1252,6 +1253,8 @@ const Screens = {
     showConfigPlan() {
         // Créer le modal de configuration
         const planConfig = DataManager.data.processus?.planConfig || {};
+        const planImageSrc = planConfig.imageURL || planConfig.imageData;
+        const hasPlanImage = !!planImageSrc;
 
         const modalHtml = `
             <div class="modal-overlay" id="planConfigModal" onclick="if(event.target === this) Screens.closePlanConfig()">
@@ -1264,21 +1267,21 @@ const Screens = {
                         <div class="plan-config-section">
                             <h4>1. Importer l'image du plan</h4>
                             <div class="plan-upload-area" id="planUploadArea">
-                                ${planConfig.imageData ? `
-                                    <img src="${planConfig.imageData}" alt="Plan" class="plan-preview">
+                                ${hasPlanImage ? `
+                                    <img src="${planImageSrc}" alt="Plan" class="plan-preview">
                                     <button class="btn btn-sm btn-danger" onclick="Screens.removePlanImage()">Supprimer l'image</button>
                                 ` : `
                                     <input type="file" id="planImageInput" accept="image/*" onchange="Screens.handlePlanImageUpload(event)" style="display:none">
                                     <div class="upload-placeholder" onclick="document.getElementById('planImageInput').click()">
                                         <span class="upload-icon">📁</span>
                                         <p>Cliquez pour sélectionner une image</p>
-                                        <small>PNG, JPG, GIF (max 5MB)</small>
+                                        <small>PNG, JPG, GIF (max 10MB)</small>
                                     </div>
                                 `}
                             </div>
                         </div>
 
-                        ${planConfig.imageData ? `
+                        ${hasPlanImage ? `
                             <div class="plan-config-section">
                                 <h4>2. Positionner les équipements</h4>
                                 <p class="config-hint">Sélectionnez un équipement dans la liste, puis cliquez sur le plan pour le positionner. Utilisez la molette ou les boutons pour zoomer.</p>
@@ -1294,7 +1297,7 @@ const Screens = {
                                              onwheel="Screens.wheelConfigZoom(event)">
                                             <div class="plan-canvas-container" id="planCanvasContainer"
                                                  onmousedown="Screens.startConfigPan(event)">
-                                                <img src="${planConfig.imageData}" alt="Plan" id="planEditorImage"
+                                                <img src="${planImageSrc}" alt="Plan" id="planEditorImage"
                                                      onclick="Screens.handlePlanClick(event)" draggable="false">
                                                 ${this.renderEquipementMarkers(planConfig.positions || {})}
                                             </div>
@@ -1410,42 +1413,65 @@ const Screens = {
         document.addEventListener('mouseup', upHandler);
     },
 
-    handlePlanImageUpload(event) {
+    async handlePlanImageUpload(event) {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Vérifier la taille (max 10MB pour le fichier original)
+        // Vérifier la taille (max 10MB)
         if (file.size > 10 * 1024 * 1024) {
             App.showToast('Image trop volumineuse (max 10MB)', 'error');
             return;
         }
 
-        const maxSize = 800 * 1024; // 800KB max pour Firebase (base64 augmente ~33%)
+        App.showToast('Upload du plan en cours...', 'info');
 
-        // Charger l'image pour potentiellement la compresser
+        // Charger l'image
         const reader = new FileReader();
-        reader.onload = (e) => {
+        reader.onload = async (e) => {
             const img = new Image();
-            img.onload = () => {
+            img.onload = async () => {
+                // Compresser l'image pour un upload plus rapide (max 2MB)
                 let imageData = e.target.result;
+                const maxSize = 2 * 1024 * 1024; // 2MB max
 
-                // Si l'image est trop grande, la compresser
                 if (file.size > maxSize) {
-                    App.showToast('Compression de l\'image en cours...', 'info');
+                    App.showToast('Compression de l\'image...', 'info');
                     imageData = this.compressImage(img, maxSize);
-                    App.showToast('Image compressée automatiquement', 'success');
                 }
 
+                // Initialiser les données processus si nécessaire
                 if (!DataManager.data.processus) DataManager.data.processus = {};
                 if (!DataManager.data.processus.planConfig) DataManager.data.processus.planConfig = {};
 
-                DataManager.data.processus.planConfig.imageData = imageData;
-                DataManager.saveToStorage(true); // Sync Firebase immédiate
+                // Upload vers Firebase Storage
+                if (typeof FirebaseManager !== 'undefined' && FirebaseManager.storage) {
+                    const downloadURL = await FirebaseManager.uploadPlanImage(imageData);
+                    if (downloadURL) {
+                        // Stocker l'URL Firebase au lieu du base64
+                        DataManager.data.processus.planConfig.imageURL = downloadURL;
+                        DataManager.data.processus.planConfig.imageData = null; // Ne plus stocker le base64
+                        DataManager.saveToStorage(true);
 
-                // Rafraîchir le modal
-                this.closePlanConfig();
-                this.showConfigPlan();
-                App.showToast('Image importée et synchronisée!', 'success');
+                        // Rafraîchir le modal
+                        this.closePlanConfig();
+                        this.showConfigPlan();
+                        App.showToast('Plan uploadé et synchronisé!', 'success');
+                    } else {
+                        // Fallback: garder en local si l'upload échoue
+                        DataManager.data.processus.planConfig.imageData = imageData;
+                        DataManager.saveToStorage();
+                        App.showToast('Plan sauvegardé localement (erreur cloud)', 'warning');
+                        this.closePlanConfig();
+                        this.showConfigPlan();
+                    }
+                } else {
+                    // Pas de Firebase, sauvegarder en local
+                    DataManager.data.processus.planConfig.imageData = imageData;
+                    DataManager.saveToStorage();
+                    App.showToast('Plan sauvegardé localement', 'info');
+                    this.closePlanConfig();
+                    this.showConfigPlan();
+                }
             };
             img.src = e.target.result;
         };
@@ -1499,16 +1525,23 @@ const Screens = {
         return result;
     },
 
-    removePlanImage() {
+    async removePlanImage() {
         if (confirm('Supprimer l\'image du plan?')) {
             if (DataManager.data.processus?.planConfig) {
+                // Supprimer de Firebase Storage si présent
+                if (DataManager.data.processus.planConfig.imageURL &&
+                    typeof FirebaseManager !== 'undefined' && FirebaseManager.storage) {
+                    await FirebaseManager.deletePlanImage();
+                }
+
                 DataManager.data.processus.planConfig.imageData = null;
+                DataManager.data.processus.planConfig.imageURL = null;
                 DataManager.data.processus.planConfig.positions = {};
                 DataManager.saveToStorage(true); // Sync Firebase immédiate
             }
             this.closePlanConfig();
             this.showConfigPlan();
-            App.showToast('Image supprimée et synchronisée', 'info');
+            App.showToast('Image supprimée', 'info');
         }
     },
 
