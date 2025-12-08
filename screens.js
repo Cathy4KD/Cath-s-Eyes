@@ -506,6 +506,10 @@ const Screens = {
                             onclick="Screens.switchExecutionTab('demandes')">
                         📋 Demandes quotidiennes
                     </button>
+                    <button class="exec-tab ${this.executionTab === 'quarts' ? 'active' : ''}"
+                            onclick="Screens.switchExecutionTab('quarts')">
+                        🌙 Rapports de Quart
+                    </button>
                 </div>
 
                 <!-- Contenu de l'onglet -->
@@ -529,6 +533,7 @@ const Screens = {
             case 'realisation': return this.renderRealisationTempsReel();
             case 'journal': return this.renderJournalDeBord();
             case 'demandes': return this.renderDemandesQuotidiennes();
+            case 'quarts': return this.renderRapportsDeQuart();
             default: return this.renderRealisationTempsReel();
         }
     },
@@ -2194,8 +2199,6 @@ const Screens = {
                     ✅ Actions
                     ${ouvertes > 0 ? `<span class="pm-badge">${ouvertes}</span>` : ''}
                 </button>
-                <button class="pm-nav-btn ${this.postMortemView === 'quarts' ? 'active' : ''}"
-                        onclick="Screens.setPostMortemView('quarts')">🌙 Rapports de Quart</button>
             </div>
 
             <div class="pm-content">
@@ -2211,7 +2214,6 @@ const Screens = {
             case 'couts': return this.renderPMCouts();
             case 'lecons': return this.renderPMLecons();
             case 'actions': return this.renderPMActions();
-            case 'quarts': return this.renderPMQuarts();
             default: return this.renderPMPreparation();
         }
     },
@@ -2860,6 +2862,11 @@ const Screens = {
     quartDate: new Date().toISOString().split('T')[0],
     quartType: 'soir', // 'soir' ou 'nuit'
 
+    // Fonction pour l'onglet Exécution
+    renderRapportsDeQuart() {
+        return this.renderPMQuarts();
+    },
+
     renderPMQuarts() {
         const pm = DataManager.data.processus?.postMortem || {};
         const quarts = pm.quarts || {};
@@ -3004,12 +3011,25 @@ const Screens = {
 
     changeQuartDate(date) {
         this.quartDate = date;
-        document.querySelector('.pm-content').innerHTML = this.renderPMQuarts();
+        this.refreshQuartsContent();
     },
 
     setQuartType(type) {
         this.quartType = type;
-        document.querySelector('.pm-content').innerHTML = this.renderPMQuarts();
+        this.refreshQuartsContent();
+    },
+
+    // Rafraîchir le contenu des rapports de quart (fonctionne dans Exécution et Post-Mortem)
+    refreshQuartsContent() {
+        // Essayer d'abord le conteneur Exécution, sinon Post-Mortem
+        const execContent = document.querySelector('.exec-content');
+        const pmContent = document.querySelector('.pm-content');
+
+        if (execContent && this.executionTab === 'quarts') {
+            execContent.innerHTML = this.renderPMQuarts();
+        } else if (pmContent) {
+            pmContent.innerHTML = this.renderPMQuarts();
+        }
     },
 
     toggleQuartHistory() {
@@ -3054,7 +3074,7 @@ const Screens = {
     loadQuartReport(date, type) {
         this.quartDate = date;
         this.quartType = type;
-        document.querySelector('.pm-content').innerHTML = this.renderPMQuarts();
+        this.refreshQuartsContent();
     },
 
     saveQuartReport() {
@@ -3088,7 +3108,7 @@ const Screens = {
         App.showToast('Rapport de quart sauvegardé', 'success');
 
         // Rafraîchir pour mettre à jour l'historique
-        document.querySelector('.pm-content').innerHTML = this.renderPMQuarts();
+        this.refreshQuartsContent();
     },
 
     printQuartReport() {
