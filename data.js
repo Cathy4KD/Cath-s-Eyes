@@ -554,6 +554,7 @@ const DataManager = {
 
     // Fusion des travaux (conserve commentaires et modifications)
     // Clé unique = OT + Description
+    // Supprime les travaux qui n'existent plus dans le nouveau fichier
     mergeTravaux(newTravaux) {
         const existingMap = new Map();
         this.data.travaux.forEach(t => {
@@ -561,22 +562,54 @@ const DataManager = {
             existingMap.set(key, t);
         });
 
+        // Créer un set des clés des nouveaux travaux
+        const newTravauxKeys = new Set();
+        newTravaux.forEach(newT => {
+            const key = this.createTravailKey(newT.ot, newT.description);
+            newTravauxKeys.add(key);
+        });
+
+        // Stats pour le résumé
+        let added = 0, updated = 0, removed = 0;
+
+        // Traiter les nouveaux travaux
         newTravaux.forEach(newT => {
             const key = this.createTravailKey(newT.ot, newT.description);
             const existing = existingMap.get(key);
             if (existing) {
-                // Mise à jour en conservant les données locales
+                // Mise à jour en conservant les données locales (commentaires, statuts, etc.)
                 Object.assign(existing, {
                     ...newT,
                     id: existing.id,
                     preparation: existing.preparation,
-                    execution: existing.execution
+                    execution: existing.execution,
+                    commentaire: existing.commentaire // Conserver le commentaire
                 });
+                updated++;
             } else {
                 this.data.travaux.push(newT);
                 existingMap.set(key, newT);
+                added++;
             }
         });
+
+        // Supprimer les travaux qui n'existent plus dans le nouveau fichier
+        const travauxToKeep = this.data.travaux.filter(t => {
+            const key = this.createTravailKey(t.ot, t.description);
+            if (!newTravauxKeys.has(key)) {
+                removed++;
+                return false; // Supprimer
+            }
+            return true; // Garder
+        });
+
+        this.data.travaux = travauxToKeep;
+
+        // Stocker les stats pour affichage
+        this.lastMergeStats = { added, updated, removed };
+        console.log(`Fusion travaux: ${added} ajoutés, ${updated} mis à jour, ${removed} supprimés`);
+
+        return { added, updated, removed };
     },
 
     // Obtenir tous les travaux

@@ -552,9 +552,10 @@ const ImportManager = {
 
             if (type === 'travaux') {
                 const count = DataManager.importTravaux(this.currentData, mapping);
+                const stats = DataManager.lastMergeStats || { added: 0, updated: 0, removed: 0 };
                 return {
                     success: true,
-                    message: `${count} travaux importés avec succès (${Object.keys(mapping).length} colonnes)`,
+                    message: `Import terminé: ${stats.added} nouveaux, ${stats.updated} mis à jour, ${stats.removed} supprimés (Total: ${count})`,
                     count
                 };
             } else if (type === 'pieces') {
