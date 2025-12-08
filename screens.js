@@ -1276,11 +1276,11 @@ const Screens = {
                                     <img src="${planImageSrc}" alt="Plan" class="plan-preview">
                                     <button class="btn btn-sm btn-danger" onclick="Screens.removePlanImage()">Supprimer l'image</button>
                                 ` : `
-                                    <input type="file" id="planImageInput" accept="image/*" onchange="Screens.handlePlanImageUpload(event)" style="display:none">
+                                    <input type="file" id="planImageInput" accept="image/*,application/pdf" onchange="Screens.handlePlanImageUpload(event)" style="display:none">
                                     <div class="upload-placeholder" onclick="document.getElementById('planImageInput').click()">
                                         <span class="upload-icon">📁</span>
-                                        <p>Cliquez pour sélectionner une image</p>
-                                        <small>PNG, JPG, GIF (max 10MB)</small>
+                                        <p>Cliquez pour sélectionner un fichier</p>
+                                        <small>PNG, JPG, PDF (max 20MB)</small>
                                     </div>
                                 `}
                             </div>
@@ -1422,65 +1422,133 @@ const Screens = {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Vérifier la taille (max 10MB)
-        if (file.size > 10 * 1024 * 1024) {
-            App.showToast('Image trop volumineuse (max 10MB)', 'error');
+        // Vérifier la taille (max 20MB pour PDF, 10MB pour images)
+        const maxSize = file.type === 'application/pdf' ? 20 * 1024 * 1024 : 10 * 1024 * 1024;
+        if (file.size > maxSize) {
+            App.showToast(`Fichier trop volumineux (max ${file.type === 'application/pdf' ? '20' : '10'}MB)`, 'error');
             return;
         }
 
-        App.showToast('Upload du plan en cours...', 'info');
+        App.showToast('Traitement du plan en cours...', 'info');
 
-        // Charger l'image
+        // Si c'est un PDF, le convertir en image
+        if (file.type === 'application/pdf') {
+            await this.handlePDFUpload(file);
+        } else {
+            // Sinon, traiter comme une image normale
+            await this.handleImageUpload(file);
+        }
+    },
+
+    // Convertir un PDF en image et l'uploader
+    async handlePDFUpload(file) {
+        try {
+            // Configurer PDF.js
+            if (typeof pdfjsLib !== 'undefined') {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            }
+
+            App.showToast('Conversion du PDF en image...', 'info');
+
+            // Lire le fichier PDF
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+            // Récupérer la première page
+            const page = await pdf.getPage(1);
+
+            // Définir l'échelle pour une bonne qualité (2x pour haute résolution)
+            const scale = 2;
+            const viewport = page.getViewport({ scale });
+
+            // Créer un canvas pour le rendu
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            // Rendre la page PDF sur le canvas
+            await page.render({
+                canvasContext: context,
+                viewport: viewport
+            }).promise;
+
+            // Convertir en image JPEG
+            let imageData = canvas.toDataURL('image/jpeg', 0.9);
+
+            // Compresser si nécessaire
+            const maxImageSize = 2 * 1024 * 1024;
+            if (imageData.length > maxImageSize * 1.4) {
+                App.showToast('Compression de l\'image...', 'info');
+                // Réduire la qualité progressivement
+                let quality = 0.8;
+                while (imageData.length > maxImageSize * 1.4 && quality > 0.3) {
+                    quality -= 0.1;
+                    imageData = canvas.toDataURL('image/jpeg', quality);
+                }
+            }
+
+            // Sauvegarder l'image
+            await this.savePlanImage(imageData);
+
+        } catch (error) {
+            console.error('Erreur conversion PDF:', error);
+            App.showToast('Erreur lors de la conversion du PDF', 'error');
+        }
+    },
+
+    // Traiter une image normale
+    async handleImageUpload(file) {
         const reader = new FileReader();
         reader.onload = async (e) => {
             const img = new Image();
             img.onload = async () => {
-                // Compresser l'image pour un upload plus rapide (max 2MB)
                 let imageData = e.target.result;
-                const maxSize = 2 * 1024 * 1024; // 2MB max
+                const maxSize = 2 * 1024 * 1024;
 
                 if (file.size > maxSize) {
                     App.showToast('Compression de l\'image...', 'info');
                     imageData = this.compressImage(img, maxSize);
                 }
 
-                // Initialiser les données processus si nécessaire
-                if (!DataManager.data.processus) DataManager.data.processus = {};
-                if (!DataManager.data.processus.planConfig) DataManager.data.processus.planConfig = {};
-
-                // Upload vers Firebase Storage
-                if (typeof FirebaseManager !== 'undefined' && FirebaseManager.storage) {
-                    const downloadURL = await FirebaseManager.uploadPlanImage(imageData);
-                    if (downloadURL) {
-                        // Stocker l'URL Firebase au lieu du base64
-                        DataManager.data.processus.planConfig.imageURL = downloadURL;
-                        DataManager.data.processus.planConfig.imageData = null; // Ne plus stocker le base64
-                        DataManager.saveToStorage(true);
-
-                        // Rafraîchir le modal
-                        this.closePlanConfig();
-                        this.showConfigPlan();
-                        App.showToast('Plan uploadé et synchronisé!', 'success');
-                    } else {
-                        // Fallback: garder en local si l'upload échoue
-                        DataManager.data.processus.planConfig.imageData = imageData;
-                        DataManager.saveToStorage();
-                        App.showToast('Plan sauvegardé localement (erreur cloud)', 'warning');
-                        this.closePlanConfig();
-                        this.showConfigPlan();
-                    }
-                } else {
-                    // Pas de Firebase, sauvegarder en local
-                    DataManager.data.processus.planConfig.imageData = imageData;
-                    DataManager.saveToStorage();
-                    App.showToast('Plan sauvegardé localement', 'info');
-                    this.closePlanConfig();
-                    this.showConfigPlan();
-                }
+                await this.savePlanImage(imageData);
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
+    },
+
+    // Sauvegarder l'image du plan (commune aux deux types)
+    async savePlanImage(imageData) {
+        // Initialiser les données processus si nécessaire
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.planConfig) DataManager.data.processus.planConfig = {};
+
+        // Upload vers Firebase Storage
+        if (typeof FirebaseManager !== 'undefined' && FirebaseManager.storage) {
+            const downloadURL = await FirebaseManager.uploadPlanImage(imageData);
+            if (downloadURL) {
+                DataManager.data.processus.planConfig.imageURL = downloadURL;
+                DataManager.data.processus.planConfig.imageData = null;
+                DataManager.saveToStorage(true);
+
+                this.closePlanConfig();
+                this.showConfigPlan();
+                App.showToast('Plan uploadé et synchronisé!', 'success');
+            } else {
+                DataManager.data.processus.planConfig.imageData = imageData;
+                DataManager.saveToStorage();
+                App.showToast('Plan sauvegardé localement (erreur cloud)', 'warning');
+                this.closePlanConfig();
+                this.showConfigPlan();
+            }
+        } else {
+            DataManager.data.processus.planConfig.imageData = imageData;
+            DataManager.saveToStorage();
+            App.showToast('Plan sauvegardé localement', 'info');
+            this.closePlanConfig();
+            this.showConfigPlan();
+        }
     },
 
     // Compresser une image pour qu'elle soit sous la taille max
