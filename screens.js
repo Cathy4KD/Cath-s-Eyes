@@ -4,8 +4,17 @@
  */
 
 const Screens = {
+    // === DÉTECTION MOBILE ===
+    isMobile() {
+        return window.innerWidth <= 768;
+    },
+
     // === DASHBOARD ===
     renderDashboard() {
+        // Sur mobile, afficher l'écran d'accueil simplifié
+        if (this.isMobile()) {
+            return this.renderMobileHome();
+        }
         const stats = DataManager.getGlobalStats();
         const travaux = DataManager.getTravaux();
         const pieces = DataManager.data.pieces || [];
@@ -166,6 +175,74 @@ const Screens = {
                         </table>
                     </div>
                 `}
+            </div>
+        `;
+    },
+
+    // === ÉCRAN D'ACCUEIL MOBILE ===
+    renderMobileHome() {
+        const stats = DataManager.getGlobalStats();
+
+        return `
+            <div class="mobile-home">
+                <div class="mobile-stats-summary">
+                    <div class="mobile-stat">
+                        <span class="mobile-stat-value">${stats.preparation.total}</span>
+                        <span class="mobile-stat-label">Travaux</span>
+                    </div>
+                    <div class="mobile-stat">
+                        <span class="mobile-stat-value">${stats.preparation.pourcentage}%</span>
+                        <span class="mobile-stat-label">Préparé</span>
+                    </div>
+                    <div class="mobile-stat">
+                        <span class="mobile-stat-value">${stats.execution.termine}</span>
+                        <span class="mobile-stat-label">Terminés</span>
+                    </div>
+                </div>
+
+                <h3 class="mobile-section-title">Accès rapide</h3>
+
+                <div class="mobile-menu-grid">
+                    <button class="mobile-menu-btn mobile-btn-orange" onclick="App.navigate('preparation')">
+                        <span class="mobile-btn-icon">📝</span>
+                        <span class="mobile-btn-text">Préparation</span>
+                    </button>
+                    <button class="mobile-menu-btn mobile-btn-blue" onclick="App.navigate('execution')">
+                        <span class="mobile-btn-icon">⚡</span>
+                        <span class="mobile-btn-text">Exécution</span>
+                    </button>
+                    <button class="mobile-menu-btn mobile-btn-green" onclick="App.navigate('postmortem')">
+                        <span class="mobile-btn-icon">📈</span>
+                        <span class="mobile-btn-text">Post-Mortem</span>
+                    </button>
+                    <button class="mobile-menu-btn" onclick="App.navigate('travaux')">
+                        <span class="mobile-btn-icon">📋</span>
+                        <span class="mobile-btn-text">Liste Travaux</span>
+                    </button>
+                </div>
+
+                <h3 class="mobile-section-title">Consultation rapide</h3>
+
+                <div class="mobile-quick-links">
+                    <button class="mobile-link-btn" onclick="App.navigate('preparation', 'PL3.0')">
+                        <span>🔧</span> Liste TPAA
+                    </button>
+                    <button class="mobile-link-btn" onclick="App.navigate('reunions')">
+                        <span>👥</span> Réunions
+                    </button>
+                    <button class="mobile-link-btn" onclick="App.navigate('pieces')">
+                        <span>🔩</span> Pièces
+                    </button>
+                    <button class="mobile-link-btn" onclick="App.navigate('rapports')">
+                        <span>📄</span> Rapports
+                    </button>
+                </div>
+
+                <div class="mobile-footer-links">
+                    <a href="https://cathy4kd.github.io/Kitting_acierie/" target="_blank" class="mobile-external-link">
+                        📦 Kitting Aciérie
+                    </a>
+                </div>
             </div>
         `;
     },

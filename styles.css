@@ -7799,3 +7799,311 @@ tr:hover .btn-edit-comment {
         justify-content: center;
     }
 }
+
+/* ========================================
+   STYLES MOBILE - ÉCRAN D'ACCUEIL
+   ======================================== */
+
+.mobile-home {
+    padding: 15px;
+    max-width: 100%;
+}
+
+.mobile-stats-summary {
+    display: flex;
+    justify-content: space-around;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+    border-radius: 12px;
+    padding: 20px 10px;
+    margin-bottom: 25px;
+    color: white;
+}
+
+.mobile-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.mobile-stat-value {
+    font-size: 1.8rem;
+    font-weight: bold;
+}
+
+.mobile-stat-label {
+    font-size: 0.75rem;
+    opacity: 0.85;
+    margin-top: 2px;
+}
+
+.mobile-section-title {
+    font-size: 0.9rem;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 20px 0 12px 0;
+    padding-left: 5px;
+}
+
+.mobile-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.mobile-menu-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.mobile-menu-btn:hover, .mobile-menu-btn:active {
+    transform: scale(0.98);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.mobile-menu-btn.mobile-btn-orange {
+    background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+    color: white;
+    border: none;
+}
+
+.mobile-menu-btn.mobile-btn-blue {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    border: none;
+}
+
+.mobile-menu-btn.mobile-btn-green {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+}
+
+.mobile-btn-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+}
+
+.mobile-btn-text {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.mobile-quick-links {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mobile-link-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.mobile-link-btn:hover, .mobile-link-btn:active {
+    background: var(--background);
+    border-color: var(--primary);
+}
+
+.mobile-link-btn span:first-child {
+    font-size: 1.3rem;
+}
+
+.mobile-footer-links {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+}
+
+.mobile-external-link {
+    display: block;
+    text-align: center;
+    padding: 12px;
+    background: var(--background);
+    border-radius: 8px;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* ========================================
+   STYLES MOBILE - TABLEAUX OPTIMISÉS
+   ======================================== */
+
+@media (max-width: 768px) {
+    /* Masquer certaines colonnes sur mobile */
+    .mobile-hide {
+        display: none !important;
+    }
+
+    /* Tableau TPAA mobile */
+    #tpaaTable {
+        font-size: 0.85rem;
+    }
+
+    #tpaaTable th,
+    #tpaaTable td {
+        padding: 8px 6px;
+    }
+
+    /* Masquer colonnes moins importantes sur mobile */
+    #tpaaTable th:nth-child(3),
+    #tpaaTable td:nth-child(3),
+    #tpaaTable th:nth-child(5),
+    #tpaaTable td:nth-child(5),
+    #tpaaTable th:nth-child(7),
+    #tpaaTable td:nth-child(7) {
+        display: none;
+    }
+
+    /* Ajuster la colonne date sur mobile */
+    .date-ajustable {
+        flex-wrap: nowrap;
+        gap: 2px;
+    }
+
+    .date-ajustable .btn-icon {
+        padding: 4px 6px;
+        font-size: 0.75rem;
+    }
+
+    .date-value {
+        font-size: 0.8rem;
+        min-width: auto;
+    }
+
+    .ajustement-badge {
+        font-size: 0.65rem;
+        padding: 1px 4px;
+    }
+
+    /* Liste travaux mobile */
+    .filters-bar {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .filter-group select,
+    .filter-group input {
+        width: 100% !important;
+    }
+
+    /* Tableau travaux - format carte sur mobile */
+    #travauxTable tr {
+        display: flex;
+        flex-direction: column;
+        background: white;
+        margin-bottom: 10px;
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    #travauxTable td {
+        display: flex;
+        padding: 4px 0;
+        border: none;
+    }
+
+    #travauxTable td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-light);
+        min-width: 100px;
+        font-size: 0.8rem;
+    }
+
+    /* Masquer header sur mobile pour tableau travaux */
+    #travauxTable thead {
+        display: none;
+    }
+
+    /* Mini select plus grand sur mobile */
+    .mini-select {
+        min-width: 100px;
+        padding: 6px 8px;
+        font-size: 0.85rem;
+    }
+
+    /* Commentaire input plus grand sur mobile */
+    .commentaire-input {
+        min-width: 120px;
+        padding: 8px;
+    }
+
+    /* Cards plus compacts */
+    .detail-card {
+        padding: 12px;
+        margin-bottom: 12px;
+    }
+
+    .card-header-flex {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    /* Résumé stats plus compact */
+    .commande-resume {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .resume-stat {
+        min-width: 60px;
+        padding: 8px;
+    }
+
+    .resume-stat .stat-value {
+        font-size: 1.2rem;
+    }
+
+    .resume-stat .stat-label {
+        font-size: 0.7rem;
+    }
+
+    /* Boutons de tri plus compacts */
+    .tpaa-filters {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .sort-buttons {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .sort-buttons .btn {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+    }
+
+    /* Header simplifié */
+    .header-right .search-box {
+        display: none;
+    }
+}
