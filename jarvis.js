@@ -5,15 +5,44 @@
 
 const JARVIS = {
     // Configuration
-    backendUrl: localStorage.getItem('jarvis_backend_url') || '',
     isListening: false,
-    mediaRecorder: null,
-    audioChunks: [],
+    recognition: null,
+    currentTranscript: '',
 
     // Initialisation
     init() {
         this.createUI();
+        this.initSpeechRecognition();
         this.checkBackend();
+    },
+
+    // Initialiser la reconnaissance vocale
+    initSpeechRecognition() {
+        if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            this.recognition = new SpeechRecognition();
+            this.recognition.lang = 'fr-FR';
+            this.recognition.continuous = true;
+            this.recognition.interimResults = true;
+
+            this.recognition.onresult = (event) => {
+                let fullTranscript = '';
+                for (let i = 0; i < event.results.length; i++) {
+                    fullTranscript += event.results[i][0].transcript;
+                }
+                this.currentTranscript = fullTranscript;
+                document.getElementById('jarvisHint').textContent = fullTranscript + '...';
+            };
+
+            this.recognition.onerror = (event) => {
+                this.addMessage('Erreur micro: ' + event.error, 'system');
+                this.stopRecording();
+            };
+
+            this.recognition.onend = () => {
+                if (this.isListening) this.recognition.start();
+            };
+        }
     },
 
     // Créer l'interface JARVIS
@@ -55,33 +84,13 @@ const JARVIS = {
                     <button onclick="JARVIS.sendText()">➤</button>
                 </div>
                 <div class="jarvis-quick-actions">
-                    <button onclick="JARVIS.sendCommand('Liste des travaux en cours')">📋 Travaux</button>
+                    <button onclick="JARVIS.sendCommand('Liste des travaux')">📋 Travaux</button>
                     <button onclick="JARVIS.sendCommand('Statut des arrêts')">📊 Statut</button>
                     <button onclick="JARVIS.sendCommand('Montre les kittings')">📦 Kitting</button>
-                </div>
-                <div class="jarvis-settings">
-                    <button onclick="JARVIS.openSettings()">⚙️ Configurer Backend</button>
                 </div>
             </div>
         `;
         document.body.appendChild(modal);
-
-        // Modal Settings
-        const settings = document.createElement('div');
-        settings.id = 'jarvis-settings-modal';
-        settings.className = 'jarvis-modal';
-        settings.innerHTML = `
-            <div class="jarvis-modal-content jarvis-settings-content">
-                <h3>Configuration Backend JARVIS</h3>
-                <p>Entrez l'URL ngrok du backend PC:</p>
-                <input type="text" id="jarvisBackendUrl" placeholder="https://xxxx.ngrok-free.app">
-                <div class="jarvis-settings-buttons">
-                    <button class="save" onclick="JARVIS.saveSettings()">Sauvegarder</button>
-                    <button class="cancel" onclick="JARVIS.closeSettings()">Annuler</button>
-                </div>
-            </div>
-        `;
-        document.body.appendChild(settings);
 
         // Styles
         this.addStyles();
@@ -368,22 +377,10 @@ const JARVIS = {
         document.head.appendChild(style);
     },
 
-    // Vérifier le backend
-    async checkBackend() {
-        if (!this.backendUrl) return;
-
-        try {
-            const response = await fetch(this.backendUrl + '/health', {
-                headers: { 'ngrok-skip-browser-warning': 'true' }
-            });
-            const data = await response.json();
-            if (data.status === 'online') {
-                document.getElementById('jarvisStatus').textContent = 'En ligne';
-                document.getElementById('jarvisStatus').classList.add('online');
-            }
-        } catch (e) {
-            console.log('Backend JARVIS non disponible');
-        }
+    // Marquer comme en ligne
+    checkBackend() {
+        document.getElementById('jarvisStatus').textContent = 'En ligne';
+        document.getElementById('jarvisStatus').classList.add('online');
     },
 
     // Modal
@@ -429,141 +426,100 @@ const JARVIS = {
     },
 
     // Reconnaissance vocale
-    async toggleVoice() {
+    toggleVoice() {
         if (this.isListening) {
+            // Envoyer et arrêter
+            if (this.currentTranscript.trim()) {
+                this.addMessage(this.currentTranscript, 'user');
+                this.sendToBackend(this.currentTranscript);
+                this.currentTranscript = '';
+            }
             this.stopRecording();
         } else {
             this.startRecording();
         }
     },
 
-    async startRecording() {
-        if (!this.backendUrl) {
-            this.addMessage('Configurez le backend d\'abord', 'system');
-            this.openSettings();
+    startRecording() {
+        if (!this.recognition) {
+            this.addMessage('Reconnaissance vocale non supportée', 'system');
             return;
         }
 
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-            this.audioChunks = [];
-
-            this.mediaRecorder.ondataavailable = (e) => {
-                this.audioChunks.push(e.data);
-            };
-
-            this.mediaRecorder.onstop = async () => {
-                const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
-                stream.getTracks().forEach(track => track.stop());
-                await this.transcribeAudio(audioBlob);
-            };
-
-            this.mediaRecorder.start();
-            this.isListening = true;
-            document.getElementById('jarvisMic').classList.add('listening');
-            document.getElementById('jarvisHint').textContent = 'Enregistrement... (appuyez pour arrêter)';
-
-        } catch (e) {
-            this.addMessage('Erreur micro: ' + e.message, 'system');
-        }
+        this.isListening = true;
+        this.currentTranscript = '';
+        document.getElementById('jarvisMic').classList.add('listening');
+        document.getElementById('jarvisHint').textContent = 'Parlez... (appuyez pour envoyer)';
+        this.recognition.start();
     },
 
     stopRecording() {
-        if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
-            this.mediaRecorder.stop();
-        }
         this.isListening = false;
         document.getElementById('jarvisMic').classList.remove('listening');
-        document.getElementById('jarvisHint').textContent = 'Traitement...';
-    },
-
-    async transcribeAudio(audioBlob) {
-        try {
-            document.getElementById('jarvisHint').textContent = 'Transcription Whisper...';
-
-            const formData = new FormData();
-            formData.append('audio', audioBlob, 'audio.webm');
-
-            const response = await fetch(this.backendUrl + '/transcribe', {
-                method: 'POST',
-                headers: { 'ngrok-skip-browser-warning': 'true' },
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (data.success && data.text) {
-                this.addMessage(data.text, 'user');
-                await this.sendToBackend(data.text);
-            } else {
-                this.addMessage('Erreur transcription', 'system');
-            }
-        } catch (e) {
-            this.addMessage('Erreur: ' + e.message, 'system');
-        }
-
         document.getElementById('jarvisHint').textContent = 'Appuyez pour parler';
+        if (this.recognition) this.recognition.stop();
     },
 
     async sendToBackend(text) {
-        try {
-            document.getElementById('jarvisHint').textContent = 'Claude réfléchit...';
+        document.getElementById('jarvisHint').textContent = 'Réflexion...';
 
-            const response = await fetch(this.backendUrl + '/chat', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': 'true'
-                },
-                body: JSON.stringify({ message: text })
-            });
-
-            const data = await response.json();
-
-            if (data.success && data.response) {
-                this.addMessage(data.response, 'jarvis');
-                await this.speak(data.response);
-            } else {
-                this.addMessage('Erreur Claude', 'system');
-            }
-        } catch (e) {
-            this.addMessage('Erreur: ' + e.message, 'system');
-        }
+        // Traitement local des commandes
+        const response = this.processCommand(text);
+        this.addMessage(response, 'jarvis');
+        this.speak(response);
 
         document.getElementById('jarvisHint').textContent = 'Appuyez pour parler';
     },
 
-    async speak(text) {
-        try {
-            const response = await fetch(this.backendUrl + '/speak', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'ngrok-skip-browser-warning': 'true'
-                },
-                body: JSON.stringify({ text: text })
-            });
+    // Intelligence locale pour comprendre les commandes
+    processCommand(text) {
+        const lower = text.toLowerCase();
 
-            const data = await response.json();
-
-            if (data.success && data.audio_base64) {
-                const audio = new Audio('data:audio/mp3;base64,' + data.audio_base64);
-                audio.play();
-            } else {
-                // Fallback
-                if ('speechSynthesis' in window) {
-                    const utterance = new SpeechSynthesisUtterance(text);
-                    utterance.lang = 'fr-FR';
-                    speechSynthesis.speak(utterance);
+        // Créer un kitting
+        if (lower.includes('crée') || lower.includes('créer') || lower.includes('nouveau') || lower.includes('ajoute')) {
+            if (lower.includes('kitting') || lower.includes('commande') || lower.includes('kit')) {
+                const numMatch = text.match(/(\d+)/);
+                if (numMatch) {
+                    return `Je vais créer le kitting ${numMatch[1]}. Utilisez l'app Kitting pour finaliser.`;
                 }
+                return "Quel numéro de commande, Madame?";
             }
-        } catch (e) {
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'fr-FR';
-                speechSynthesis.speak(utterance);
-            }
+        }
+
+        // Lister
+        if (lower.includes('liste') || lower.includes('montre') || lower.includes('travaux')) {
+            return "Consultez la liste des travaux dans le menu à gauche, Madame.";
+        }
+
+        // Statut
+        if (lower.includes('statut') || lower.includes('arrêt')) {
+            return "Le statut des arrêts est disponible sur le Dashboard, Madame.";
+        }
+
+        // Heure
+        if (lower.includes('heure')) {
+            return `Il est ${new Date().toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}, Madame.`;
+        }
+
+        // Bonjour
+        if (lower.includes('bonjour') || lower.includes('salut')) {
+            return "Bonjour Madame, comment puis-je vous aider?";
+        }
+
+        // Aide
+        if (lower.includes('aide') || lower.includes('faire')) {
+            return "Je peux vous aider avec: les travaux, le statut des arrêts, les kittings, et répondre à vos questions.";
+        }
+
+        return "Je vous écoute, Madame. Que puis-je faire pour vous?";
+    },
+
+    speak(text) {
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 1.1;
+            speechSynthesis.speak(utterance);
         }
     },
 
