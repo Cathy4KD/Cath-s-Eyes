@@ -4171,7 +4171,43 @@ const ScreenPreparation = {
         DataManager.data.processus.tpaa[uniqueId].ajustementJours = currentAjustement + jours;
 
         DataManager.saveToStorage();
-        this.refreshTPAAWithScroll(uniqueId);
+
+        // Mettre à jour uniquement la cellule de date sans rafraîchir tout l'écran
+        const row = document.querySelector(`tr[data-unique-id="${uniqueId}"]`);
+        if (row) {
+            const dateValue = row.querySelector('.date-value');
+            const ajustementBadge = row.querySelector('.ajustement-badge');
+            const newAjustement = DataManager.data.processus.tpaa[uniqueId].ajustementJours;
+
+            // Recalculer la date
+            const dateDebutArret = DataManager.data.processus?.dateArret;
+            const travaux = this.getTravauxImportes();
+            const travail = travaux.find((t, idx) => `${t.ot}_${idx}` === uniqueId || uniqueId.startsWith(t.ot));
+            if (travail && dateValue) {
+                const semainesAvant = this.extraireSemainesTPAA(travail.description);
+                const nouvelleDate = this.calculerDateTPAA(dateDebutArret, semainesAvant, newAjustement);
+                dateValue.textContent = nouvelleDate || '-';
+            }
+
+            // Mettre à jour ou créer le badge d'ajustement
+            const dateAjustable = row.querySelector('.date-ajustable');
+            if (newAjustement && newAjustement !== 0) {
+                if (ajustementBadge) {
+                    ajustementBadge.textContent = `${newAjustement > 0 ? '+' : ''}${newAjustement}j`;
+                } else if (dateAjustable) {
+                    const badge = document.createElement('span');
+                    badge.className = 'ajustement-badge';
+                    badge.textContent = `${newAjustement > 0 ? '+' : ''}${newAjustement}j`;
+                    dateAjustable.appendChild(badge);
+                }
+            } else if (ajustementBadge) {
+                ajustementBadge.remove();
+            }
+
+            // Flash jaune pour indiquer la modification
+            row.classList.add('row-highlight');
+            setTimeout(() => row.classList.remove('row-highlight'), 1000);
+        }
     },
 
     updateTPAAStatut(uniqueId, statut) {
@@ -4184,31 +4220,67 @@ const ScreenPreparation = {
 
         DataManager.data.processus.tpaa[uniqueId].statut = statut;
         DataManager.saveToStorage();
-        this.refreshTPAAWithScroll(uniqueId);
+
+        // Mettre à jour uniquement la classe de la ligne sans rafraîchir tout l'écran
+        const row = document.querySelector(`tr[data-unique-id="${uniqueId}"]`);
+        if (row) {
+            // Retirer toutes les classes de statut
+            row.classList.remove('row-success', 'row-cancelled', 'row-planifie');
+
+            // Ajouter la nouvelle classe selon le statut
+            if (statut === 'termine') {
+                row.classList.add('row-success');
+            } else if (statut === 'annule') {
+                row.classList.add('row-cancelled');
+            } else if (statut === 'planifie') {
+                row.classList.add('row-planifie');
+            }
+
+            // Mettre à jour la classe du select si annulé
+            const select = row.querySelector('.mini-select');
+            if (select) {
+                select.classList.toggle('statut-annule', statut === 'annule');
+            }
+
+            // Flash jaune pour indiquer la modification
+            row.classList.add('row-highlight');
+            setTimeout(() => row.classList.remove('row-highlight'), 1000);
+        }
+
+        // Mettre à jour les statistiques en haut
+        this.updateTPAAStats();
     },
 
-    // Rafraîchir le tableau TPAA en conservant la position de scroll
-    refreshTPAAWithScroll(uniqueId) {
-        // Mémoriser la position de scroll du conteneur du tableau
-        const tableContainer = document.querySelector('#tpaaTable')?.closest('.table-container');
-        const scrollTop = tableContainer ? tableContainer.scrollTop : 0;
+    // Mettre à jour uniquement les statistiques TPAA
+    updateTPAAStats() {
+        const travaux = this.getTravauxImportes();
+        const tpaaData = DataManager.data.processus?.tpaa || {};
+        const allTPAA = travaux.filter(t => t.description && t.description.toUpperCase().includes('TPAA'));
+        const allTPAAWithIds = allTPAA.map((t, idx) => {
+            const travailIndex = travaux.findIndex(tr => tr === t);
+            const uniqueId = `${t.ot}_${travailIndex}`;
+            return { ...t, uniqueId };
+        });
 
-        // Rafraîchir l'écran
-        this.refresh();
+        const stats = {
+            total: allTPAA.length,
+            aFaire: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'a_faire').length,
+            planifie: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'planifie').length,
+            enCours: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'en_cours').length,
+            termine: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'termine').length,
+            annule: allTPAAWithIds.filter(t => this.getTPAAStatut(t.uniqueId, tpaaData) === 'annule').length
+        };
 
-        // Restaurer la position après le rafraîchissement
-        setTimeout(() => {
-            const newTableContainer = document.querySelector('#tpaaTable')?.closest('.table-container');
-            if (newTableContainer) {
-                newTableContainer.scrollTop = scrollTop;
-            }
-            // Mettre en surbrillance brièvement la ligne modifiée
-            const row = document.querySelector(`tr[data-unique-id="${uniqueId}"]`);
-            if (row) {
-                row.classList.add('row-highlight');
-                setTimeout(() => row.classList.remove('row-highlight'), 1000);
-            }
-        }, 50);
+        // Mettre à jour les valeurs dans le DOM
+        const statElements = document.querySelectorAll('.commande-resume .resume-stat');
+        if (statElements.length >= 6) {
+            statElements[0].querySelector('.stat-value').textContent = stats.total;
+            statElements[1].querySelector('.stat-value').textContent = stats.aFaire;
+            statElements[2].querySelector('.stat-value').textContent = stats.planifie;
+            statElements[3].querySelector('.stat-value').textContent = stats.enCours;
+            statElements[4].querySelector('.stat-value').textContent = stats.termine;
+            statElements[5].querySelector('.stat-value').textContent = stats.annule;
+        }
     },
 
     updateTPAASap(uniqueId, checked) {
