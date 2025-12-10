@@ -4171,7 +4171,7 @@ const ScreenPreparation = {
         DataManager.data.processus.tpaa[uniqueId].ajustementJours = currentAjustement + jours;
 
         DataManager.saveToStorage();
-        this.refresh();
+        this.refreshTPAAWithScroll(uniqueId);
     },
 
     updateTPAAStatut(uniqueId, statut) {
@@ -4184,7 +4184,31 @@ const ScreenPreparation = {
 
         DataManager.data.processus.tpaa[uniqueId].statut = statut;
         DataManager.saveToStorage();
+        this.refreshTPAAWithScroll(uniqueId);
+    },
+
+    // Rafraîchir le tableau TPAA en conservant la position de scroll
+    refreshTPAAWithScroll(uniqueId) {
+        // Mémoriser la position de scroll du conteneur du tableau
+        const tableContainer = document.querySelector('#tpaaTable')?.closest('.table-container');
+        const scrollTop = tableContainer ? tableContainer.scrollTop : 0;
+
+        // Rafraîchir l'écran
         this.refresh();
+
+        // Restaurer la position après le rafraîchissement
+        setTimeout(() => {
+            const newTableContainer = document.querySelector('#tpaaTable')?.closest('.table-container');
+            if (newTableContainer) {
+                newTableContainer.scrollTop = scrollTop;
+            }
+            // Mettre en surbrillance brièvement la ligne modifiée
+            const row = document.querySelector(`tr[data-unique-id="${uniqueId}"]`);
+            if (row) {
+                row.classList.add('row-highlight');
+                setTimeout(() => row.classList.remove('row-highlight'), 1000);
+            }
+        }, 50);
     },
 
     updateTPAASap(uniqueId, checked) {
