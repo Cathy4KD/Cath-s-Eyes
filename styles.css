@@ -5837,6 +5837,15 @@ tr:hover .btn-edit-comment {
     box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
 }
 
+/* TPAA - Ligne planifiée (bleu) */
+.row-planifie {
+    background: rgba(59, 130, 246, 0.15) !important;
+}
+
+.row-planifie td {
+    color: #1d4ed8;
+}
+
 /* TPAA - Ligne annulée */
 .row-cancelled {
     background: rgba(156, 163, 175, 0.15) !important;

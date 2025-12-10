@@ -4044,7 +4044,7 @@ const ScreenPreparation = {
                                     ` : travauxAvecDates.map((t) => {
                                         const statut = t.tpaaInfo.statut || 'a_faire';
                                         const sapChecked = t.tpaaInfo.sap || false;
-                                        const rowClass = statut === 'termine' ? 'row-success' : (statut === 'annule' ? 'row-cancelled' : '');
+                                        const rowClass = statut === 'termine' ? 'row-success' : (statut === 'annule' ? 'row-cancelled' : (statut === 'planifie' ? 'row-planifie' : ''));
 
                                         return `
                                         <tr class="${rowClass}" data-unique-id="${t.uniqueId}">
