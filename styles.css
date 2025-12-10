@@ -8106,4 +8106,278 @@ tr:hover .btn-edit-comment {
     .header-right .search-box {
         display: none;
     }
+
+    /* Masquer le dashboard standard sur mobile */
+    .stats-grid,
+    .grid-2 {
+        display: none;
+    }
+}
+
+/* ========================================
+   STYLES MOBILE - ÉCRAN PRÉPARATION
+   ======================================== */
+
+.prep-screen-mobile {
+    padding: 10px;
+}
+
+.prep-mobile-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    color: white;
+}
+
+.prep-mobile-progress {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.prep-mobile-circle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: conic-gradient(#10b981 calc(var(--progress) * 1%), rgba(255,255,255,0.2) 0);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.prep-mobile-circle::before {
+    content: '';
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    background: #1e3a5f;
+    border-radius: 50%;
+}
+
+.prep-mobile-circle span {
+    position: relative;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.prep-mobile-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.85rem;
+}
+
+.prep-mobile-stats .stat-done {
+    color: #10b981;
+}
+
+.prep-mobile-stats .stat-progress {
+    color: #f59e0b;
+}
+
+.prep-mobile-stats .stat-blocked {
+    color: #ef4444;
+}
+
+.prep-mobile-countdown {
+    text-align: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,0.2);
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+/* Phases mobile */
+.prep-phases-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.prep-phase-mobile {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.phase-head-mobile {
+    display: flex;
+    align-items: center;
+    padding: 14px;
+    gap: 12px;
+    cursor: pointer;
+    background: linear-gradient(90deg, var(--color) 0%, transparent 100%);
+    background-size: 4px 100%;
+    background-repeat: no-repeat;
+}
+
+.phase-icon-mobile {
+    font-size: 1.5rem;
+}
+
+.phase-info-mobile {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.phase-name-mobile {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.phase-ratio-mobile {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.phase-bar-mobile {
+    width: 60px;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.phase-bar-fill-mobile {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s;
+}
+
+.phase-arrow-mobile {
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.phase-body-mobile {
+    display: none;
+    padding: 0 10px 10px;
+}
+
+.prep-phase-mobile.expanded .phase-body-mobile {
+    display: block;
+}
+
+/* Cartes d'étapes mobile */
+.etape-card-mobile {
+    display: flex;
+    align-items: center;
+    background: var(--background);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid var(--border);
+}
+
+.etape-card-mobile:active {
+    transform: scale(0.98);
+    background: #f1f5f9;
+}
+
+.etape-card-mobile.termine {
+    background: rgba(16, 185, 129, 0.08);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.etape-card-mobile.en_cours {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.3);
+}
+
+.etape-card-mobile.bloque {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.etape-card-left {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-right: 12px;
+    margin-right: 12px;
+    border-right: 3px solid;
+    min-width: 50px;
+}
+
+.etape-code-mobile {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-light);
+}
+
+.etape-status-icon-mobile {
+    font-size: 1.2rem;
+    margin-top: 4px;
+}
+
+.etape-status-icon-mobile.non_demarre {
+    color: #94a3b8;
+}
+
+.etape-status-icon-mobile.en_cours {
+    color: #f59e0b;
+}
+
+.etape-status-icon-mobile.termine {
+    color: #10b981;
+}
+
+.etape-status-icon-mobile.bloque {
+    color: #ef4444;
+}
+
+.etape-card-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.etape-card-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.tag-mobile {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+}
+
+.tag-jalon-mobile {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.etape-card-status {
+    display: flex;
+    align-items: center;
+}
+
+.status-select-mobile {
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: white;
+    font-size: 0.8rem;
+    color: var(--text);
+    cursor: pointer;
+    min-width: 100px;
+}
+
+.etape-card-arrow {
+    font-size: 1.5rem;
+    color: var(--text-light);
+    margin-left: 8px;
 }

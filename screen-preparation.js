@@ -8,6 +8,11 @@ const ScreenPreparation = {
     currentView: 'list', // 'list' ou 'detail'
     expandedPhases: { definir: true, planifier: false, preparer: false },
 
+    // Détection mobile
+    isMobile() {
+        return window.innerWidth <= 768;
+    },
+
     render() {
         ProcessusArret.init();
 
@@ -19,6 +24,11 @@ const ScreenPreparation = {
         // Sinon afficher la liste
         const stats = ProcessusArret.getStatsGlobales();
         const dateArret = DataManager.data.processus?.dateArret;
+
+        // Version mobile simplifiée
+        if (this.isMobile()) {
+            return this.renderMobilePreparation(stats, dateArret);
+        }
 
         return `
             <div class="prep-screen">
@@ -69,6 +79,114 @@ const ScreenPreparation = {
                     ${this.renderPhase('planifier')}
                     ${this.renderPhase('preparer')}
                 </div>
+            </div>
+        `;
+    },
+
+    // Version mobile de l'écran préparation
+    renderMobilePreparation(stats, dateArret) {
+        return `
+            <div class="prep-screen-mobile">
+                <!-- Header mobile avec progression -->
+                <div class="prep-mobile-header">
+                    <div class="prep-mobile-progress">
+                        <div class="prep-mobile-circle" style="--progress: ${stats.pourcentage}">
+                            <span>${stats.pourcentage}%</span>
+                        </div>
+                        <div class="prep-mobile-stats">
+                            <span class="stat-done">✓ ${stats.terminees}</span>
+                            <span class="stat-progress">● ${stats.enCours}</span>
+                            <span class="stat-blocked">⚠ ${stats.bloquees}</span>
+                        </div>
+                    </div>
+                    ${dateArret ? `<div class="prep-mobile-countdown">${this.getCountdown(dateArret)}</div>` : ''}
+                </div>
+
+                <!-- Les 3 phases en format mobile -->
+                <div class="prep-phases-mobile">
+                    ${this.renderPhaseMobile('definir')}
+                    ${this.renderPhaseMobile('planifier')}
+                    ${this.renderPhaseMobile('preparer')}
+                </div>
+            </div>
+        `;
+    },
+
+    // Rendu d'une phase pour mobile
+    renderPhaseMobile(phaseId) {
+        const phase = ProcessusArret.structure[phaseId];
+        const stats = ProcessusArret.getStatsPhase(phaseId);
+        const isExpanded = this.expandedPhases[phaseId];
+
+        const colors = {
+            definir: '#3b82f6',
+            planifier: '#8b5cf6',
+            preparer: '#ec4899'
+        };
+
+        return `
+            <div class="prep-phase-mobile ${isExpanded ? 'expanded' : ''}" data-phase="${phaseId}">
+                <div class="phase-head-mobile" onclick="ScreenPreparation.togglePhase('${phaseId}')" style="--color: ${colors[phaseId]}">
+                    <span class="phase-icon-mobile">${phase.icone}</span>
+                    <div class="phase-info-mobile">
+                        <span class="phase-name-mobile">${phase.nom}</span>
+                        <span class="phase-ratio-mobile">${stats.terminees}/${stats.total}</span>
+                    </div>
+                    <div class="phase-bar-mobile">
+                        <div class="phase-bar-fill-mobile" style="width: ${stats.pourcentage}%; background: ${colors[phaseId]}"></div>
+                    </div>
+                    <span class="phase-arrow-mobile">${isExpanded ? '▲' : '▼'}</span>
+                </div>
+
+                <div class="phase-body-mobile">
+                    ${phase.etapes.map(etape => this.renderEtapeCardMobile(etape, colors[phaseId])).join('')}
+                </div>
+            </div>
+        `;
+    },
+
+    // Rendu d'une étape en format carte pour mobile
+    renderEtapeCardMobile(etape, color) {
+        const etat = ProcessusArret.getEtatEtape(etape.id);
+        const statut = etat?.statut || 'non_demarre';
+
+        const statutLabels = {
+            'non_demarre': 'À faire',
+            'en_cours': 'En cours',
+            'termine': 'Terminé',
+            'bloque': 'Bloqué'
+        };
+
+        const statutIcons = {
+            'non_demarre': '○',
+            'en_cours': '◐',
+            'termine': '●',
+            'bloque': '⚠'
+        };
+
+        return `
+            <div class="etape-card-mobile ${statut}" onclick="ScreenPreparation.openEtape('${etape.id}')">
+                <div class="etape-card-left" style="border-color: ${color}">
+                    <span class="etape-code-mobile">${etape.id}</span>
+                    <span class="etape-status-icon-mobile ${statut}">${statutIcons[statut]}</span>
+                </div>
+                <div class="etape-card-content">
+                    <div class="etape-card-title">
+                        ${etape.nom}
+                        ${etape.jalon ? '<span class="tag-mobile tag-jalon-mobile">Jalon</span>' : ''}
+                    </div>
+                    <div class="etape-card-status">
+                        <select class="status-select-mobile"
+                                onclick="event.stopPropagation()"
+                                onchange="ScreenPreparation.changeStatut('${etape.id}', this.value)">
+                            <option value="non_demarre" ${statut === 'non_demarre' ? 'selected' : ''}>À faire</option>
+                            <option value="en_cours" ${statut === 'en_cours' ? 'selected' : ''}>En cours</option>
+                            <option value="termine" ${statut === 'termine' ? 'selected' : ''}>Terminé</option>
+                            <option value="bloque" ${statut === 'bloque' ? 'selected' : ''}>Bloqué</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="etape-card-arrow">›</div>
             </div>
         `;
     },
