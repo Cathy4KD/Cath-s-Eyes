@@ -8107,10 +8107,40 @@ tr:hover .btn-edit-comment {
         display: none;
     }
 
-    /* Masquer le dashboard standard sur mobile */
-    .stats-grid,
-    .grid-2 {
+    /* Masquer le dashboard standard sur mobile - SEULEMENT sur l'écran d'accueil */
+    .mobile-home + .stats-grid,
+    .mobile-home + .grid-2 {
         display: none;
+    }
+
+    /* Stats grid plus compact sur mobile pour les autres écrans */
+    .stats-grid.stats-small {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+    }
+
+    .stats-grid.stats-small .stat-card {
+        padding: 10px;
+    }
+
+    .stats-grid.stats-small .stat-info h3 {
+        font-size: 1.2rem;
+    }
+
+    .stats-grid.stats-small .stat-info p {
+        font-size: 0.75rem;
+    }
+
+    /* Onglets exécution sur mobile */
+    .exec-tabs {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .exec-tab {
+        flex: 1 1 45%;
+        font-size: 0.8rem;
+        padding: 8px;
     }
 }
 
