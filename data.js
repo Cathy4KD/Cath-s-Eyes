@@ -841,12 +841,13 @@ const DataManager = {
 
     getExecutionStats() {
         const total = this.data.travaux.length;
-        if (total === 0) return { total: 0, termine: 0, enCours: 0, nonDemarre: 0, pourcentage: 0 };
+        if (total === 0) return { total: 0, termine: 0, enCours: 0, nonDemarre: 0, pourcentage: 0, heuresEstimees: 0, heuresReelles: 0 };
 
         let termine = 0, enCours = 0, nonDemarre = 0;
 
         this.data.travaux.forEach(t => {
-            switch (t.execution.statutExec) {
+            const statut = t.execution?.statutExec;
+            switch (statut) {
                 case 'Terminé': termine++; break;
                 case 'En cours': enCours++; break;
                 default: nonDemarre++;
@@ -859,8 +860,8 @@ const DataManager = {
             enCours,
             nonDemarre,
             pourcentage: Math.round((termine / total) * 100),
-            heuresEstimees: this.data.travaux.reduce((sum, t) => sum + t.estimationHeures, 0),
-            heuresReelles: this.data.travaux.reduce((sum, t) => sum + t.execution.heuresReelles, 0)
+            heuresEstimees: this.data.travaux.reduce((sum, t) => sum + (t.estimationHeures || 0), 0),
+            heuresReelles: this.data.travaux.reduce((sum, t) => sum + (t.execution?.heuresReelles || 0), 0)
         };
     },
 
