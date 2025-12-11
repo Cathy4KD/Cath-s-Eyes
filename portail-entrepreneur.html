@@ -363,6 +363,40 @@
             font-size: 0.85rem;
         }
 
+        /* Commentaire entrepreneur par travail */
+        .entrepreneur-travail-comment {
+            margin-top: 12px;
+            padding: 10px 12px;
+            background: #f0fdf4;
+            border-radius: 6px;
+            border-left: 3px solid #10b981;
+        }
+
+        .entrepreneur-travail-comment .commentaire-label {
+            color: #065f46;
+            margin-bottom: 8px;
+        }
+
+        .comment-travail-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #d1fae5;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 50px;
+        }
+
+        .comment-travail-input:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .comment-travail-input::placeholder {
+            color: #94a3b8;
+        }
+
         /* Plan section */
         .plan-section {
             margin-bottom: 30px;
@@ -862,12 +896,23 @@
                                     `).join('')}
                                 </div>
                             ` : ''}
+
+                            <!-- Commentaire entrepreneur par travail -->
+                            <div class="entrepreneur-travail-comment">
+                                <div class="commentaire-label">✏️ Votre commentaire pour ce travail</div>
+                                <textarea class="comment-travail-input"
+                                          id="comment-travail-${index}"
+                                          data-travail-index="${index}"
+                                          placeholder="Ajoutez vos remarques, questions ou prix pour ce travail..."
+                                          rows="2">${this.commentairesTravaux[index] || ''}</textarea>
+                            </div>
                         </div>
                     </div>
                 `;
             },
 
             commentaireEntrepreneur: '',
+            commentairesTravaux: [],
 
             async loadCommentaireEntrepreneur() {
                 try {
@@ -876,33 +921,50 @@
                         .doc(this.appelId)
                         .get();
                     if (doc.exists) {
-                        this.commentaireEntrepreneur = doc.data().commentaire || '';
+                        const data = doc.data();
+                        this.commentaireEntrepreneur = data.commentaire || '';
+                        this.commentairesTravaux = data.commentairesTravaux || [];
                     }
                 } catch (e) {
                     console.log('Pas de commentaire existant');
                 }
             },
 
-            async sauvegarderCommentaire() {
-                const textarea = document.getElementById('commentaireEntrepreneur');
-                const commentaire = textarea.value.trim();
+            async sauvegarderTousCommentaires() {
+                // Récupérer le commentaire global
+                const textareaGlobal = document.getElementById('commentaireEntrepreneur');
+                const commentaireGlobal = textareaGlobal ? textareaGlobal.value.trim() : '';
+
+                // Récupérer tous les commentaires par travail
+                const commentairesTravaux = [];
+                this.travaux.forEach((t, index) => {
+                    const textarea = document.getElementById(`comment-travail-${index}`);
+                    commentairesTravaux[index] = textarea ? textarea.value.trim() : '';
+                });
 
                 try {
                     await firebase.firestore()
                         .collection('commentaires_entrepreneurs')
                         .doc(this.appelId)
                         .set({
-                            commentaire: commentaire,
+                            commentaire: commentaireGlobal,
+                            commentairesTravaux: commentairesTravaux,
                             entreprise: this.entreprise,
                             dateModification: new Date().toISOString()
                         });
 
-                    this.commentaireEntrepreneur = commentaire;
-                    this.showToast('✅ Commentaire enregistré!');
+                    this.commentaireEntrepreneur = commentaireGlobal;
+                    this.commentairesTravaux = commentairesTravaux;
+                    this.showToast('✅ Tous les commentaires enregistrés!');
                 } catch (error) {
                     console.error('Erreur sauvegarde:', error);
                     this.showToast('❌ Erreur lors de la sauvegarde', 'error');
                 }
+            },
+
+            async sauvegarderCommentaire() {
+                // Utiliser la nouvelle fonction qui sauvegarde tout
+                await this.sauvegarderTousCommentaires();
             },
 
             showPhoto(src) {
