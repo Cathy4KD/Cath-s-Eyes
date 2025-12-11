@@ -348,6 +348,31 @@
             font-size: 0.95rem;
         }
 
+        /* Plan section */
+        .plan-section {
+            margin-bottom: 30px;
+        }
+
+        .plan-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .plan-image {
+            width: 100%;
+            max-height: 500px;
+            object-fit: contain;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .plan-image:hover {
+            transform: scale(1.02);
+        }
+
         /* Boutons */
         .actions-bar {
             display: flex;
@@ -653,6 +678,15 @@
                             ` : ''}
                         </div>
 
+                        ${this.appelData.planImage ? `
+                            <div class="plan-section">
+                                <h2 class="section-title">🗺️ Plan de localisation</h2>
+                                <div class="plan-container">
+                                    <img src="${this.appelData.planImage}" alt="Plan" class="plan-image" onclick="PortailEntrepreneur.showPhoto('${this.appelData.planImage}')">
+                                </div>
+                            </div>
+                        ` : ''}
+
                         <h2 class="section-title">📋 Travaux (${this.travaux.length})</h2>
 
                         ${this.travaux.map((t, i) => this.renderTravailCard(t, i)).join('')}
@@ -706,20 +740,12 @@
                                     <div class="info-box-value">${travail.operation || '-'}</div>
                                 </div>
                                 <div class="info-box">
-                                    <div class="info-box-label">Discipline</div>
-                                    <div class="info-box-value">${travail.discipline || '-'}</div>
-                                </div>
-                                <div class="info-box">
                                     <div class="info-box-label">Heures estimées</div>
                                     <div class="info-box-value">${travail.estimationHeures || '-'} h</div>
                                 </div>
                                 <div class="info-box">
                                     <div class="info-box-label">Secteur / Localisation</div>
                                     <div class="info-box-value">${travail.localisation || travail.secteur || '-'}</div>
-                                </div>
-                                <div class="info-box">
-                                    <div class="info-box-label">Priorité</div>
-                                    <div class="info-box-value">${travail.priorite || '-'}</div>
                                 </div>
                                 ${travail.conditions ? `
                                 <div class="info-box">
