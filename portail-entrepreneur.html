@@ -444,6 +444,24 @@
             font-size: 0.85rem;
         }
 
+        /* Section Type de travail (AA/TPAA + Jour) */
+        .travail-type-section {
+            margin-top: 12px;
+            padding: 10px 0;
+        }
+
+        .type-badges {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .badge-large {
+            padding: 8px 16px !important;
+            font-size: 0.95rem !important;
+            font-weight: 600;
+        }
+
         /* Commentaire entrepreneur par travail */
         .entrepreneur-travail-comment {
             margin-top: 12px;
@@ -914,13 +932,6 @@
                     <div class="travail-card ${hasPhotos ? 'has-photo' : ''}">
                         <div class="travail-header">
                             <span class="travail-ot">${travail.ot || `#${index + 1}`}</span>
-                            <div class="travail-badges">
-                                ${isTypeAA ? '<span class="badge badge-aa">🔧 Arrêt Annuel</span>' : ''}
-                                ${isTypeTPAA ? '<span class="badge badge-tpaa">📋 TPAA</span>' : ''}
-                                ${isTypeAaOuTpaa ? '<span class="badge badge-aa-tpaa">🔧📋 AA ou TPAA</span>' : ''}
-                                ${isJeudi ? '<span class="badge badge-jeudi">🗓️ Jeudi d\'arrêt</span>' : ''}
-                                ${isHorsJeudi ? '<span class="badge badge-hors-jeudi">✓ Hors jeudi</span>' : ''}
-                            </div>
                         </div>
 
                         <div class="travail-content-wrapper">
@@ -968,6 +979,19 @@
                                                 📄 ${d.nom || 'Document'}
                                             </a>
                                         `).join('')}
+                                    </div>
+                                ` : ''}
+
+                                <!-- Type de travail (AA/TPAA + Jour) -->
+                                ${(isTypeAA || isTypeTPAA || isTypeAaOuTpaa || isJeudi || isHorsJeudi) ? `
+                                    <div class="travail-type-section">
+                                        <div class="type-badges">
+                                            ${isTypeAA ? '<span class="badge badge-aa badge-large">🔧 Arrêt Annuel</span>' : ''}
+                                            ${isTypeTPAA ? '<span class="badge badge-tpaa badge-large">📋 TPAA</span>' : ''}
+                                            ${isTypeAaOuTpaa ? '<span class="badge badge-aa-tpaa badge-large">🔧📋 AA ou TPAA</span>' : ''}
+                                            ${isJeudi ? '<span class="badge badge-jeudi badge-large">🗓️ Jeudi d\'arrêt</span>' : ''}
+                                            ${isHorsJeudi ? '<span class="badge badge-hors-jeudi badge-large">✓ Hors jeudi</span>' : ''}
+                                        </div>
                                     </div>
                                 ` : ''}
 
