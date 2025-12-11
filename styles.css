@@ -10283,14 +10283,15 @@ tr:hover .btn-edit-comment {
 }
 
 .portail-modal {
-    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+    background: #1e293b;
     border-radius: 20px;
     width: 100%;
     max-width: 450px;
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     overflow: hidden;
     animation: modalSlideIn 0.3s ease-out;
+    color: #f1f5f9;
 }
 
 @keyframes modalSlideIn {
@@ -10386,7 +10387,7 @@ tr:hover .btn-edit-comment {
 .portail-stat-label {
     display: block;
     font-size: 0.8rem;
-    color: var(--text-muted);
+    color: #94a3b8;
     margin-top: 5px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -10399,18 +10400,18 @@ tr:hover .btn-edit-comment {
 .portail-form-group label {
     display: block;
     font-size: 0.85rem;
-    color: var(--text-muted);
+    color: #94a3b8;
     margin-bottom: 8px;
     font-weight: 500;
 }
 
 .portail-input {
     width: 100%;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
     padding: 12px 15px;
-    color: var(--text);
+    color: #ffffff;
     font-size: 1rem;
     transition: all 0.2s;
 }
@@ -10432,9 +10433,10 @@ tr:hover .btn-edit-comment {
     gap: 12px;
     cursor: pointer;
     padding: 12px 15px;
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 10px;
     transition: background 0.2s;
+    color: #f1f5f9;
 }
 
 .portail-checkbox:hover {
@@ -10457,10 +10459,10 @@ tr:hover .btn-edit-comment {
 .portail-btn-cancel {
     flex: 1;
     padding: 14px 20px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
-    color: var(--text);
+    color: #ffffff;
     font-size: 1rem;
     cursor: pointer;
     transition: all 0.2s;
@@ -10505,7 +10507,7 @@ tr:hover .btn-edit-comment {
 .portail-lien-box label {
     display: block;
     font-size: 0.85rem;
-    color: var(--text-muted);
+    color: #94a3b8;
     margin-bottom: 12px;
 }
 
@@ -10546,10 +10548,10 @@ tr:hover .btn-edit-comment {
     align-items: center;
     gap: 8px;
     padding: 12px 24px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
-    color: var(--text);
+    color: #ffffff;
     text-decoration: none;
     font-size: 0.95rem;
     transition: all 0.2s;
