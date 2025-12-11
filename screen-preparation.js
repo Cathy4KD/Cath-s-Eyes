@@ -328,10 +328,13 @@ const ScreenPreparation = {
 
     togglePhase(phaseId) {
         this.expandedPhases[phaseId] = !this.expandedPhases[phaseId];
-        const phaseEl = document.querySelector(`.prep-phase[data-phase="${phaseId}"]`);
+        // Support desktop et mobile
+        const phaseEl = document.querySelector(`.prep-phase[data-phase="${phaseId}"]`) ||
+                        document.querySelector(`.prep-phase-mobile[data-phase="${phaseId}"]`);
         if (phaseEl) {
             phaseEl.classList.toggle('expanded', this.expandedPhases[phaseId]);
-            phaseEl.querySelector('.phase-arrow').textContent = this.expandedPhases[phaseId] ? '▲' : '▼';
+            const arrow = phaseEl.querySelector('.phase-arrow') || phaseEl.querySelector('.phase-arrow-mobile');
+            if (arrow) arrow.textContent = this.expandedPhases[phaseId] ? '▲' : '▼';
         }
     },
 

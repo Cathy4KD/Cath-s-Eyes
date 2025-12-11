@@ -8653,11 +8653,6 @@ tr:hover .btn-edit-comment {
     cursor: default;
 }
 
-.jour-case.jour-aujourdhui {
-    background: #dbeafe;
-    border: 2px solid #3b82f6;
-}
-
 .jour-case.jour-weekend {
     background: #fef2f2;
 }
@@ -8666,10 +8661,6 @@ tr:hover .btn-edit-comment {
     font-weight: 600;
     font-size: 0.9rem;
     margin-bottom: 5px;
-}
-
-.jour-aujourdhui .jour-numero {
-    color: #3b82f6;
 }
 
 /* Liste d'événements dans une case jour */
@@ -8884,5 +8875,242 @@ tr:hover .btn-edit-comment {
         display: flex;
         justify-content: space-between;
         align-items: center;
+    }
+
+    /* Mini-events sur mobile */
+    .jour-event-mini {
+        padding: 1px 3px;
+        font-size: 0.6rem;
+    }
+
+    .event-mini-icon {
+        font-size: 0.65rem;
+    }
+
+    .jour-events-more {
+        font-size: 0.6rem;
+    }
+}
+
+/* ========================================
+   AUJOURD'HUI - Style amélioré
+   ======================================== */
+
+/* Effet spécial pour la case d'aujourd'hui */
+.jour-case.jour-aujourdhui {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    border: 2px solid #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15);
+    position: relative;
+    overflow: visible;
+}
+
+.jour-case.jour-aujourdhui::before {
+    content: "AUJOURD'HUI";
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: white;
+    font-size: 0.55rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+}
+
+.jour-case.jour-aujourdhui .jour-numero {
+    color: #1d4ed8;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+
+.jour-case.jour-aujourdhui:hover {
+    background: linear-gradient(135deg, #bfdbfe 0%, #93c5fd 100%);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3), 0 6px 16px rgba(59, 130, 246, 0.2);
+}
+
+/* Animation pulse subtile pour aujourd'hui */
+@keyframes pulse-today {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2), 0 4px 12px rgba(59, 130, 246, 0.15); }
+    50% { box-shadow: 0 0 0 5px rgba(59, 130, 246, 0.15), 0 4px 12px rgba(59, 130, 246, 0.2); }
+}
+
+.jour-case.jour-aujourdhui {
+    animation: pulse-today 3s ease-in-out infinite;
+}
+
+/* ========================================
+   EXÉCUTION - Styles Mobile
+   ======================================== */
+
+@media (max-width: 768px) {
+    .execution-screen {
+        padding: 10px;
+    }
+
+    /* Navigation réalisation en colonne */
+    .realisation-nav {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .realisation-nav .btn {
+        width: 100%;
+    }
+
+    .realisation-nav .date-selector {
+        width: 100%;
+    }
+
+    .realisation-nav .date-selector input {
+        width: 100%;
+    }
+
+    /* Tableaux de travaux sur mobile */
+    .execution-screen .data-table th:nth-child(3),
+    .execution-screen .data-table td:nth-child(3),
+    .execution-screen .data-table th:nth-child(4),
+    .execution-screen .data-table td:nth-child(4),
+    .execution-screen .data-table th:nth-child(6),
+    .execution-screen .data-table td:nth-child(6) {
+        display: none;
+    }
+
+    .execution-screen .data-table td {
+        padding: 8px 4px;
+        font-size: 0.75rem;
+    }
+
+    /* Journal de bord sur mobile */
+    .journal-form {
+        gap: 12px;
+    }
+
+    .journal-form .form-group {
+        flex: 1 1 100%;
+    }
+
+    .chemins-critiques {
+        grid-template-columns: 1fr;
+    }
+
+    .securite-stats {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .securite-stat {
+        padding: 10px;
+    }
+
+    /* Demandes quotidiennes sur mobile */
+    .demandes-section {
+        width: 100%;
+    }
+
+    .demandes-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .demande-table th:nth-child(2),
+    .demande-table td:nth-child(2),
+    .demande-table th:nth-child(4),
+    .demande-table td:nth-child(4) {
+        display: none;
+    }
+}
+
+/* ========================================
+   POST-MORTEM - Styles Mobile
+   ======================================== */
+
+@media (max-width: 768px) {
+    .postmortem-screen {
+        padding: 10px;
+    }
+
+    .postmortem-screen .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .postmortem-tabs {
+        flex-wrap: wrap;
+        gap: 5px;
+    }
+
+    .postmortem-tab {
+        flex: 1 1 45%;
+        font-size: 0.8rem;
+        padding: 8px;
+    }
+
+    /* Tableau comparaison */
+    .comparison-table th,
+    .comparison-table td {
+        padding: 8px 4px;
+        font-size: 0.75rem;
+    }
+
+    /* Leçons apprises */
+    .lesson-card {
+        padding: 12px;
+    }
+
+    .lesson-card h4 {
+        font-size: 0.9rem;
+    }
+
+    .lesson-card p {
+        font-size: 0.8rem;
+    }
+}
+
+/* ========================================
+   DÉTAIL ÉTAPE PRÉPARATION - Mobile
+   ======================================== */
+
+@media (max-width: 768px) {
+    .etape-detail-modal {
+        padding: 10px;
+    }
+
+    .etape-detail-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .etape-detail-title h2 {
+        font-size: 1.1rem;
+    }
+
+    .etape-detail-content {
+        padding: 15px;
+    }
+
+    .etape-detail-section {
+        margin-bottom: 15px;
+    }
+
+    .etape-detail-section h3 {
+        font-size: 0.9rem;
+    }
+
+    .checklist-item {
+        padding: 10px;
+        font-size: 0.85rem;
+    }
+
+    .etape-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .etape-actions .btn {
+        width: 100%;
     }
 }
