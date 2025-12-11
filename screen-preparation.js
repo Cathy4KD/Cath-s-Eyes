@@ -5783,6 +5783,8 @@ const ScreenPreparation = {
                                     ${entreprises.map(entreprise => {
                                         const stats = statsParEntreprise[entreprise] || { count: 0, heures: 0 };
                                         const isActive = entrepreneurActif === entreprise;
+                                        const appelEnvoye = DataManager.data.processus?.appelsEnvoyes?.[entreprise];
+                                        const lienPortail = appelEnvoye ? this.getLienPortail(appelEnvoye.appelId) : null;
                                         return `
                                             <div class="secteur-card ${isActive ? 'secteur-card-active' : ''} ${this.isEntrepriseSoumise(entreprise) ? 'secteur-card-soumis' : ''}"
                                                  onclick="ScreenPreparation.voirTravauxEntreprise('${this.escapeHtml(entreprise)}')"
@@ -5807,6 +5809,16 @@ const ScreenPreparation = {
                                                         <span class="stat-label">heures</span>
                                                     </div>
                                                 </div>
+                                                ${lienPortail ? `
+                                                    <div class="secteur-portail-link" onclick="event.stopPropagation()">
+                                                        <a href="${lienPortail}" target="_blank" title="Ouvrir le portail entrepreneur">
+                                                            🔗 Portail
+                                                        </a>
+                                                        <button class="btn-copy-mini" onclick="ScreenPreparation.copierLienEntrepreneur('${appelEnvoye.appelId}')" title="Copier le lien">
+                                                            📋
+                                                        </button>
+                                                    </div>
+                                                ` : ''}
                                             </div>
                                         `;
                                     }).join('')}
@@ -6219,6 +6231,26 @@ const ScreenPreparation = {
                     App.showToast('Lien copié!', 'success');
                 });
         }
+    },
+
+    getLienPortail(appelId) {
+        const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+        return `${window.location.origin}${basePath}portail-entrepreneur.html?id=${appelId}`;
+    },
+
+    copierLienEntrepreneur(appelId) {
+        const lien = this.getLienPortail(appelId);
+        navigator.clipboard.writeText(lien)
+            .then(() => App.showToast('Lien copié!', 'success'))
+            .catch(() => {
+                const input = document.createElement('input');
+                input.value = lien;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                App.showToast('Lien copié!', 'success');
+            });
     },
 
     // Ancienne fonction conservée pour compatibilité

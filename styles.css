@@ -9963,6 +9963,46 @@ tr:hover .btn-edit-comment {
     position: relative;
 }
 
+/* Lien portail sur carte entrepreneur */
+.secteur-portail-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.secteur-portail-link a {
+    color: #60a5fa;
+    text-decoration: none;
+    font-size: 0.8rem;
+    padding: 4px 10px;
+    background: rgba(96, 165, 250, 0.1);
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.secteur-portail-link a:hover {
+    background: rgba(96, 165, 250, 0.2);
+    color: #93c5fd;
+}
+
+.btn-copy-mini {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+
+.btn-copy-mini:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
 /* ========================================
    Portail Soumission - Modal Gestionnaire
    ======================================== */

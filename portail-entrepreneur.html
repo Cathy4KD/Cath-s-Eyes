@@ -796,20 +796,27 @@
             },
 
             async loadHistorique() {
-                // Charger l'historique par équipement
-                const equipements = [...new Set(this.travaux.map(t => t.equipement).filter(e => e))];
+                // Charger l'historique par équipement (simplifié sans orderBy pour éviter erreur d'index)
+                try {
+                    const equipements = [...new Set(this.travaux.map(t => t.equipement).filter(e => e))];
 
-                for (const equip of equipements) {
-                    const snapshot = await firebase.firestore()
-                        .collection('historique_travaux')
-                        .where('equipement', '==', equip)
-                        .orderBy('annee', 'desc')
-                        .limit(5)
-                        .get();
+                    for (const equip of equipements) {
+                        try {
+                            const snapshot = await firebase.firestore()
+                                .collection('historique_travaux')
+                                .where('equipement', '==', equip)
+                                .limit(5)
+                                .get();
 
-                    if (!snapshot.empty) {
-                        this.historique[equip] = snapshot.docs.map(d => d.data());
+                            if (!snapshot.empty) {
+                                this.historique[equip] = snapshot.docs.map(d => d.data());
+                            }
+                        } catch (e) {
+                            console.log('Pas d\'historique pour', equip);
+                        }
                     }
+                } catch (error) {
+                    console.log('Historique non disponible:', error);
                 }
             },
 
