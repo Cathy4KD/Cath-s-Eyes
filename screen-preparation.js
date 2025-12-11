@@ -6083,6 +6083,7 @@ const ScreenPreparation = {
                                                     <td class="center">${t.estimationHeures || '-'}</td>
                                                     <td>
                                                         <select class="mini-select type-travail-select"
+                                                                data-travail-key="${travailKey}"
                                                                 onchange="ScreenPreparation.updateSoumissionTypeTravail('${travailKey}', this.value)">
                                                             <option value="" ${!soumData.typeTravail ? 'selected' : ''}>-</option>
                                                             <option value="aa" ${soumData.typeTravail === 'aa' ? 'selected' : ''}>🔧 AA</option>
@@ -6092,6 +6093,8 @@ const ScreenPreparation = {
                                                     </td>
                                                     <td>
                                                         <select class="mini-select jour-arret-select"
+                                                                data-travail-key="${travailKey}"
+                                                                ${soumData.typeTravail === 'aa' ? 'disabled style="opacity: 0.4; background: #e5e7eb;"' : ''}
                                                                 onchange="ScreenPreparation.updateSoumissionJourArret('${travailKey}', this.value)">
                                                             <option value="" ${!soumData.jourArret ? 'selected' : ''}>-</option>
                                                             <option value="jeudi" ${soumData.jourArret === 'jeudi' ? 'selected' : ''}>🗓️ Jeudi</option>
@@ -6539,6 +6542,24 @@ const ScreenPreparation = {
 
     updateSoumissionTypeTravail(travailKey, value) {
         this.saveSoumissionData(travailKey, { typeTravail: value || null });
+
+        // Griser/dégriser le select Jour selon le type
+        const jourSelect = document.querySelector(`.jour-arret-select[data-travail-key="${travailKey}"]`);
+        if (jourSelect) {
+            if (value === 'aa') {
+                // AA = pas de jour, griser et vider la valeur
+                jourSelect.disabled = true;
+                jourSelect.style.opacity = '0.4';
+                jourSelect.style.background = '#e5e7eb';
+                jourSelect.value = '';
+                this.saveSoumissionData(travailKey, { jourArret: null });
+            } else {
+                // TPAA ou AA/TPAA = activer le select Jour
+                jourSelect.disabled = false;
+                jourSelect.style.opacity = '1';
+                jourSelect.style.background = '';
+            }
+        }
     },
 
     updateSoumissionJourArret(travailKey, value) {
