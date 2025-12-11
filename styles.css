@@ -10262,3 +10262,348 @@ tr:hover .btn-edit-comment {
     color: var(--text-muted);
     font-style: italic;
 }
+
+/* ========================================
+   Portail Modal - Design moderne
+   ======================================== */
+
+.portail-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(5px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.portail-modal {
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+    border-radius: 20px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.portail-modal-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+    padding: 30px;
+    text-align: center;
+    position: relative;
+}
+
+.portail-success-header {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+}
+
+.portail-modal-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.portail-modal-header h2 {
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 0 0 8px 0;
+    color: white;
+}
+
+.portail-modal-header p {
+    margin: 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.95rem;
+}
+
+.portail-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 1.3rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.portail-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(90deg);
+}
+
+.portail-modal-body {
+    padding: 25px 30px;
+}
+
+.portail-stats-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.portail-stat-box {
+    flex: 1;
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    text-align: center;
+}
+
+.portail-stat-num {
+    display: block;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #f59e0b;
+    line-height: 1;
+}
+
+.portail-stat-label {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.portail-form-group {
+    margin-bottom: 18px;
+}
+
+.portail-form-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.portail-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 12px 15px;
+    color: var(--text);
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.portail-input:focus {
+    outline: none;
+    border-color: #f59e0b;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+}
+
+.portail-options {
+    margin-top: 20px;
+}
+
+.portail-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+.portail-checkbox:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.portail-checkbox input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    accent-color: #f59e0b;
+    cursor: pointer;
+}
+
+.portail-modal-footer {
+    padding: 20px 30px 25px;
+    display: flex;
+    gap: 12px;
+}
+
+.portail-btn-cancel {
+    flex: 1;
+    padding: 14px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.portail-btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.portail-btn-create {
+    flex: 2;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.portail-btn-create:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -5px rgba(245, 158, 11, 0.4);
+}
+
+.portail-btn-create:disabled {
+    opacity: 0.7;
+    cursor: wait;
+    transform: none;
+}
+
+/* Écran de succès */
+.portail-lien-box {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.portail-lien-box label {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.portail-lien-input-row {
+    display: flex;
+    gap: 10px;
+}
+
+.portail-lien-input-row .portail-input {
+    flex: 1;
+    font-size: 0.9rem;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.portail-btn-copy {
+    padding: 12px 18px;
+    background: #10b981;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.portail-btn-copy:hover {
+    background: #059669;
+}
+
+.portail-actions-row {
+    display: flex;
+    justify-content: center;
+}
+
+.portail-btn-preview {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: var(--text);
+    text-decoration: none;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+}
+
+.portail-btn-preview:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.portail-btn-done {
+    width: 100%;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.portail-btn-done:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+    .portail-modal {
+        max-width: 100%;
+        margin: 10px;
+        border-radius: 16px;
+    }
+
+    .portail-modal-header {
+        padding: 25px 20px;
+    }
+
+    .portail-modal-body {
+        padding: 20px;
+    }
+
+    .portail-modal-footer {
+        padding: 15px 20px 20px;
+        flex-direction: column;
+    }
+
+    .portail-btn-cancel,
+    .portail-btn-create {
+        flex: none;
+    }
+
+    .portail-lien-input-row {
+        flex-direction: column;
+    }
+}

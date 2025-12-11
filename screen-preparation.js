@@ -6031,102 +6031,58 @@ const ScreenPreparation = {
             return;
         }
 
-        // Vérifier si un appel existe déjà pour cette entreprise
-        const appelExistant = await this.getAppelExistant(entreprise);
+        const totalHeures = travaux.reduce((s, t) => s + (t.estimationHeures || 0), 0);
+        const nomArret = DataManager.data.processus?.nomArret || 'Arrêt Annuel 2025';
 
         const html = `
-            <div class="overlay-modal" id="appelSoumissionModal">
-                <div class="overlay-box overlay-box-large">
-                    <div class="overlay-header">
-                        <h3>🚀 Portail Soumission - ${entreprise}</h3>
-                        <button class="overlay-close" onclick="ScreenPreparation.fermerModalAppel()">×</button>
+            <div class="portail-modal-overlay" id="appelSoumissionModal" onclick="if(event.target===this)ScreenPreparation.fermerModalAppel()">
+                <div class="portail-modal">
+                    <div class="portail-modal-header">
+                        <div class="portail-modal-icon">🚀</div>
+                        <h2>Créer un portail de soumission</h2>
+                        <p>Générez un lien unique pour <strong>${entreprise}</strong></p>
+                        <button class="portail-modal-close" onclick="ScreenPreparation.fermerModalAppel()">×</button>
                     </div>
-                    <div class="overlay-content">
-                        ${appelExistant ? `
-                            <div class="appel-existant-banner">
-                                <span>📋 Un appel existe déjà pour cette entreprise</span>
-                                ${appelExistant.soumissionRecue ? `<span class="badge badge-success">✅ Soumission reçue</span>` : `<span class="badge badge-warning">⏳ En attente</span>`}
-                            </div>
-                        ` : ''}
 
-                        <div class="appel-resume">
-                            <h4>Résumé de l'appel</h4>
-                            <div class="appel-stats">
-                                <div class="appel-stat">
-                                    <span class="stat-number">${travaux.length}</span>
-                                    <span class="stat-label">Travaux</span>
-                                </div>
-                                <div class="appel-stat">
-                                    <span class="stat-number">${travaux.reduce((s, t) => s + (t.estimationHeures || 0), 0)}</span>
-                                    <span class="stat-label">Heures estimées</span>
-                                </div>
+                    <div class="portail-modal-body">
+                        <div class="portail-stats-row">
+                            <div class="portail-stat-box">
+                                <span class="portail-stat-num">${travaux.length}</span>
+                                <span class="portail-stat-label">Travaux</span>
+                            </div>
+                            <div class="portail-stat-box">
+                                <span class="portail-stat-num">${totalHeures}</span>
+                                <span class="portail-stat-label">Heures</span>
                             </div>
                         </div>
 
-                        <form id="appelSoumissionForm" class="appel-form">
-                            <div class="form-group">
-                                <label>Nom de l'arrêt</label>
-                                <input type="text" name="nomArret" value="${DataManager.data.processus?.nomArret || 'Arrêt Annuel 2025'}" required>
+                        <form id="appelSoumissionForm">
+                            <div class="portail-form-group">
+                                <label>📋 Nom de l'arrêt</label>
+                                <input type="text" name="nomArret" value="${nomArret}" class="portail-input">
                             </div>
 
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Date limite de soumission</label>
-                                    <input type="date" name="dateLimite" value="${this.getDateDansXJours(7)}">
-                                </div>
-                                <div class="form-group">
-                                    <label>Email de l'entrepreneur (optionnel)</label>
-                                    <input type="email" name="emailEntrepreneur" placeholder="entrepreneur@email.com">
-                                </div>
+                            <div class="portail-form-group">
+                                <label>📅 Date limite de soumission</label>
+                                <input type="date" name="dateLimite" value="${this.getDateDansXJours(7)}" class="portail-input">
                             </div>
 
-                            <div class="form-group">
-                                <label>Message personnalisé (optionnel)</label>
-                                <textarea name="message" rows="3" placeholder="Instructions ou informations supplémentaires pour l'entrepreneur..."></textarea>
-                            </div>
-
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" name="inclurePlan" ${DataManager.data.planConfig?.imageURL ? 'checked' : 'disabled'}>
-                                    Inclure le plan de l'usine avec positions des équipements
-                                    ${!DataManager.data.planConfig?.imageURL ? '<span style="color: #f59e0b;"> (Aucun plan configuré)</span>' : ''}
-                                </label>
-                            </div>
-
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" name="inclurePhotos">
-                                    Inclure les photos des travaux (si disponibles)
+                            <div class="portail-options">
+                                <label class="portail-checkbox">
+                                    <input type="checkbox" name="inclurePlan" ${DataManager.data.planConfig?.imageURL ? 'checked' : ''}>
+                                    <span class="checkmark"></span>
+                                    🗺️ Inclure le plan de l'usine
                                 </label>
                             </div>
                         </form>
-
-                        ${appelExistant ? `
-                            <div class="appel-lien-existant">
-                                <h4>🔗 Lien du portail</h4>
-                                <div class="lien-container">
-                                    <input type="text" readonly value="${window.location.origin}/portail-entrepreneur.html?id=${appelExistant.id}" id="lienPortail">
-                                    <button class="btn btn-sm btn-outline" onclick="ScreenPreparation.copierLienPortail()">📋 Copier</button>
-                                </div>
-                            </div>
-                        ` : ''}
-
-                        ${appelExistant?.soumissionRecue ? `
-                            <div class="soumission-recue-section">
-                                <h4>💰 Soumission reçue</h4>
-                                <button class="btn btn-primary" onclick="ScreenPreparation.voirSoumissionRecue('${appelExistant.id}')">
-                                    👁️ Voir la soumission
-                                </button>
-                            </div>
-                        ` : ''}
                     </div>
-                    <div class="overlay-footer">
-                        <button class="btn btn-outline" onclick="ScreenPreparation.fermerModalAppel()">Annuler</button>
-                        ${appelExistant ? `
-                            <button class="btn btn-warning" onclick="ScreenPreparation.mettreAJourAppel('${appelExistant.id}')">🔄 Mettre à jour</button>
-                        ` : ''}
-                        <button class="btn btn-primary" onclick="ScreenPreparation.genererAppelSoumission(${appelExistant ? `'${appelExistant.id}'` : 'null'})">
-                            ${appelExistant ? '🔗 Copier le lien' : '🚀 Créer le portail'}
+
+                    <div class="portail-modal-footer">
+                        <button class="portail-btn-cancel" onclick="ScreenPreparation.fermerModalAppel()">
+                            Annuler
+                        </button>
+                        <button class="portail-btn-create" onclick="ScreenPreparation.genererAppelSoumission(null)">
+                            🚀 Générer le lien
                         </button>
                     </div>
                 </div>
@@ -6134,25 +6090,6 @@ const ScreenPreparation = {
         `;
 
         document.body.insertAdjacentHTML('beforeend', html);
-    },
-
-    async getAppelExistant(entreprise) {
-        try {
-            const snapshot = await firebase.firestore()
-                .collection('appels_soumission')
-                .where('entreprise', '==', entreprise)
-                .orderBy('dateCreation', 'desc')
-                .limit(1)
-                .get();
-
-            if (!snapshot.empty) {
-                const doc = snapshot.docs[0];
-                return { id: doc.id, ...doc.data() };
-            }
-        } catch (error) {
-            console.error('Erreur récupération appel:', error);
-        }
-        return null;
     },
 
     getDateDansXJours(jours) {
@@ -6167,6 +6104,125 @@ const ScreenPreparation = {
     },
 
     async genererAppelSoumission(appelIdExistant) {
+        const form = document.getElementById('appelSoumissionForm');
+        if (!form) {
+            App.showToast('Erreur: formulaire non trouvé', 'error');
+            return;
+        }
+
+        const formData = new FormData(form);
+        const entreprise = this.entrepreneurActif;
+        const travaux = this.getTravauxEntrepreneurActif();
+
+        // Afficher le loading
+        const btn = document.querySelector('.portail-btn-create');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Création...';
+        }
+
+        const appelData = {
+            entreprise: entreprise,
+            nomArret: formData.get('nomArret') || 'Arrêt Annuel 2025',
+            dateLimite: formData.get('dateLimite') || null,
+            inclurePlan: formData.get('inclurePlan') === 'on',
+            travaux: travaux.map(t => ({
+                ot: t.ot || '',
+                description: t.description || '',
+                equipement: t.equipement || '',
+                discipline: t.discipline || '',
+                estimationHeures: t.estimationHeures || 0,
+                priorite: t.priorite || '',
+                secteur: t.secteur || '',
+                localisation: t.localisation || t.secteur || ''
+            })),
+            dateCreation: new Date().toISOString(),
+            soumissionRecue: false
+        };
+
+        // Ajouter le plan si demandé
+        if (appelData.inclurePlan && DataManager.data.planConfig?.imageURL) {
+            appelData.planImage = DataManager.data.planConfig.imageURL;
+        }
+
+        try {
+            // Création dans Firebase
+            const docRef = await firebase.firestore()
+                .collection('appels_soumission')
+                .add(appelData);
+
+            const appelId = docRef.id;
+
+            // Générer le lien
+            const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
+            const lien = `${window.location.origin}${basePath}portail-entrepreneur.html?id=${appelId}`;
+
+            // Afficher le succès avec le lien
+            this.afficherLienGenere(lien, entreprise);
+
+        } catch (error) {
+            console.error('Erreur création appel:', error);
+            App.showToast('Erreur: ' + (error.message || 'Impossible de créer le portail'), 'error');
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '🚀 Générer le lien';
+            }
+        }
+    },
+
+    afficherLienGenere(lien, entreprise) {
+        const modal = document.getElementById('appelSoumissionModal');
+        if (!modal) return;
+
+        modal.querySelector('.portail-modal').innerHTML = `
+            <div class="portail-modal-header portail-success-header">
+                <div class="portail-modal-icon">✅</div>
+                <h2>Portail créé avec succès!</h2>
+                <p>Lien pour <strong>${entreprise}</strong></p>
+                <button class="portail-modal-close" onclick="ScreenPreparation.fermerModalAppel()">×</button>
+            </div>
+
+            <div class="portail-modal-body">
+                <div class="portail-lien-box">
+                    <label>🔗 Lien à envoyer à l'entrepreneur:</label>
+                    <div class="portail-lien-input-row">
+                        <input type="text" value="${lien}" id="lienPortailGenere" readonly class="portail-input" onclick="this.select()">
+                        <button class="portail-btn-copy" onclick="ScreenPreparation.copierLien()">
+                            📋 Copier
+                        </button>
+                    </div>
+                </div>
+
+                <div class="portail-actions-row">
+                    <a href="${lien}" target="_blank" class="portail-btn-preview">
+                        👁️ Prévisualiser
+                    </a>
+                </div>
+            </div>
+
+            <div class="portail-modal-footer">
+                <button class="portail-btn-done" onclick="ScreenPreparation.fermerModalAppel()">
+                    ✓ Terminé
+                </button>
+            </div>
+        `;
+    },
+
+    copierLien() {
+        const input = document.getElementById('lienPortailGenere');
+        if (input) {
+            input.select();
+            navigator.clipboard.writeText(input.value)
+                .then(() => App.showToast('Lien copié!', 'success'))
+                .catch(() => {
+                    document.execCommand('copy');
+                    App.showToast('Lien copié!', 'success');
+                });
+        }
+    },
+
+    // Ancienne fonction conservée pour compatibilité
+    async genererAppelSoumissionOLD(appelIdExistant) {
         const form = document.getElementById('appelSoumissionForm');
         const formData = new FormData(form);
         const entreprise = this.entrepreneurActif;
