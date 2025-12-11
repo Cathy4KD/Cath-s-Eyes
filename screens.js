@@ -5103,28 +5103,80 @@ Actions à suivre:
             return dateEvent > aujourd_hui && dateEvent <= dans7jours;
         }).sort((a, b) => new Date(a.date) - new Date(b.date));
 
+        // Notes du jour
+        const noteJour = DataManager.getNoteJour(aujourd_hui);
+
         return `
             <div class="calendrier-screen">
-                <!-- Panneau des rappels -->
+                <!-- Panneau Aujourd'hui étendu -->
                 <div class="calendrier-rappels">
-                    <div class="rappel-section rappel-aujourdhui">
-                        <h3>📍 Aujourd'hui <span class="rappel-date">${this.formatDateComplete(aujourd_hui)}</span></h3>
-                        ${eventsAujourdhui.length === 0 ?
-                            '<p class="rappel-vide">Aucun événement aujourd\'hui</p>' :
-                            `<div class="rappel-liste">${eventsAujourdhui.map(e => this.renderEventRappel(e)).join('')}</div>`
-                        }
+                    <!-- Section Aujourd'hui avec résumé -->
+                    <div class="aujourdhui-panel">
+                        <div class="aujourdhui-header">
+                            <div class="aujourdhui-date">
+                                <span class="aujourdhui-jour">${aujourd_hui.getDate()}</span>
+                                <div class="aujourdhui-mois">
+                                    <span>${aujourd_hui.toLocaleDateString('fr-FR', {weekday: 'long'})}</span>
+                                    <span>${aujourd_hui.toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'})}</span>
+                                </div>
+                            </div>
+                            <div class="aujourdhui-badge">${eventsAujourdhui.length} événement${eventsAujourdhui.length > 1 ? 's' : ''}</div>
+                        </div>
+
+                        <!-- Résumé des événements -->
+                        <div class="aujourdhui-events">
+                            ${eventsAujourdhui.length === 0 ?
+                                '<p class="rappel-vide">🎉 Aucun événement aujourd\'hui</p>' :
+                                eventsAujourdhui.map(e => this.renderEventRappel(e)).join('')
+                            }
+                        </div>
+
+                        <!-- Zone de notes -->
+                        <div class="aujourdhui-notes">
+                            <div class="notes-header">
+                                <h4>📝 Notes du jour</h4>
+                            </div>
+                            <textarea class="notes-textarea"
+                                placeholder="Écrivez vos notes ici..."
+                                onchange="Screens.saveNoteJour(this.value)">${noteJour.note || ''}</textarea>
+                        </div>
+
+                        <!-- Zone photos -->
+                        <div class="aujourdhui-photos">
+                            <div class="photos-header">
+                                <h4>📷 Photos</h4>
+                                <label class="btn btn-sm btn-outline photo-add-btn">
+                                    + Ajouter
+                                    <input type="file" accept="image/*" capture="environment"
+                                           onchange="Screens.addPhotoJour(this)" style="display:none">
+                                </label>
+                            </div>
+                            <div class="photos-grid">
+                                ${noteJour.photos && noteJour.photos.length > 0 ?
+                                    noteJour.photos.map(p => `
+                                        <div class="photo-item" onclick="Screens.viewPhoto('${p.id}')">
+                                            <img src="${p.data}" alt="Photo">
+                                            <button class="photo-delete" onclick="event.stopPropagation(); Screens.deletePhotoJour('${p.id}')" title="Supprimer">×</button>
+                                        </div>
+                                    `).join('') :
+                                    '<p class="photos-empty">Aucune photo</p>'
+                                }
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Demain et Cette semaine -->
                     <div class="rappel-section rappel-demain">
                         <h3>⏰ Demain</h3>
                         ${events24h.length === 0 ?
-                            '<p class="rappel-vide">Aucun événement demain</p>' :
+                            '<p class="rappel-vide">Aucun événement</p>' :
                             `<div class="rappel-liste">${events24h.map(e => this.renderEventRappel(e)).join('')}</div>`
                         }
                     </div>
                     <div class="rappel-section rappel-semaine">
                         <h3>📆 Cette semaine (${eventsSemaine.length})</h3>
                         ${eventsSemaine.length === 0 ?
-                            '<p class="rappel-vide">Aucun événement cette semaine</p>' :
+                            '<p class="rappel-vide">Aucun événement</p>' :
                             `<div class="rappel-liste">${eventsSemaine.slice(0, 5).map(e => this.renderEventRappel(e, true)).join('')}
                              ${eventsSemaine.length > 5 ? `<p class="rappel-more">+ ${eventsSemaine.length - 5} autres...</p>` : ''}</div>`
                         }
@@ -5499,5 +5551,87 @@ Actions à suivre:
     voirJour(dateStr) {
         // TODO: Afficher les détails du jour
         console.log('Voir jour:', dateStr);
+    },
+
+    // === Notes et Photos du jour ===
+
+    saveNoteJour(note) {
+        const today = new Date().toISOString().split('T')[0];
+        DataManager.saveNoteJour(today, note);
+        App.showToast('Note sauvegardée', 'success');
+    },
+
+    addPhotoJour(input) {
+        const file = input.files[0];
+        if (!file) return;
+
+        // Vérifier la taille (max 2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            App.showToast('Image trop grande (max 2MB)', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            // Compresser l'image si nécessaire
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxSize = 800;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxSize || height > maxSize) {
+                    if (width > height) {
+                        height = (height / width) * maxSize;
+                        width = maxSize;
+                    } else {
+                        width = (width / height) * maxSize;
+                        height = maxSize;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressedData = canvas.toDataURL('image/jpeg', 0.7);
+                const today = new Date().toISOString().split('T')[0];
+                DataManager.addPhotoJour(today, compressedData);
+                App.showToast('Photo ajoutée', 'success');
+                App.renderScreen('calendrier');
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    },
+
+    deletePhotoJour(photoId) {
+        if (confirm('Supprimer cette photo ?')) {
+            const today = new Date().toISOString().split('T')[0];
+            DataManager.deletePhotoJour(today, photoId);
+            App.showToast('Photo supprimée', 'success');
+            App.renderScreen('calendrier');
+        }
+    },
+
+    viewPhoto(photoId) {
+        const today = new Date().toISOString().split('T')[0];
+        const noteJour = DataManager.getNoteJour(today);
+        const photo = noteJour.photos.find(p => p.id === photoId);
+        if (photo) {
+            // Afficher en plein écran
+            const modal = document.createElement('div');
+            modal.className = 'photo-modal';
+            modal.innerHTML = `
+                <div class="photo-modal-content">
+                    <img src="${photo.data}" alt="Photo">
+                    <button class="photo-modal-close" onclick="this.parentElement.parentElement.remove()">×</button>
+                </div>
+            `;
+            modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+            document.body.appendChild(modal);
+        }
     }
 };

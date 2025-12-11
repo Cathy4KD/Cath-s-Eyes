@@ -14,6 +14,7 @@ const DataManager = {
         pieces: [],            // Pièces importées
         avis: [],              // Avis importés
         processus: null,       // Données du processus d'arrêt (initialisé par ProcessusArret)
+        notesJour: {},         // Notes journalières {date: {note: '', photos: []}}
         metadata: {
             lastImportTravaux: null,
             lastImportExecution: null,
@@ -58,6 +59,7 @@ const DataManager = {
                     pieces: loadedData.pieces || [],
                     avis: loadedData.avis || [],
                     processus: loadedData.processus || null,
+                    notesJour: loadedData.notesJour || {},
                     metadata: {
                         ...this.data.metadata,
                         ...(loadedData.metadata || {})
@@ -860,6 +862,48 @@ const DataManager = {
             heuresEstimees: this.data.travaux.reduce((sum, t) => sum + t.estimationHeures, 0),
             heuresReelles: this.data.travaux.reduce((sum, t) => sum + t.execution.heuresReelles, 0)
         };
+    },
+
+    // === GESTION DES NOTES JOURNALIÈRES ===
+
+    getNoteJour(date) {
+        const dateKey = typeof date === 'string' ? date.split('T')[0] : date.toISOString().split('T')[0];
+        return this.data.notesJour[dateKey] || { note: '', photos: [] };
+    },
+
+    saveNoteJour(date, note) {
+        const dateKey = typeof date === 'string' ? date.split('T')[0] : date.toISOString().split('T')[0];
+        if (!this.data.notesJour[dateKey]) {
+            this.data.notesJour[dateKey] = { note: '', photos: [] };
+        }
+        this.data.notesJour[dateKey].note = note;
+        this.saveToStorage();
+        this.notifyUpdate('notesJour', { date: dateKey });
+    },
+
+    addPhotoJour(date, photoData) {
+        const dateKey = typeof date === 'string' ? date.split('T')[0] : date.toISOString().split('T')[0];
+        if (!this.data.notesJour[dateKey]) {
+            this.data.notesJour[dateKey] = { note: '', photos: [] };
+        }
+        const photo = {
+            id: `PHOTO-${Date.now()}`,
+            data: photoData,
+            timestamp: new Date().toISOString()
+        };
+        this.data.notesJour[dateKey].photos.push(photo);
+        this.saveToStorage();
+        this.notifyUpdate('notesJour', { date: dateKey, photo });
+        return photo;
+    },
+
+    deletePhotoJour(date, photoId) {
+        const dateKey = typeof date === 'string' ? date.split('T')[0] : date.toISOString().split('T')[0];
+        if (this.data.notesJour[dateKey]) {
+            this.data.notesJour[dateKey].photos = this.data.notesJour[dateKey].photos.filter(p => p.id !== photoId);
+            this.saveToStorage();
+            this.notifyUpdate('notesJour', { date: dateKey });
+        }
     },
 
     // === GESTION DES COMMENTAIRES ===
