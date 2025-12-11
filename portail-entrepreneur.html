@@ -779,25 +779,21 @@
             },
 
             renderTravailCard(travail, index) {
-                const isTPAA = travail.discipline?.toLowerCase().includes('tpaa') ||
-                               travail.ot?.toLowerCase().includes('tpaa') ||
-                               travail.description?.toLowerCase().includes('tpaa');
+                // Type de travail : AA ou TPAA (depuis la colonne Type)
+                const isTypeAA = travail.typeTravail === 'aa';
+                const isTypeTPAA = travail.typeTravail === 'tpaa';
 
-                // Déterminer le type de jour (AA, Jeudi, Hors Jeudi)
-                const isAA = travail.jourArret === 'aa';
+                // Jour : Jeudi ou Hors Jeudi (depuis la colonne Jour)
                 const isJeudi = travail.jourArret === 'jeudi';
                 const isHorsJeudi = travail.jourArret === 'hors-jeudi';
-
-                const prioriteClass = (travail.priorite || '').toLowerCase().includes('haute') ? 'badge-priorite-haute' :
-                                      (travail.priorite || '').toLowerCase().includes('moyenne') ? 'badge-priorite-moyenne' : '';
 
                 return `
                     <div class="travail-card">
                         <div class="travail-header">
                             <span class="travail-ot">${travail.ot || `#${index + 1}`}</span>
                             <div class="travail-badges">
-                                ${isTPAA ? '<span class="badge badge-tpaa">TPAA</span>' : ''}
-                                ${isAA ? '<span class="badge badge-aa">🔧 Arrêt Annuel</span>' : ''}
+                                ${isTypeAA ? '<span class="badge badge-aa">🔧 Arrêt Annuel</span>' : ''}
+                                ${isTypeTPAA ? '<span class="badge badge-tpaa">📋 TPAA</span>' : ''}
                                 ${isJeudi ? '<span class="badge badge-jeudi">🗓️ Jeudi d\'arrêt</span>' : ''}
                                 ${isHorsJeudi ? '<span class="badge badge-hors-jeudi">✓ Hors jeudi</span>' : ''}
                             </div>

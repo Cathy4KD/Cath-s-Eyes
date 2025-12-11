@@ -6062,14 +6062,15 @@ const ScreenPreparation = {
                                                 <th>Description</th>
                                                 <th>Équipement</th>
                                                 <th>Heures</th>
-                                                <th style="width: 120px;">Jour arrêt</th>
+                                                <th style="width: 100px;">Type</th>
+                                                <th style="width: 110px;">Jour</th>
                                                 <th style="width: 150px;">Commentaire</th>
                                                 <th style="width: 80px;">Photos</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             ${travauxAffiches.length === 0 ? `
-                                                <tr><td colspan="7" class="empty-msg">Aucun travail pour cette entreprise</td></tr>
+                                                <tr><td colspan="8" class="empty-msg">Aucun travail pour cette entreprise</td></tr>
                                             ` : travauxAffiches.map((t, idx) => {
                                                 const travailKey = this.getTravailSoumissionKey(t);
                                                 const soumData = this.getSoumissionData(travailKey);
@@ -6081,10 +6082,17 @@ const ScreenPreparation = {
                                                     <td>${t.equipement || '-'}</td>
                                                     <td class="center">${t.estimationHeures || '-'}</td>
                                                     <td>
+                                                        <select class="mini-select type-travail-select"
+                                                                onchange="ScreenPreparation.updateSoumissionTypeTravail('${travailKey}', this.value)">
+                                                            <option value="" ${!soumData.typeTravail ? 'selected' : ''}>-</option>
+                                                            <option value="aa" ${soumData.typeTravail === 'aa' ? 'selected' : ''}>🔧 AA</option>
+                                                            <option value="tpaa" ${soumData.typeTravail === 'tpaa' ? 'selected' : ''}>📋 TPAA</option>
+                                                        </select>
+                                                    </td>
+                                                    <td>
                                                         <select class="mini-select jour-arret-select"
                                                                 onchange="ScreenPreparation.updateSoumissionJourArret('${travailKey}', this.value)">
                                                             <option value="" ${!soumData.jourArret ? 'selected' : ''}>-</option>
-                                                            <option value="aa" ${soumData.jourArret === 'aa' ? 'selected' : ''}>🔧 AA</option>
                                                             <option value="jeudi" ${soumData.jourArret === 'jeudi' ? 'selected' : ''}>🗓️ Jeudi</option>
                                                             <option value="hors-jeudi" ${soumData.jourArret === 'hors-jeudi' ? 'selected' : ''}>✓ Hors jeudi</option>
                                                         </select>
@@ -6379,9 +6387,10 @@ const ScreenPreparation = {
                     localisation: t.localisation || t.secteur || '',
                     operation: t.operation || '',
                     // Données saisies dans l'écran PL9.0
+                    typeTravail: soumData.typeTravail || null, // 'aa' ou 'tpaa'
+                    jourArret: soumData.jourArret || null, // 'jeudi' ou 'hors-jeudi'
                     commentaire: soumData.commentaire || '',
                     photos: soumData.photos || [],
-                    jourArret: soumData.jourArret || null,
                     conditions: t.conditions || t.contraintesAcces || ''
                 };
             }),
@@ -6525,6 +6534,10 @@ const ScreenPreparation = {
             ...data
         };
         DataManager.saveToStorage();
+    },
+
+    updateSoumissionTypeTravail(travailKey, value) {
+        this.saveSoumissionData(travailKey, { typeTravail: value || null });
     },
 
     updateSoumissionJourArret(travailKey, value) {
