@@ -6541,7 +6541,8 @@ const ScreenPreparation = {
             ...DataManager.data.processus.soumissionData[travailKey],
             ...data
         };
-        DataManager.saveToStorage();
+        // Sauvegarde immédiate (pas de debounce) pour éviter perte de données
+        DataManager.saveToStorage(true);
     },
 
     updateSoumissionTypeTravail(travailKey, value) {
