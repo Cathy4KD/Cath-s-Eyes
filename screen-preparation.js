@@ -6401,6 +6401,15 @@ const ScreenPreparation = {
 
             const appelId = docRef.id;
 
+            // Sauvegarder l'appelId pour afficher le lien sur la carte entrepreneur
+            if (!DataManager.data.processus) DataManager.data.processus = {};
+            if (!DataManager.data.processus.appelsEnvoyes) DataManager.data.processus.appelsEnvoyes = {};
+            DataManager.data.processus.appelsEnvoyes[entreprise] = {
+                appelId: appelId,
+                dateCreation: new Date().toISOString()
+            };
+            DataManager.saveToStorage();
+
             // Générer le lien
             const basePath = window.location.pathname.substring(0, window.location.pathname.lastIndexOf('/') + 1);
             const lien = `${window.location.origin}${basePath}portail-entrepreneur.html?id=${appelId}`;
