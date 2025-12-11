@@ -8635,12 +8635,13 @@ tr:hover .btn-edit-comment {
 .jour-case {
     background: var(--background);
     border-radius: 6px;
-    padding: 8px;
-    min-height: 80px;
+    padding: 6px;
+    min-height: 100px;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .jour-case:hover {
@@ -8671,6 +8672,48 @@ tr:hover .btn-edit-comment {
     color: #3b82f6;
 }
 
+/* Liste d'événements dans une case jour */
+.jour-events-liste {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: auto;
+    overflow: hidden;
+}
+
+.jour-event-mini {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    border-left: 2px solid;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.event-mini-icon {
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+.event-mini-titre {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text);
+}
+
+.jour-events-more {
+    font-size: 0.65rem;
+    color: var(--text-light);
+    text-align: center;
+    padding: 2px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 3px;
+}
+
+/* Ancien style dots (gardé pour compatibilité) */
 .jour-events-dots {
     display: flex;
     flex-wrap: wrap;

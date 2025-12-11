@@ -5365,14 +5365,18 @@ Actions à suivre:
             html += `<span class="jour-numero">${jour}</span>`;
 
             if (eventsJour.length > 0) {
-                html += `<div class="jour-events-dots">`;
-                const uniqueTypes = [...new Set(eventsJour.map(e => e.type))];
-                uniqueTypes.slice(0, 4).forEach(type => {
-                    const color = {arret: '#ef4444', tpaa: '#f59e0b', reunion: '#3b82f6', jalon: '#8b5cf6', travaux: '#10b981'}[type];
-                    html += `<span class="event-dot" style="background: ${color}"></span>`;
+                html += `<div class="jour-events-liste">`;
+                // Afficher les 3 premiers événements avec leur titre
+                eventsJour.slice(0, 3).forEach(e => {
+                    const color = {arret: '#ef4444', tpaa: '#f59e0b', reunion: '#3b82f6', jalon: '#8b5cf6', travaux: '#10b981'}[e.type];
+                    const titre = e.titre.length > 15 ? e.titre.substring(0, 15) + '...' : e.titre;
+                    html += `<div class="jour-event-mini" style="background: ${color}20; border-left-color: ${color}">
+                        <span class="event-mini-icon">${e.icon}</span>
+                        <span class="event-mini-titre">${titre}</span>
+                    </div>`;
                 });
-                if (eventsJour.length > 4) {
-                    html += `<span class="events-count">+${eventsJour.length - 4}</span>`;
+                if (eventsJour.length > 3) {
+                    html += `<div class="jour-events-more">+${eventsJour.length - 3} autres</div>`;
                 }
                 html += `</div>`;
             }
