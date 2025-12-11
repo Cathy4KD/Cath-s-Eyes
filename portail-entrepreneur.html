@@ -419,16 +419,13 @@
             background: #dbeafe;
         }
 
-        /* Commentaire - compact inline */
+        /* Commentaire gestionnaire (jaune) */
         .travail-commentaire {
             margin-top: 10px;
-            padding: 8px 12px;
+            padding: 10px 12px;
             background: #fffbeb;
             border-radius: 6px;
             border-left: 3px solid #f59e0b;
-            display: flex;
-            align-items: flex-start;
-            gap: 8px;
         }
 
         .commentaire-label {
@@ -436,12 +433,13 @@
             color: #92400e;
             text-transform: uppercase;
             font-weight: 600;
-            white-space: nowrap;
+            margin-bottom: 8px;
         }
 
         .commentaire-text {
             color: #78350f;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
+            line-height: 1.4;
         }
 
         /* Section Type de travail (AA/TPAA + Jour) */
@@ -475,18 +473,27 @@
         /* Ligne des deux commentaires côte à côte */
         .comments-row {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             margin-top: 12px;
         }
 
         .comments-row .travail-commentaire {
             flex: 1;
             margin-top: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .comments-row .travail-commentaire .commentaire-text {
+            flex: 1;
+            min-height: 80px;
         }
 
         .comments-row .entrepreneur-travail-comment {
             flex: 1;
             margin-top: 0;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Commentaire entrepreneur par travail */
@@ -510,7 +517,8 @@
             font-size: 0.9rem;
             font-family: inherit;
             resize: vertical;
-            min-height: 50px;
+            min-height: 80px;
+            flex: 1;
         }
 
         .comment-travail-input:focus {
