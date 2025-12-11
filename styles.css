@@ -9886,3 +9886,73 @@ tr:hover .btn-edit-comment {
         padding: 15px;
     }
 }
+
+/* ========================================
+   Case à cocher "Soumis" - Cartes Entrepreneur
+   ======================================== */
+
+.secteur-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.soumis-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    transition: background 0.2s;
+}
+
+.soumis-checkbox:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.soumis-checkbox input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: #10b981;
+}
+
+.soumis-label {
+    color: rgba(255, 255, 255, 0.8);
+    white-space: nowrap;
+}
+
+.secteur-card-soumis {
+    border: 2px solid #10b981 !important;
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%) !important;
+}
+
+.secteur-card-soumis .soumis-label {
+    color: #a7f3d0;
+    font-weight: 600;
+}
+
+.secteur-card-soumis::after {
+    content: "✓";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #10b981;
+    color: white;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.secteur-card {
+    position: relative;
+}

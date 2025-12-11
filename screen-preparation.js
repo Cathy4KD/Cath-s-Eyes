@@ -5784,11 +5784,18 @@ const ScreenPreparation = {
                                         const stats = statsParEntreprise[entreprise] || { count: 0, heures: 0 };
                                         const isActive = entrepreneurActif === entreprise;
                                         return `
-                                            <div class="secteur-card ${isActive ? 'secteur-card-active' : ''}"
+                                            <div class="secteur-card ${isActive ? 'secteur-card-active' : ''} ${this.isEntrepriseSoumise(entreprise) ? 'secteur-card-soumis' : ''}"
                                                  onclick="ScreenPreparation.voirTravauxEntreprise('${this.escapeHtml(entreprise)}')"
                                                  style="cursor: pointer;">
                                                 <div class="secteur-header">
                                                     <span class="secteur-nom" title="${entreprise}">${entreprise.length > 25 ? entreprise.substring(0, 25) + '...' : entreprise}</span>
+                                                    <label class="soumis-checkbox" onclick="event.stopPropagation()">
+                                                        <input type="checkbox"
+                                                               ${this.isEntrepriseSoumise(entreprise) ? 'checked' : ''}
+                                                               onchange="ScreenPreparation.toggleEntrepriseSoumise('${this.escapeHtml(entreprise)}', this.checked)"
+                                                               title="Marquer comme soumis">
+                                                        <span class="soumis-label">Soumis</span>
+                                                    </label>
                                                 </div>
                                                 <div class="secteur-stats">
                                                     <div class="secteur-stat">
@@ -5975,6 +5982,37 @@ const ScreenPreparation = {
     voirTravauxEntreprise(entreprise) {
         this.entrepreneurActif = entreprise;
         this.refresh();
+    },
+
+    isEntrepriseSoumise(entreprise) {
+        const soumissions = DataManager.data.processus?.entreprisesSoumises || {};
+        return soumissions[entreprise] === true;
+    },
+
+    toggleEntrepriseSoumise(entreprise, checked) {
+        if (!DataManager.data.processus) {
+            DataManager.data.processus = {};
+        }
+        if (!DataManager.data.processus.entreprisesSoumises) {
+            DataManager.data.processus.entreprisesSoumises = {};
+        }
+        DataManager.data.processus.entreprisesSoumises[entreprise] = checked;
+        DataManager.saveToStorage();
+
+        // Mettre à jour visuellement la carte sans recharger toute la page
+        const cards = document.querySelectorAll('.secteur-card');
+        cards.forEach(card => {
+            const nomElement = card.querySelector('.secteur-nom');
+            if (nomElement && (nomElement.title === entreprise || nomElement.textContent === entreprise || nomElement.textContent === entreprise.substring(0, 25) + '...')) {
+                if (checked) {
+                    card.classList.add('secteur-card-soumis');
+                } else {
+                    card.classList.remove('secteur-card-soumis');
+                }
+            }
+        });
+
+        App.showToast(checked ? `${entreprise} marqué comme soumis` : `${entreprise} non soumis`, 'success');
     },
 
     getTravauxEntrepreneurActif() {
