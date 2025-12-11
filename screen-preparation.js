@@ -6054,31 +6054,55 @@ const ScreenPreparation = {
                             </div>
 
                             ${entrepreneurActif ? `
-                                <div class="table-container" style="max-height: 400px;">
-                                    <table class="planifier-table" id="tableTravauxEntrepreneur">
+                                <div class="table-container" style="max-height: 500px;">
+                                    <table class="planifier-table table-soumission" id="tableTravauxEntrepreneur">
                                         <thead>
                                             <tr>
                                                 <th>OT</th>
                                                 <th>Description</th>
                                                 <th>Équipement</th>
-                                                <th>Discipline</th>
                                                 <th>Heures</th>
-                                                <th>Priorité</th>
+                                                <th style="width: 120px;">Jour arrêt</th>
+                                                <th style="width: 150px;">Commentaire</th>
+                                                <th style="width: 80px;">Photos</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             ${travauxAffiches.length === 0 ? `
-                                                <tr><td colspan="6" class="empty-msg">Aucun travail pour cette entreprise</td></tr>
-                                            ` : travauxAffiches.map(t => `
-                                                <tr>
+                                                <tr><td colspan="7" class="empty-msg">Aucun travail pour cette entreprise</td></tr>
+                                            ` : travauxAffiches.map((t, idx) => {
+                                                const travailKey = this.getTravailSoumissionKey(t);
+                                                const soumData = this.getSoumissionData(travailKey);
+                                                const photosCount = soumData.photos?.length || 0;
+                                                return `
+                                                <tr data-travail-key="${travailKey}">
                                                     <td><strong>${t.ot || '-'}</strong></td>
-                                                    <td title="${t.description || ''}">${(t.description || '-').substring(0, 50)}${(t.description || '').length > 50 ? '...' : ''}</td>
+                                                    <td title="${t.description || ''}">${(t.description || '-').substring(0, 40)}${(t.description || '').length > 40 ? '...' : ''}</td>
                                                     <td>${t.equipement || '-'}</td>
-                                                    <td>${t.discipline || '-'}</td>
                                                     <td class="center">${t.estimationHeures || '-'}</td>
-                                                    <td>${t.priorite || '-'}</td>
+                                                    <td>
+                                                        <select class="mini-select jour-arret-select"
+                                                                onchange="ScreenPreparation.updateSoumissionJourArret('${travailKey}', this.value)">
+                                                            <option value="" ${!soumData.jourArret ? 'selected' : ''}>-</option>
+                                                            <option value="jeudi" ${soumData.jourArret === 'jeudi' ? 'selected' : ''}>🗓️ Jeudi</option>
+                                                            <option value="hors-jeudi" ${soumData.jourArret === 'hors-jeudi' ? 'selected' : ''}>✓ Hors jeudi</option>
+                                                        </select>
+                                                    </td>
+                                                    <td>
+                                                        <input type="text" class="mini-input commentaire-input"
+                                                               value="${soumData.commentaire || ''}"
+                                                               placeholder="Commentaire..."
+                                                               onchange="ScreenPreparation.updateSoumissionCommentaire('${travailKey}', this.value)">
+                                                    </td>
+                                                    <td class="center">
+                                                        <button class="btn-photo ${photosCount > 0 ? 'has-photos' : ''}"
+                                                                onclick="ScreenPreparation.gererPhotosSoumission('${travailKey}')"
+                                                                title="${photosCount > 0 ? photosCount + ' photo(s)' : 'Ajouter des photos'}">
+                                                            📷 ${photosCount > 0 ? photosCount : '+'}
+                                                        </button>
+                                                    </td>
                                                 </tr>
-                                            `).join('')}
+                                            `;}).join('')}
                                         </tbody>
                                     </table>
                                 </div>
@@ -6340,24 +6364,26 @@ const ScreenPreparation = {
             nomArret: formData.get('nomArret') || 'Arrêt Annuel 2025',
             dateLimite: formData.get('dateLimite') || null,
             inclurePlan: formData.get('inclurePlan') === 'on',
-            travaux: travaux.map(t => ({
-                ot: t.ot || '',
-                description: t.description || '',
-                equipement: t.equipement || '',
-                discipline: t.discipline || '',
-                estimationHeures: t.estimationHeures || 0,
-                priorite: t.priorite || '',
-                secteur: t.secteur || '',
-                localisation: t.localisation || t.secteur || '',
-                operation: t.operation || '',
-                commentaire: t.commentaire || t.notes || '',
-                photos: t.photos || [],
-                documents: t.documents || [],
-                // Détecter Jeudi/Hors Jeudi basé sur operation ou champ dédié
-                jourArret: t.jourArret || (t.operation?.toLowerCase().includes('jeudi') ? 'jeudi' :
-                           t.operation?.toLowerCase().includes('hors') ? 'hors-jeudi' : null),
-                conditions: t.conditions || t.contraintesAcces || ''
-            })),
+            travaux: travaux.map(t => {
+                // Récupérer les données de soumission saisies dans le tableau
+                const travailKey = this.getTravailSoumissionKey(t);
+                const soumData = this.getSoumissionData(travailKey);
+
+                return {
+                    ot: t.ot || '',
+                    description: t.description || '',
+                    equipement: t.equipement || '',
+                    estimationHeures: t.estimationHeures || 0,
+                    secteur: t.secteur || '',
+                    localisation: t.localisation || t.secteur || '',
+                    operation: t.operation || '',
+                    // Données saisies dans l'écran PL9.0
+                    commentaire: soumData.commentaire || '',
+                    photos: soumData.photos || [],
+                    jourArret: soumData.jourArret || null,
+                    conditions: t.conditions || t.contraintesAcces || ''
+                };
+            }),
             dateCreation: new Date().toISOString(),
             soumissionRecue: false
         };
@@ -6461,6 +6487,179 @@ const ScreenPreparation = {
                 document.body.removeChild(input);
                 App.showToast('Lien copié!', 'success');
             });
+    },
+
+    // ==========================================
+    // DONNÉES SOUMISSION PAR TRAVAIL
+    // Stockées par clé unique (équipement + opération)
+    // ==========================================
+
+    getTravailSoumissionKey(travail) {
+        // Clé unique basée sur équipement + opération pour historique
+        const equip = (travail.equipement || '').trim().toUpperCase();
+        const op = (travail.operation || travail.description || '').trim().substring(0, 50);
+        return `${equip}_${op}`.replace(/[^a-zA-Z0-9_]/g, '_');
+    },
+
+    getSoumissionData(travailKey) {
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.soumissionData) DataManager.data.processus.soumissionData = {};
+        return DataManager.data.processus.soumissionData[travailKey] || {};
+    },
+
+    saveSoumissionData(travailKey, data) {
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.soumissionData) DataManager.data.processus.soumissionData = {};
+        DataManager.data.processus.soumissionData[travailKey] = {
+            ...DataManager.data.processus.soumissionData[travailKey],
+            ...data
+        };
+        DataManager.saveToStorage();
+    },
+
+    updateSoumissionJourArret(travailKey, value) {
+        this.saveSoumissionData(travailKey, { jourArret: value || null });
+    },
+
+    updateSoumissionCommentaire(travailKey, value) {
+        this.saveSoumissionData(travailKey, { commentaire: value || '' });
+    },
+
+    gererPhotosSoumission(travailKey) {
+        const soumData = this.getSoumissionData(travailKey);
+        const photos = soumData.photos || [];
+
+        const html = `
+            <div class="overlay-modal" id="photosSoumissionModal">
+                <div class="overlay-content" style="max-width: 600px;">
+                    <div class="overlay-header">
+                        <h3>📷 Photos du travail</h3>
+                        <button class="btn-close" onclick="document.getElementById('photosSoumissionModal').remove()">×</button>
+                    </div>
+                    <div class="overlay-body">
+                        <div class="photos-grid-edit" id="photosGridEdit">
+                            ${photos.length === 0 ? '<p class="empty-msg">Aucune photo</p>' : ''}
+                            ${photos.map((p, i) => `
+                                <div class="photo-item">
+                                    <img src="${p}" alt="Photo ${i+1}" onclick="ScreenPreparation.agrandirPhoto('${p}')">
+                                    <button class="btn-delete-photo" onclick="ScreenPreparation.supprimerPhotoSoumission('${travailKey}', ${i})">×</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="photo-upload-zone">
+                            <input type="file" id="photoInput" accept="image/*" multiple style="display:none"
+                                   onchange="ScreenPreparation.ajouterPhotosSoumission('${travailKey}', this.files)">
+                            <button class="btn btn-primary" onclick="document.getElementById('photoInput').click()">
+                                📷 Ajouter des photos
+                            </button>
+                            <p class="hint">Max 5 photos, compression automatique</p>
+                        </div>
+                    </div>
+                    <div class="overlay-footer">
+                        <button class="btn btn-primary" onclick="document.getElementById('photosSoumissionModal').remove()">
+                            Terminé
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+    },
+
+    async ajouterPhotosSoumission(travailKey, files) {
+        const soumData = this.getSoumissionData(travailKey);
+        let photos = soumData.photos || [];
+
+        if (photos.length + files.length > 5) {
+            App.showToast('Maximum 5 photos par travail', 'error');
+            return;
+        }
+
+        for (let file of files) {
+            if (photos.length >= 5) break;
+
+            try {
+                const compressed = await this.compressImage(file, 800, 0.7);
+                photos.push(compressed);
+            } catch (e) {
+                console.error('Erreur compression:', e);
+            }
+        }
+
+        this.saveSoumissionData(travailKey, { photos });
+
+        // Rafraîchir le modal
+        document.getElementById('photosSoumissionModal')?.remove();
+        this.gererPhotosSoumission(travailKey);
+
+        // Mettre à jour le bouton dans le tableau
+        this.updatePhotoBtnCount(travailKey, photos.length);
+    },
+
+    supprimerPhotoSoumission(travailKey, index) {
+        const soumData = this.getSoumissionData(travailKey);
+        let photos = soumData.photos || [];
+        photos.splice(index, 1);
+        this.saveSoumissionData(travailKey, { photos });
+
+        // Rafraîchir le modal
+        document.getElementById('photosSoumissionModal')?.remove();
+        this.gererPhotosSoumission(travailKey);
+
+        // Mettre à jour le bouton dans le tableau
+        this.updatePhotoBtnCount(travailKey, photos.length);
+    },
+
+    updatePhotoBtnCount(travailKey, count) {
+        const row = document.querySelector(`tr[data-travail-key="${travailKey}"]`);
+        if (row) {
+            const btn = row.querySelector('.btn-photo');
+            if (btn) {
+                btn.textContent = `📷 ${count > 0 ? count : '+'}`;
+                btn.classList.toggle('has-photos', count > 0);
+            }
+        }
+    },
+
+    agrandirPhoto(src) {
+        const html = `
+            <div class="photo-modal-full" onclick="this.remove()">
+                <img src="${src}" alt="Photo">
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+    },
+
+    async compressImage(file, maxSize = 800, quality = 0.7) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height && width > maxSize) {
+                        height = (height * maxSize) / width;
+                        width = maxSize;
+                    } else if (height > maxSize) {
+                        width = (width * maxSize) / height;
+                        height = maxSize;
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.onerror = reject;
+                img.src = e.target.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     },
 
     // Ancienne fonction conservée pour compatibilité

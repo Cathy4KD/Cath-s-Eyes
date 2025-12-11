@@ -10004,6 +10004,133 @@ tr:hover .btn-edit-comment {
 }
 
 /* ========================================
+   Tableau Soumission Entrepreneurs
+   ======================================== */
+
+.table-soumission .mini-input {
+    width: 100%;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    font-size: 0.85rem;
+}
+
+.table-soumission .mini-input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.table-soumission .jour-arret-select {
+    padding: 6px 8px;
+    font-size: 0.85rem;
+}
+
+.btn-photo {
+    padding: 6px 12px;
+    background: var(--surface-light);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.btn-photo:hover {
+    background: var(--primary);
+    color: white;
+}
+
+.btn-photo.has-photos {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+}
+
+/* Modal photos soumission */
+.photos-grid-edit {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+    min-height: 100px;
+}
+
+.photos-grid-edit .photo-item {
+    position: relative;
+    width: 120px;
+    height: 120px;
+}
+
+.photos-grid-edit .photo-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid var(--border);
+}
+
+.photos-grid-edit .photo-item img:hover {
+    border-color: var(--primary);
+}
+
+.btn-delete-photo {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 24px;
+    height: 24px;
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.btn-delete-photo:hover {
+    background: #dc2626;
+}
+
+.photo-upload-zone {
+    text-align: center;
+    padding: 20px;
+    border: 2px dashed var(--border);
+    border-radius: 10px;
+}
+
+.photo-upload-zone .hint {
+    margin-top: 10px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+/* Photo modal plein écran */
+.photo-modal-full {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10001;
+    cursor: pointer;
+    padding: 20px;
+}
+
+.photo-modal-full img {
+    max-width: 100%;
+    max-height: 100%;
+    border-radius: 8px;
+}
+
+/* ========================================
    Portail Soumission - Modal Gestionnaire
    ======================================== */
 
