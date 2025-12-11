@@ -472,9 +472,25 @@
             font-weight: 600;
         }
 
+        /* Ligne des deux commentaires côte à côte */
+        .comments-row {
+            display: flex;
+            gap: 15px;
+            margin-top: 12px;
+        }
+
+        .comments-row .travail-commentaire {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        .comments-row .entrepreneur-travail-comment {
+            flex: 1;
+            margin-top: 0;
+        }
+
         /* Commentaire entrepreneur par travail */
         .entrepreneur-travail-comment {
-            margin-top: 12px;
             padding: 10px 12px;
             background: #f0fdf4;
             border-radius: 6px;
@@ -500,6 +516,70 @@
         .comment-travail-input:focus {
             outline: none;
             border-color: #10b981;
+        }
+
+        /* Filtres de recherche */
+        .filters-section {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .filter-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .filter-input, .filter-select {
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            min-width: 150px;
+        }
+
+        .filter-input:focus, .filter-select:focus {
+            outline: none;
+            border-color: #1e3a5f;
+        }
+
+        .filter-count {
+            margin-left: auto;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        @media (max-width: 600px) {
+            .comments-row {
+                flex-direction: column;
+            }
+
+            .filters-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .filter-input, .filter-select {
+                width: 100%;
+            }
         }
 
         .comment-travail-input::placeholder {
@@ -899,7 +979,42 @@
 
                         <h2 class="section-title">📋 Travaux (${this.travaux.length})</h2>
 
-                        ${this.travaux.map((t, i) => this.renderTravailCard(t, i)).join('')}
+                        <!-- Filtres de recherche -->
+                        <div class="filters-section">
+                            <div class="filter-group">
+                                <span class="filter-label">Recherche</span>
+                                <input type="text" class="filter-input" id="filterSearch" placeholder="OT, description..." oninput="PortailEntrepreneur.filterTravaux()">
+                            </div>
+                            <div class="filter-group">
+                                <span class="filter-label">Équipement</span>
+                                <select class="filter-select" id="filterEquipement" onchange="PortailEntrepreneur.filterTravaux()">
+                                    <option value="">Tous</option>
+                                    ${[...new Set(this.travaux.map(t => t.equipement).filter(Boolean))].sort().map(e => `<option value="${e}">${e}</option>`).join('')}
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <span class="filter-label">Type</span>
+                                <select class="filter-select" id="filterType" onchange="PortailEntrepreneur.filterTravaux()">
+                                    <option value="">Tous</option>
+                                    <option value="aa">AA (Arrêt Annuel)</option>
+                                    <option value="tpaa">TPAA</option>
+                                    <option value="aa-tpaa">AA ou TPAA</option>
+                                </select>
+                            </div>
+                            <div class="filter-group">
+                                <span class="filter-label">Jour</span>
+                                <select class="filter-select" id="filterJour" onchange="PortailEntrepreneur.filterTravaux()">
+                                    <option value="">Tous</option>
+                                    <option value="jeudi">Jeudi d'arrêt</option>
+                                    <option value="hors-jeudi">Hors jeudi</option>
+                                </select>
+                            </div>
+                            <span class="filter-count" id="filterCount">${this.travaux.length} travaux</span>
+                        </div>
+
+                        <div id="travauxContainer">
+                            ${this.travaux.map((t, i) => this.renderTravailCard(t, i)).join('')}
+                        </div>
 
                         <!-- Section commentaire entrepreneur -->
                         <div class="entrepreneur-comment-section">
@@ -974,13 +1089,6 @@
                                     ` : ''}
                                 </div>
 
-                                ${travail.commentaire ? `
-                                    <div class="travail-commentaire">
-                                        <div class="commentaire-label">💬 Commentaire</div>
-                                        <div class="commentaire-text">${travail.commentaire}</div>
-                                    </div>
-                                ` : ''}
-
                                 ${(travail.documents && travail.documents.length > 0) ? `
                                     <div class="travail-documents">
                                         <div class="photos-title">📎 Documents</div>
@@ -1011,14 +1119,22 @@
                                     </div>
                                 ` : ''}
 
-                                <!-- Commentaire entrepreneur par travail -->
-                                <div class="entrepreneur-travail-comment">
-                                    <div class="commentaire-label">✏️ Votre commentaire pour ce travail</div>
-                                    <textarea class="comment-travail-input"
-                                              id="comment-travail-${index}"
-                                              data-travail-index="${index}"
-                                              placeholder="Ajoutez vos remarques, questions ou prix pour ce travail..."
-                                              rows="2">${this.commentairesTravaux[index] || ''}</textarea>
+                                <!-- Commentaires côte à côte : gestionnaire (jaune) + entrepreneur (vert) -->
+                                <div class="comments-row">
+                                    ${travail.commentaire ? `
+                                        <div class="travail-commentaire">
+                                            <div class="commentaire-label">💬 Note du gestionnaire</div>
+                                            <div class="commentaire-text">${travail.commentaire}</div>
+                                        </div>
+                                    ` : ''}
+                                    <div class="entrepreneur-travail-comment">
+                                        <div class="commentaire-label">✏️ Votre commentaire</div>
+                                        <textarea class="comment-travail-input"
+                                                  id="comment-travail-${index}"
+                                                  data-travail-index="${index}"
+                                                  placeholder="Remarques, questions ou prix..."
+                                                  rows="2">${this.commentairesTravaux[index] || ''}</textarea>
+                                    </div>
                                 </div>
                             </div>
 
@@ -1151,6 +1267,46 @@
                 toast.textContent = message;
                 toast.className = `toast ${type} show`;
                 setTimeout(() => toast.classList.remove('show'), 3000);
+            },
+
+            filterTravaux() {
+                const searchVal = (document.getElementById('filterSearch')?.value || '').toLowerCase();
+                const equipementVal = document.getElementById('filterEquipement')?.value || '';
+                const typeVal = document.getElementById('filterType')?.value || '';
+                const jourVal = document.getElementById('filterJour')?.value || '';
+
+                let visibleCount = 0;
+                const cards = document.querySelectorAll('.travail-card');
+
+                this.travaux.forEach((travail, index) => {
+                    const card = cards[index];
+                    if (!card) return;
+
+                    // Filtre recherche texte (OT, description, équipement)
+                    const matchSearch = !searchVal ||
+                        (travail.ot || '').toLowerCase().includes(searchVal) ||
+                        (travail.description || '').toLowerCase().includes(searchVal) ||
+                        (travail.equipement || '').toLowerCase().includes(searchVal);
+
+                    // Filtre équipement
+                    const matchEquipement = !equipementVal || travail.equipement === equipementVal;
+
+                    // Filtre type (AA/TPAA)
+                    const matchType = !typeVal || travail.typeTravail === typeVal;
+
+                    // Filtre jour (jeudi/hors-jeudi)
+                    const matchJour = !jourVal || travail.jourArret === jourVal;
+
+                    const visible = matchSearch && matchEquipement && matchType && matchJour;
+                    card.style.display = visible ? '' : 'none';
+                    if (visible) visibleCount++;
+                });
+
+                // Mettre à jour le compteur
+                const countEl = document.getElementById('filterCount');
+                if (countEl) {
+                    countEl.textContent = `${visibleCount} / ${this.travaux.length} travaux`;
+                }
             }
         };
 
