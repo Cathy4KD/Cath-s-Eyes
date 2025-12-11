@@ -5064,5 +5064,436 @@ Actions à suivre:
             console.error('Erreur sync pièces:', error);
             App.showToast('Erreur de synchronisation', 'error');
         }
+    },
+
+    // ==========================================
+    // CALENDRIER - Vue globale des dates du projet
+    // ==========================================
+
+    calendrierVue: 'mois', // 'mois' ou 'semaine'
+    calendrierDate: new Date(),
+
+    renderCalendrier() {
+        const evenements = this.collecterEvenements();
+        const aujourd_hui = new Date();
+        aujourd_hui.setHours(0, 0, 0, 0);
+
+        // Événements aujourd'hui
+        const eventsAujourdhui = evenements.filter(e => {
+            const dateEvent = new Date(e.date);
+            dateEvent.setHours(0, 0, 0, 0);
+            return dateEvent.getTime() === aujourd_hui.getTime();
+        });
+
+        // Événements des prochaines 24h (demain)
+        const demain = new Date(aujourd_hui);
+        demain.setDate(demain.getDate() + 1);
+        const events24h = evenements.filter(e => {
+            const dateEvent = new Date(e.date);
+            dateEvent.setHours(0, 0, 0, 0);
+            return dateEvent.getTime() === demain.getTime();
+        });
+
+        // Événements des 7 prochains jours
+        const dans7jours = new Date(aujourd_hui);
+        dans7jours.setDate(dans7jours.getDate() + 7);
+        const eventsSemaine = evenements.filter(e => {
+            const dateEvent = new Date(e.date);
+            dateEvent.setHours(0, 0, 0, 0);
+            return dateEvent > aujourd_hui && dateEvent <= dans7jours;
+        }).sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        return `
+            <div class="calendrier-screen">
+                <!-- Panneau des rappels -->
+                <div class="calendrier-rappels">
+                    <div class="rappel-section rappel-aujourdhui">
+                        <h3>📍 Aujourd'hui <span class="rappel-date">${this.formatDateComplete(aujourd_hui)}</span></h3>
+                        ${eventsAujourdhui.length === 0 ?
+                            '<p class="rappel-vide">Aucun événement aujourd\'hui</p>' :
+                            `<div class="rappel-liste">${eventsAujourdhui.map(e => this.renderEventRappel(e)).join('')}</div>`
+                        }
+                    </div>
+                    <div class="rappel-section rappel-demain">
+                        <h3>⏰ Demain</h3>
+                        ${events24h.length === 0 ?
+                            '<p class="rappel-vide">Aucun événement demain</p>' :
+                            `<div class="rappel-liste">${events24h.map(e => this.renderEventRappel(e)).join('')}</div>`
+                        }
+                    </div>
+                    <div class="rappel-section rappel-semaine">
+                        <h3>📆 Cette semaine (${eventsSemaine.length})</h3>
+                        ${eventsSemaine.length === 0 ?
+                            '<p class="rappel-vide">Aucun événement cette semaine</p>' :
+                            `<div class="rappel-liste">${eventsSemaine.slice(0, 5).map(e => this.renderEventRappel(e, true)).join('')}
+                             ${eventsSemaine.length > 5 ? `<p class="rappel-more">+ ${eventsSemaine.length - 5} autres...</p>` : ''}</div>`
+                        }
+                    </div>
+                </div>
+
+                <!-- Calendrier principal -->
+                <div class="calendrier-main">
+                    <div class="calendrier-header">
+                        <div class="calendrier-nav">
+                            <button class="btn btn-icon" onclick="Screens.calendrierPrecedent()">◀</button>
+                            <h2>${this.getCalendrierTitre()}</h2>
+                            <button class="btn btn-icon" onclick="Screens.calendrierSuivant()">▶</button>
+                        </div>
+                        <div class="calendrier-vues">
+                            <button class="btn ${this.calendrierVue === 'mois' ? 'btn-primary' : 'btn-outline'}" onclick="Screens.setCalendrierVue('mois')">Mois</button>
+                            <button class="btn ${this.calendrierVue === 'semaine' ? 'btn-primary' : 'btn-outline'}" onclick="Screens.setCalendrierVue('semaine')">Semaine</button>
+                            <button class="btn btn-outline" onclick="Screens.calendrierAujourdhui()">Aujourd'hui</button>
+                        </div>
+                    </div>
+
+                    <div class="calendrier-legende">
+                        <span class="legende-item"><span class="legende-dot" style="background: #ef4444;"></span> Arrêt</span>
+                        <span class="legende-item"><span class="legende-dot" style="background: #f59e0b;"></span> TPAA</span>
+                        <span class="legende-item"><span class="legende-dot" style="background: #3b82f6;"></span> Réunion</span>
+                        <span class="legende-item"><span class="legende-dot" style="background: #8b5cf6;"></span> Jalon</span>
+                        <span class="legende-item"><span class="legende-dot" style="background: #10b981;"></span> Travaux</span>
+                    </div>
+
+                    ${this.calendrierVue === 'mois' ? this.renderCalendrierMois(evenements) : this.renderCalendrierSemaine(evenements)}
+                </div>
+            </div>
+        `;
+    },
+
+    collecterEvenements() {
+        const evenements = [];
+        const dateArret = DataManager.data.processus?.dateArret;
+        const dureeArret = DataManager.data.processus?.dureeArret || 14;
+
+        // 1. Date de début et fin d'arrêt
+        if (dateArret) {
+            evenements.push({
+                date: dateArret,
+                titre: 'Début Arrêt (T-0)',
+                type: 'arret',
+                icon: '🚀',
+                important: true
+            });
+
+            const dateFin = new Date(dateArret);
+            dateFin.setDate(dateFin.getDate() + dureeArret);
+            evenements.push({
+                date: dateFin.toISOString(),
+                titre: 'Fin Arrêt',
+                type: 'arret',
+                icon: '🏁',
+                important: true
+            });
+        }
+
+        // 2. TPAA avec leurs dates calculées
+        const travaux = DataManager.getTravaux();
+        const tpaaData = DataManager.data.processus?.tpaa || {};
+        const travauxTPAA = travaux.filter(t => t.description && t.description.toUpperCase().includes('TPAA'));
+
+        travauxTPAA.forEach((t, idx) => {
+            const travailIndex = travaux.findIndex(tr => tr === t);
+            const uniqueId = `${t.ot}_${travailIndex}`;
+            const tpaaInfo = tpaaData[uniqueId] || {};
+
+            if (dateArret) {
+                const semainesAvant = this.extraireSemainesTPAA(t.description);
+                const dateTPAA = this.calculerDateTPAA(dateArret, semainesAvant, tpaaInfo.ajustementJours || 0);
+
+                if (dateTPAA && dateTPAA !== '-') {
+                    evenements.push({
+                        date: dateTPAA,
+                        titre: `TPAA: ${t.ot}`,
+                        description: t.description?.substring(0, 50),
+                        type: 'tpaa',
+                        icon: '🔧',
+                        statut: tpaaInfo.statut || 'a_faire'
+                    });
+                }
+            }
+        });
+
+        // 3. Réunions
+        const reunionsConfig = this.getReunionsConfig ? this.getReunionsConfig() : [];
+        const reunionsData = DataManager.data.processus?.reunions || {};
+
+        reunionsConfig.forEach(r => {
+            if (dateArret && r.semaines !== undefined) {
+                const dateReunion = new Date(dateArret);
+                dateReunion.setDate(dateReunion.getDate() + (r.semaines * 7));
+
+                const statut = reunionsData[r.id]?.statut || 'planifie';
+
+                evenements.push({
+                    date: dateReunion.toISOString(),
+                    titre: r.nom,
+                    type: 'reunion',
+                    icon: '👥',
+                    statut: statut
+                });
+            }
+        });
+
+        // 4. Jalons du processus
+        if (typeof ProcessusArret !== 'undefined' && ProcessusArret.structure) {
+            ['definir', 'planifier', 'preparer'].forEach(phaseId => {
+                const phase = ProcessusArret.structure[phaseId];
+                if (phase && phase.etapes) {
+                    phase.etapes.forEach(etape => {
+                        if (etape.jalon && dateArret) {
+                            const datesPhase = ProcessusArret.getDatesPhase ? ProcessusArret.getDatesPhase(phaseId) : null;
+                            if (datesPhase && datesPhase.fin) {
+                                evenements.push({
+                                    date: datesPhase.fin.toISOString(),
+                                    titre: `Jalon: ${etape.nom}`,
+                                    type: 'jalon',
+                                    icon: '🎯',
+                                    etapeId: etape.id
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        // 5. Travaux avec date de début
+        travaux.forEach(t => {
+            if (t.execution?.dateDebut) {
+                evenements.push({
+                    date: t.execution.dateDebut,
+                    titre: `OT ${t.ot}`,
+                    description: t.description?.substring(0, 40),
+                    type: 'travaux',
+                    icon: '⚙️'
+                });
+            }
+        });
+
+        return evenements;
+    },
+
+    extraireSemainesTPAA(description) {
+        if (!description) return null;
+        const match = description.match(/TPAA\s*\(?-?(\d+)\)?/i);
+        return match ? parseInt(match[1]) : null;
+    },
+
+    calculerDateTPAA(dateDebutArret, semainesAvant, ajustementJours = 0) {
+        if (!dateDebutArret || semainesAvant === null) return '-';
+
+        const dateArret = new Date(dateDebutArret);
+        const datePrevue = new Date(dateArret);
+        datePrevue.setDate(datePrevue.getDate() - (semainesAvant * 7) + ajustementJours);
+
+        return datePrevue.toISOString().split('T')[0];
+    },
+
+    renderEventRappel(event, showDate = false) {
+        const typeColors = {
+            arret: '#ef4444',
+            tpaa: '#f59e0b',
+            reunion: '#3b82f6',
+            jalon: '#8b5cf6',
+            travaux: '#10b981'
+        };
+
+        const dateStr = showDate ? `<span class="event-date">${this.formatDateCourte(new Date(event.date))}</span>` : '';
+
+        return `
+            <div class="rappel-event" style="border-left-color: ${typeColors[event.type] || '#94a3b8'}">
+                <span class="event-icon">${event.icon}</span>
+                <div class="event-info">
+                    <span class="event-titre">${event.titre}</span>
+                    ${event.description ? `<span class="event-desc">${event.description}</span>` : ''}
+                </div>
+                ${dateStr}
+            </div>
+        `;
+    },
+
+    renderCalendrierMois(evenements) {
+        const annee = this.calendrierDate.getFullYear();
+        const mois = this.calendrierDate.getMonth();
+
+        const premierJour = new Date(annee, mois, 1);
+        const dernierJour = new Date(annee, mois + 1, 0);
+
+        // Ajuster pour commencer le lundi (0 = lundi, 6 = dimanche)
+        let jourDebut = premierJour.getDay() - 1;
+        if (jourDebut < 0) jourDebut = 6;
+
+        const jours = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        const aujourd_hui = new Date();
+        aujourd_hui.setHours(0, 0, 0, 0);
+
+        let html = `<div class="calendrier-grille">`;
+
+        // En-têtes des jours
+        html += `<div class="calendrier-jours-header">`;
+        jours.forEach(j => html += `<div class="jour-header">${j}</div>`);
+        html += `</div>`;
+
+        html += `<div class="calendrier-jours">`;
+
+        // Cases vides avant le premier jour
+        for (let i = 0; i < jourDebut; i++) {
+            html += `<div class="jour-case jour-vide"></div>`;
+        }
+
+        // Jours du mois
+        for (let jour = 1; jour <= dernierJour.getDate(); jour++) {
+            const dateJour = new Date(annee, mois, jour);
+            dateJour.setHours(0, 0, 0, 0);
+
+            const isAujourdhui = dateJour.getTime() === aujourd_hui.getTime();
+            const isWeekend = dateJour.getDay() === 0 || dateJour.getDay() === 6;
+
+            // Événements de ce jour
+            const eventsJour = evenements.filter(e => {
+                const dateEvent = new Date(e.date);
+                dateEvent.setHours(0, 0, 0, 0);
+                return dateEvent.getTime() === dateJour.getTime();
+            });
+
+            const classes = ['jour-case'];
+            if (isAujourdhui) classes.push('jour-aujourdhui');
+            if (isWeekend) classes.push('jour-weekend');
+            if (eventsJour.length > 0) classes.push('jour-events');
+
+            html += `<div class="${classes.join(' ')}" onclick="Screens.voirJour('${dateJour.toISOString()}')">`;
+            html += `<span class="jour-numero">${jour}</span>`;
+
+            if (eventsJour.length > 0) {
+                html += `<div class="jour-events-dots">`;
+                const uniqueTypes = [...new Set(eventsJour.map(e => e.type))];
+                uniqueTypes.slice(0, 4).forEach(type => {
+                    const color = {arret: '#ef4444', tpaa: '#f59e0b', reunion: '#3b82f6', jalon: '#8b5cf6', travaux: '#10b981'}[type];
+                    html += `<span class="event-dot" style="background: ${color}"></span>`;
+                });
+                if (eventsJour.length > 4) {
+                    html += `<span class="events-count">+${eventsJour.length - 4}</span>`;
+                }
+                html += `</div>`;
+            }
+
+            html += `</div>`;
+        }
+
+        html += `</div></div>`;
+        return html;
+    },
+
+    renderCalendrierSemaine(evenements) {
+        const debut = this.getDebutSemaine(this.calendrierDate);
+        const jours = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+        const aujourd_hui = new Date();
+        aujourd_hui.setHours(0, 0, 0, 0);
+
+        let html = `<div class="calendrier-semaine">`;
+
+        for (let i = 0; i < 7; i++) {
+            const dateJour = new Date(debut);
+            dateJour.setDate(debut.getDate() + i);
+            dateJour.setHours(0, 0, 0, 0);
+
+            const isAujourdhui = dateJour.getTime() === aujourd_hui.getTime();
+
+            const eventsJour = evenements.filter(e => {
+                const dateEvent = new Date(e.date);
+                dateEvent.setHours(0, 0, 0, 0);
+                return dateEvent.getTime() === dateJour.getTime();
+            });
+
+            const classes = ['semaine-jour'];
+            if (isAujourdhui) classes.push('jour-aujourdhui');
+
+            html += `<div class="${classes.join(' ')}">`;
+            html += `<div class="semaine-jour-header">`;
+            html += `<span class="semaine-jour-nom">${jours[i]}</span>`;
+            html += `<span class="semaine-jour-date">${dateJour.getDate()}/${dateJour.getMonth() + 1}</span>`;
+            html += `</div>`;
+
+            html += `<div class="semaine-jour-events">`;
+            if (eventsJour.length === 0) {
+                html += `<p class="semaine-vide">-</p>`;
+            } else {
+                eventsJour.forEach(e => {
+                    const color = {arret: '#ef4444', tpaa: '#f59e0b', reunion: '#3b82f6', jalon: '#8b5cf6', travaux: '#10b981'}[e.type];
+                    html += `<div class="semaine-event" style="background: ${color}20; border-left-color: ${color}">`;
+                    html += `<span class="event-icon">${e.icon}</span>`;
+                    html += `<span class="event-titre">${e.titre}</span>`;
+                    html += `</div>`;
+                });
+            }
+            html += `</div>`;
+            html += `</div>`;
+        }
+
+        html += `</div>`;
+        return html;
+    },
+
+    getDebutSemaine(date) {
+        const d = new Date(date);
+        const jour = d.getDay();
+        const diff = d.getDate() - jour + (jour === 0 ? -6 : 1);
+        return new Date(d.setDate(diff));
+    },
+
+    getCalendrierTitre() {
+        const mois = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                      'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+
+        if (this.calendrierVue === 'mois') {
+            return `${mois[this.calendrierDate.getMonth()]} ${this.calendrierDate.getFullYear()}`;
+        } else {
+            const debut = this.getDebutSemaine(this.calendrierDate);
+            const fin = new Date(debut);
+            fin.setDate(debut.getDate() + 6);
+            return `${debut.getDate()} - ${fin.getDate()} ${mois[fin.getMonth()]} ${fin.getFullYear()}`;
+        }
+    },
+
+    formatDateComplete(date) {
+        const options = { weekday: 'long', day: 'numeric', month: 'long' };
+        return date.toLocaleDateString('fr-FR', options);
+    },
+
+    formatDateCourte(date) {
+        return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    },
+
+    setCalendrierVue(vue) {
+        this.calendrierVue = vue;
+        App.renderScreen('calendrier');
+    },
+
+    calendrierPrecedent() {
+        if (this.calendrierVue === 'mois') {
+            this.calendrierDate.setMonth(this.calendrierDate.getMonth() - 1);
+        } else {
+            this.calendrierDate.setDate(this.calendrierDate.getDate() - 7);
+        }
+        App.renderScreen('calendrier');
+    },
+
+    calendrierSuivant() {
+        if (this.calendrierVue === 'mois') {
+            this.calendrierDate.setMonth(this.calendrierDate.getMonth() + 1);
+        } else {
+            this.calendrierDate.setDate(this.calendrierDate.getDate() + 7);
+        }
+        App.renderScreen('calendrier');
+    },
+
+    calendrierAujourdhui() {
+        this.calendrierDate = new Date();
+        App.renderScreen('calendrier');
+    },
+
+    voirJour(dateStr) {
+        // TODO: Afficher les détails du jour
+        console.log('Voir jour:', dateStr);
     }
 };

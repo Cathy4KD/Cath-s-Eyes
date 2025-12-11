@@ -50,6 +50,7 @@ const App = {
             preparation: 'Préparation',
             execution: 'Exécution',
             postmortem: 'Post-Mortem',
+            calendrier: 'Calendrier',
             rapports: 'Rapports',
             import: 'Import Données',
             pieces: 'Pièces',
@@ -84,6 +85,9 @@ const App = {
                 break;
             case 'postmortem':
                 content.innerHTML = Screens.renderPostMortem();
+                break;
+            case 'calendrier':
+                content.innerHTML = Screens.renderCalendrier();
                 break;
             case 'rapports':
                 content.innerHTML = ReportsManager.renderReportsScreen();
