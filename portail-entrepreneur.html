@@ -209,6 +209,11 @@
             color: #6d28d9;
         }
 
+        .badge-aa-tpaa {
+            background: linear-gradient(135deg, #ede9fe 50%, #dbeafe 50%);
+            color: #4c1d95;
+        }
+
         .badge-jeudi {
             background: #fef3c7;
             color: #92400e;
@@ -779,9 +784,10 @@
             },
 
             renderTravailCard(travail, index) {
-                // Type de travail : AA ou TPAA (depuis la colonne Type)
+                // Type de travail : AA, TPAA ou AA ou TPAA (depuis la colonne Type)
                 const isTypeAA = travail.typeTravail === 'aa';
                 const isTypeTPAA = travail.typeTravail === 'tpaa';
+                const isTypeAaOuTpaa = travail.typeTravail === 'aa-tpaa';
 
                 // Jour : Jeudi ou Hors Jeudi (depuis la colonne Jour)
                 const isJeudi = travail.jourArret === 'jeudi';
@@ -794,6 +800,7 @@
                             <div class="travail-badges">
                                 ${isTypeAA ? '<span class="badge badge-aa">🔧 Arrêt Annuel</span>' : ''}
                                 ${isTypeTPAA ? '<span class="badge badge-tpaa">📋 TPAA</span>' : ''}
+                                ${isTypeAaOuTpaa ? '<span class="badge badge-aa-tpaa">🔧📋 AA ou TPAA</span>' : ''}
                                 ${isJeudi ? '<span class="badge badge-jeudi">🗓️ Jeudi d\'arrêt</span>' : ''}
                                 ${isHorsJeudi ? '<span class="badge badge-hors-jeudi">✓ Hors jeudi</span>' : ''}
                             </div>

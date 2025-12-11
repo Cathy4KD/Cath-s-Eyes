@@ -6087,6 +6087,7 @@ const ScreenPreparation = {
                                                             <option value="" ${!soumData.typeTravail ? 'selected' : ''}>-</option>
                                                             <option value="aa" ${soumData.typeTravail === 'aa' ? 'selected' : ''}>🔧 AA</option>
                                                             <option value="tpaa" ${soumData.typeTravail === 'tpaa' ? 'selected' : ''}>📋 TPAA</option>
+                                                            <option value="aa-tpaa" ${soumData.typeTravail === 'aa-tpaa' ? 'selected' : ''}>🔧📋 AA ou TPAA</option>
                                                         </select>
                                                     </td>
                                                     <td>
