@@ -215,7 +215,14 @@ const Screens = {
                         <span class="mobile-btn-icon">📈</span>
                         <span class="mobile-btn-text">Post-Mortem</span>
                     </button>
-                    <button class="mobile-menu-btn" onclick="App.navigate('travaux')">
+                    <button class="mobile-menu-btn mobile-btn-purple" onclick="App.navigate('calendrier')">
+                        <span class="mobile-btn-icon">📅</span>
+                        <span class="mobile-btn-text">Calendrier</span>
+                    </button>
+                </div>
+
+                <div class="mobile-menu-grid-secondary">
+                    <button class="mobile-menu-btn-small" onclick="App.navigate('travaux')">
                         <span class="mobile-btn-icon">📋</span>
                         <span class="mobile-btn-text">Liste Travaux</span>
                     </button>

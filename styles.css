@@ -7889,6 +7889,12 @@ tr:hover .btn-edit-comment {
     border: none;
 }
 
+.mobile-menu-btn.mobile-btn-purple {
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+    color: white;
+    border: none;
+}
+
 .mobile-btn-icon {
     font-size: 2rem;
     margin-bottom: 8px;
@@ -7897,6 +7903,39 @@ tr:hover .btn-edit-comment {
 .mobile-btn-text {
     font-size: 0.9rem;
     font-weight: 600;
+}
+
+/* Grille secondaire pour Liste Travaux */
+.mobile-menu-grid-secondary {
+    margin-bottom: 20px;
+}
+
+.mobile-menu-btn-small {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.mobile-menu-btn-small:active {
+    transform: scale(0.98);
+    background: var(--background);
+}
+
+.mobile-menu-btn-small .mobile-btn-icon {
+    font-size: 1.3rem;
+    margin-bottom: 0;
+}
+
+.mobile-menu-btn-small .mobile-btn-text {
+    font-size: 0.95rem;
 }
 
 .mobile-quick-links {
