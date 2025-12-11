@@ -277,7 +277,63 @@
             color: #1e293b;
         }
 
-        /* Photos - inline avec le reste */
+        /* Layout avec photo à droite */
+        .travail-content-wrapper {
+            display: flex;
+            gap: 20px;
+        }
+
+        .travail-card.has-photo .travail-body {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .travail-photo-side {
+            flex-shrink: 0;
+            width: 180px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .photo-preview {
+            width: 180px;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+
+        .photo-preview:hover {
+            transform: scale(1.02);
+            border-color: #1e3a5f;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .more-photos {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .photo-thumb-small {
+            width: 54px;
+            height: 54px;
+            border-radius: 6px;
+            object-fit: cover;
+            cursor: pointer;
+            border: 2px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+
+        .photo-thumb-small:hover {
+            transform: scale(1.1);
+            border-color: #1e3a5f;
+        }
+
+        /* Photos - inline (pour compatibilité si pas de layout 2 colonnes) */
         .travail-photos {
             margin-top: 10px;
             padding-top: 10px;
@@ -311,6 +367,28 @@
         .photo-thumb:hover {
             transform: scale(1.05);
             border-color: #1e3a5f;
+        }
+
+        /* Mobile : photo en dessous */
+        @media (max-width: 600px) {
+            .travail-content-wrapper {
+                flex-direction: column-reverse;
+            }
+
+            .travail-photo-side {
+                width: 100%;
+                flex-direction: row;
+                align-items: center;
+            }
+
+            .photo-preview {
+                width: 120px;
+                height: 90px;
+            }
+
+            .more-photos {
+                flex: 1;
+            }
         }
 
         /* Documents */
@@ -827,8 +905,10 @@
                 const isJeudi = travail.jourArret === 'jeudi';
                 const isHorsJeudi = travail.jourArret === 'hors-jeudi';
 
+                const hasPhotos = travail.photos && travail.photos.length > 0;
+
                 return `
-                    <div class="travail-card">
+                    <div class="travail-card ${hasPhotos ? 'has-photo' : ''}">
                         <div class="travail-header">
                             <span class="travail-ot">${travail.ot || `#${index + 1}`}</span>
                             <div class="travail-badges">
@@ -840,72 +920,81 @@
                             </div>
                         </div>
 
-                        <div class="travail-body">
-                            <div class="travail-description">${travail.description || 'Aucune description'}</div>
+                        <div class="travail-content-wrapper">
+                            <!-- Colonne gauche : infos -->
+                            <div class="travail-body">
+                                <div class="travail-description">${travail.description || 'Aucune description'}</div>
 
-                            <div class="travail-infos">
-                                <div class="info-box">
-                                    <div class="info-box-label">Équipement</div>
-                                    <div class="info-box-value">${travail.equipement || '-'}</div>
+                                <div class="travail-infos">
+                                    <div class="info-box">
+                                        <div class="info-box-label">Équipement</div>
+                                        <div class="info-box-value">${travail.equipement || '-'}</div>
+                                    </div>
+                                    <div class="info-box">
+                                        <div class="info-box-label">Opération</div>
+                                        <div class="info-box-value">${travail.operation || '-'}</div>
+                                    </div>
+                                    <div class="info-box">
+                                        <div class="info-box-label">Heures estimées</div>
+                                        <div class="info-box-value">${travail.estimationHeures || '-'} h</div>
+                                    </div>
+                                    <div class="info-box">
+                                        <div class="info-box-label">Secteur / Localisation</div>
+                                        <div class="info-box-value">${travail.localisation || travail.secteur || '-'}</div>
+                                    </div>
+                                    ${travail.conditions ? `
+                                    <div class="info-box">
+                                        <div class="info-box-label">Conditions</div>
+                                        <div class="info-box-value">${travail.conditions}</div>
+                                    </div>
+                                    ` : ''}
                                 </div>
-                                <div class="info-box">
-                                    <div class="info-box-label">Opération</div>
-                                    <div class="info-box-value">${travail.operation || '-'}</div>
-                                </div>
-                                <div class="info-box">
-                                    <div class="info-box-label">Heures estimées</div>
-                                    <div class="info-box-value">${travail.estimationHeures || '-'} h</div>
-                                </div>
-                                <div class="info-box">
-                                    <div class="info-box-label">Secteur / Localisation</div>
-                                    <div class="info-box-value">${travail.localisation || travail.secteur || '-'}</div>
-                                </div>
-                                ${travail.conditions ? `
-                                <div class="info-box">
-                                    <div class="info-box-label">Conditions</div>
-                                    <div class="info-box-value">${travail.conditions}</div>
-                                </div>
+
+                                ${travail.commentaire ? `
+                                    <div class="travail-commentaire">
+                                        <div class="commentaire-label">💬 Commentaire</div>
+                                        <div class="commentaire-text">${travail.commentaire}</div>
+                                    </div>
                                 ` : ''}
-                            </div>
 
-                            ${travail.commentaire ? `
-                                <div class="travail-commentaire">
-                                    <div class="commentaire-label">💬 Commentaire</div>
-                                    <div class="commentaire-text">${travail.commentaire}</div>
-                                </div>
-                            ` : ''}
-
-                            ${(travail.photos && travail.photos.length > 0) ? `
-                                <div class="travail-photos">
-                                    <div class="photos-title">📷 Photos (${travail.photos.length})</div>
-                                    <div class="photos-grid">
-                                        ${travail.photos.map(p => `
-                                            <img src="${p}" class="photo-thumb" onclick="PortailEntrepreneur.showPhoto('${p}')" alt="Photo">
+                                ${(travail.documents && travail.documents.length > 0) ? `
+                                    <div class="travail-documents">
+                                        <div class="photos-title">📎 Documents</div>
+                                        ${travail.documents.map(d => `
+                                            <a href="${d.url}" target="_blank" class="document-link">
+                                                📄 ${d.nom || 'Document'}
+                                            </a>
                                         `).join('')}
                                     </div>
-                                </div>
-                            ` : ''}
+                                ` : ''}
 
-                            ${(travail.documents && travail.documents.length > 0) ? `
-                                <div class="travail-documents">
-                                    <div class="photos-title">📎 Documents</div>
-                                    ${travail.documents.map(d => `
-                                        <a href="${d.url}" target="_blank" class="document-link">
-                                            📄 ${d.nom || 'Document'}
-                                        </a>
-                                    `).join('')}
+                                <!-- Commentaire entrepreneur par travail -->
+                                <div class="entrepreneur-travail-comment">
+                                    <div class="commentaire-label">✏️ Votre commentaire pour ce travail</div>
+                                    <textarea class="comment-travail-input"
+                                              id="comment-travail-${index}"
+                                              data-travail-index="${index}"
+                                              placeholder="Ajoutez vos remarques, questions ou prix pour ce travail..."
+                                              rows="2">${this.commentairesTravaux[index] || ''}</textarea>
                                 </div>
-                            ` : ''}
-
-                            <!-- Commentaire entrepreneur par travail -->
-                            <div class="entrepreneur-travail-comment">
-                                <div class="commentaire-label">✏️ Votre commentaire pour ce travail</div>
-                                <textarea class="comment-travail-input"
-                                          id="comment-travail-${index}"
-                                          data-travail-index="${index}"
-                                          placeholder="Ajoutez vos remarques, questions ou prix pour ce travail..."
-                                          rows="2">${this.commentairesTravaux[index] || ''}</textarea>
                             </div>
+
+                            <!-- Colonne droite : photo -->
+                            ${hasPhotos ? `
+                                <div class="travail-photo-side">
+                                    <img src="${travail.photos[0]}"
+                                         class="photo-preview"
+                                         onclick="PortailEntrepreneur.showPhoto('${travail.photos[0]}')"
+                                         alt="Photo">
+                                    ${travail.photos.length > 1 ? `
+                                        <div class="more-photos">
+                                            ${travail.photos.slice(1).map(p => `
+                                                <img src="${p}" class="photo-thumb-small" onclick="PortailEntrepreneur.showPhoto('${p}')" alt="Photo">
+                                            `).join('')}
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
