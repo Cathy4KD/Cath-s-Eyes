@@ -6517,14 +6517,15 @@ const ScreenPreparation = {
 
     // ==========================================
     // DONNÉES SOUMISSION PAR TRAVAIL
-    // Stockées par clé unique (équipement + opération)
+    // Stockées par clé unique (équipement + description)
     // ==========================================
 
     getTravailSoumissionKey(travail) {
-        // Clé unique basée sur équipement + opération pour historique
+        // Clé unique basée sur équipement + description pour historique année après année
+        // L'OT change chaque année, mais équipement + description restent souvent les mêmes
         const equip = (travail.equipement || '').trim().toUpperCase();
-        const op = (travail.operation || travail.description || '').trim().substring(0, 50);
-        return `${equip}_${op}`.replace(/[^a-zA-Z0-9_]/g, '_');
+        const desc = (travail.description || '').trim().substring(0, 50).toUpperCase();
+        return `${equip}_${desc}`.replace(/[^a-zA-Z0-9_]/g, '_');
     },
 
     getSoumissionData(travailKey) {
@@ -9171,15 +9172,19 @@ Cordialement</textarea>
             const travaux = appel.travaux || [];
             let nbPreremplis = 0;
 
+            // Récupérer les travaux actuels une seule fois
+            const travauxActuels = this.getTravauxEntrepreneurActif();
+
             // Pour chaque travail de l'historique, pré-remplir les données si le travail existe encore
             travaux.forEach(t => {
-                if (!t.equipement || !t.operation) return;
+                if (!t.equipement || !t.description) return;
 
-                // Générer la clé
-                const travailKey = `${(t.equipement || '').toUpperCase().replace(/[^a-zA-Z0-9_]/g, '_')}_${(t.operation || '').toUpperCase().replace(/[^a-zA-Z0-9_]/g, '_')}`;
+                // Générer la clé avec équipement + description (même logique que getTravailSoumissionKey)
+                const equip = (t.equipement || '').trim().toUpperCase();
+                const desc = (t.description || '').trim().substring(0, 50).toUpperCase();
+                const travailKey = `${equip}_${desc}`.replace(/[^a-zA-Z0-9_]/g, '_');
 
                 // Vérifier si ce travail existe dans les travaux actuels
-                const travauxActuels = this.getTravauxEntrepreneurActif();
                 const travailExiste = travauxActuels.some(ta => {
                     const keyActuel = this.getTravailSoumissionKey(ta);
                     return keyActuel === travailKey;
