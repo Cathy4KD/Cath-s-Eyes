@@ -448,12 +448,22 @@
         .travail-type-section {
             margin-top: 12px;
             padding: 10px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
-        .type-badges {
+        .type-row {
             display: flex;
+            align-items: center;
             gap: 10px;
             flex-wrap: wrap;
+        }
+
+        .type-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            font-weight: 500;
         }
 
         .badge-large {
@@ -983,15 +993,21 @@
                                 ` : ''}
 
                                 <!-- Type de travail (AA/TPAA + Jour) -->
-                                ${(isTypeAA || isTypeTPAA || isTypeAaOuTpaa || isJeudi || isHorsJeudi) ? `
+                                ${(isTypeAA || isTypeTPAA || isTypeAaOuTpaa) ? `
                                     <div class="travail-type-section">
-                                        <div class="type-badges">
+                                        <div class="type-row">
+                                            <span class="type-label">Doit être fait pendant :</span>
                                             ${isTypeAA ? '<span class="badge badge-aa badge-large">🔧 Arrêt Annuel</span>' : ''}
                                             ${isTypeTPAA ? '<span class="badge badge-tpaa badge-large">📋 TPAA</span>' : ''}
                                             ${isTypeAaOuTpaa ? '<span class="badge badge-aa-tpaa badge-large">🔧📋 AA ou TPAA</span>' : ''}
-                                            ${isJeudi ? '<span class="badge badge-jeudi badge-large">🗓️ Jeudi d\'arrêt</span>' : ''}
-                                            ${isHorsJeudi ? '<span class="badge badge-hors-jeudi badge-large">✓ Hors jeudi</span>' : ''}
                                         </div>
+                                        ${(isTypeTPAA || isTypeAaOuTpaa) && (isJeudi || isHorsJeudi) ? `
+                                            <div class="type-row">
+                                                <span class="type-label">Durant :</span>
+                                                ${isJeudi ? '<span class="badge badge-jeudi badge-large">🗓️ Jeudi d\'arrêt</span>' : ''}
+                                                ${isHorsJeudi ? '<span class="badge badge-hors-jeudi badge-large">✓ Hors jeudi</span>' : ''}
+                                            </div>
+                                        ` : ''}
                                     </div>
                                 ` : ''}
 
