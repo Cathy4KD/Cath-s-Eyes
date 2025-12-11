@@ -3041,7 +3041,7 @@ const Screens = {
 
     // Rapports de Quart
     quartDate: new Date().toISOString().split('T')[0],
-    quartType: 'soir', // 'soir' ou 'nuit'
+    quartType: 'nuit', // uniquement 'nuit'
 
     // Fonction pour l'onglet Exécution
     renderRapportsDeQuart() {
@@ -3060,16 +3060,10 @@ const Screens = {
         return `
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">🌙 Rapports de Quart</h3>
+                    <h3 class="card-title">🌙 Rapports de Quart de Nuit</h3>
                     <div class="quart-nav">
                         <input type="date" class="form-control" id="quartDatePicker"
                                value="${this.quartDate}" onchange="Screens.changeQuartDate(this.value)">
-                        <div class="quart-type-toggle">
-                            <button class="btn btn-sm ${this.quartType === 'soir' ? 'btn-primary' : 'btn-outline'}"
-                                    onclick="Screens.setQuartType('soir')">🌆 Soir</button>
-                            <button class="btn btn-sm ${this.quartType === 'nuit' ? 'btn-primary' : 'btn-outline'}"
-                                    onclick="Screens.setQuartType('nuit')">🌙 Nuit</button>
-                        </div>
                         <button class="btn btn-sm btn-outline" onclick="Screens.toggleQuartHistory()">
                             📜 Historique (${rapportsSauvegardes})
                         </button>
@@ -3081,7 +3075,7 @@ const Screens = {
                 </div>
 
                 <div class="pm-section">
-                    <h4>📋 Résumé du Quart - ${this.quartType === 'soir' ? 'Soir (16h-00h)' : 'Nuit (00h-08h)'}</h4>
+                    <h4>📋 Résumé du Quart de Nuit (00h-08h)</h4>
                     <div class="grid-2">
                         <div class="form-group">
                             <label>Superviseur de quart:</label>
@@ -3238,7 +3232,7 @@ const Screens = {
                              onclick="Screens.loadQuartReport('${date}', '${type}')">
                             <div class="quart-history-date">
                                 <strong>${new Date(date).toLocaleDateString('fr-FR', {weekday: 'short', day: 'numeric', month: 'short'})}</strong>
-                                <span class="quart-badge ${type}">${type === 'soir' ? '🌆 Soir' : '🌙 Nuit'}</span>
+                                <span class="quart-badge nuit">🌙 Nuit</span>
                             </div>
                             <div class="quart-history-info">
                                 <span>👷 ${quart.superviseur || 'N/A'}</span>
@@ -3308,7 +3302,7 @@ const Screens = {
                 </style>
             </head>
             <body>
-                <h1>Rapport de Quart - ${this.quartType === 'soir' ? 'Soir' : 'Nuit'}</h1>
+                <h1>Rapport de Quart de Nuit</h1>
                 <p><strong>Date:</strong> ${new Date(this.quartDate).toLocaleDateString('fr-FR')}</p>
                 <p><strong>Superviseur:</strong> ${document.getElementById('quartSuperviseur')?.value || 'N/A'}</p>
                 <p><strong>Effectif:</strong> ${document.getElementById('quartEffectif')?.value || 'N/A'} personnes</p>
