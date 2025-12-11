@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Portail Soumission - Arrêt Annuel</title>
     <link rel="icon" type="image/png" href="icon.png">
-    <meta name="theme-color" content="#1a237e">
+    <meta name="theme-color" content="#1e3a5f">
     <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -18,419 +18,348 @@
             box-sizing: border-box;
         }
 
-        :root {
-            --primary: #1e3a5f;
-            --primary-light: #2d5a87;
-            --accent: #f59e0b;
-            --success: #10b981;
-            --danger: #ef4444;
-            --background: #0f172a;
-            --surface: #1e293b;
-            --surface-light: #334155;
-            --text: #f1f5f9;
-            --text-muted: #94a3b8;
-        }
-
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--background);
-            color: var(--text);
+            background: #f5f7fa;
+            color: #1e293b;
             min-height: 100vh;
         }
 
         /* Header */
         .portal-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            padding: 20px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            color: white;
+            padding: 25px 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
         }
 
         .header-content {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .portal-title {
-            display: flex;
-            align-items: center;
-            gap: 15px;
+            gap: 20px;
         }
 
         .portal-title h1 {
-            font-size: 1.5rem;
+            font-size: 1.6rem;
             font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .portal-title p {
+            opacity: 0.9;
+            font-size: 0.95rem;
         }
 
         .entreprise-badge {
-            background: var(--accent);
+            background: #f59e0b;
             color: #000;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 10px 20px;
+            border-radius: 25px;
             font-weight: 700;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
         }
 
-        .header-info {
+        .header-stats {
             display: flex;
-            gap: 20px;
-            align-items: center;
-            flex-wrap: wrap;
+            gap: 25px;
         }
 
-        .info-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px 15px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
+        .header-stat {
+            text-align: center;
         }
 
-        .info-label {
-            font-size: 0.7rem;
-            color: var(--text-muted);
+        .header-stat-num {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        .header-stat-label {
+            font-size: 0.75rem;
+            opacity: 0.8;
             text-transform: uppercase;
-        }
-
-        .info-value {
-            font-size: 1.1rem;
-            font-weight: 600;
         }
 
         /* Main content */
         .portal-content {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 30px 20px;
         }
 
-        /* Stats bar */
-        .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-
-        .stat-card {
-            background: var(--surface);
+        /* Info banner */
+        .info-banner {
+            background: white;
             border-radius: 12px;
             padding: 20px;
-            text-align: center;
-            border: 1px solid var(--surface-light);
-        }
-
-        .stat-card .stat-number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: var(--accent);
-        }
-
-        .stat-card .stat-label {
-            color: var(--text-muted);
-            font-size: 0.85rem;
-            margin-top: 5px;
-        }
-
-        /* Tabs */
-        .portal-tabs {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-        }
-
-        .portal-tab {
-            padding: 12px 24px;
-            background: var(--surface);
-            border: none;
-            border-radius: 10px;
-            color: var(--text);
-            cursor: pointer;
-            font-size: 0.95rem;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .portal-tab:hover {
-            background: var(--surface-light);
-        }
-
-        .portal-tab.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* Section card */
-        .section-card {
-            background: var(--surface);
-            border-radius: 16px;
-            padding: 25px;
-            margin-bottom: 20px;
-            border: 1px solid var(--surface-light);
-        }
-
-        .section-header {
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
         }
 
+        .info-banner-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .info-banner-icon {
+            font-size: 2rem;
+        }
+
+        .info-banner h2 {
+            font-size: 1.1rem;
+            color: #1e293b;
+        }
+
+        .info-banner p {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .date-limite {
+            background: #fef3c7;
+            border: 2px solid #f59e0b;
+            padding: 12px 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .date-limite-label {
+            font-size: 0.75rem;
+            color: #92400e;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .date-limite-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #b45309;
+        }
+
+        /* Section title */
         .section-title {
             font-size: 1.3rem;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            color: #1e3a5f;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #1e3a5f;
+            display: inline-block;
         }
 
-        /* Travaux list */
-        .travaux-grid {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
+        /* Travail card - affiche tout directement */
         .travail-card {
-            background: var(--background);
+            background: white;
             border-radius: 12px;
-            padding: 20px;
-            border: 1px solid var(--surface-light);
-            transition: all 0.2s;
-        }
-
-        .travail-card:hover {
-            border-color: var(--accent);
-            transform: translateX(5px);
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+            border-left: 5px solid #1e3a5f;
         }
 
         .travail-header {
+            background: #f8fafc;
+            padding: 15px 20px;
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 15px;
+            align-items: center;
             flex-wrap: wrap;
             gap: 10px;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         .travail-ot {
-            background: var(--primary);
+            background: #1e3a5f;
             color: white;
-            padding: 5px 12px;
+            padding: 6px 14px;
             border-radius: 6px;
-            font-weight: 600;
-            font-size: 0.9rem;
+            font-weight: 700;
+            font-size: 0.95rem;
         }
 
-        .travail-priorite {
-            padding: 4px 10px;
-            border-radius: 15px;
+        .travail-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
             font-size: 0.75rem;
             font-weight: 600;
         }
 
-        .priorite-haute { background: #dc2626; color: white; }
-        .priorite-moyenne { background: #f59e0b; color: #000; }
-        .priorite-basse { background: #10b981; color: white; }
+        .badge-tpaa {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .badge-jeudi {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .badge-hors-jeudi {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-priorite-haute {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .badge-priorite-moyenne {
+            background: #fef3c7;
+            color: #b45309;
+        }
+
+        .travail-body {
+            padding: 20px;
+        }
 
         .travail-description {
-            font-size: 1.05rem;
-            margin-bottom: 15px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: #1e293b;
+            margin-bottom: 20px;
             line-height: 1.5;
         }
 
-        .travail-details {
+        /* Grille d'infos */
+        .travail-infos {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 10px;
-            margin-bottom: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
         }
 
-        .detail-item {
-            display: flex;
-            flex-direction: column;
+        .info-box {
+            background: #f8fafc;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
         }
 
-        .detail-label {
-            font-size: 0.75rem;
-            color: var(--text-muted);
+        .info-box-label {
+            font-size: 0.7rem;
+            color: #64748b;
             text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 4px;
         }
 
-        .detail-value {
+        .info-box-value {
+            font-size: 0.95rem;
             font-weight: 500;
+            color: #1e293b;
         }
 
-        /* Photos gallery */
+        /* Photos */
         .travail-photos {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .photos-title {
+            font-size: 0.8rem;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .photos-grid {
             display: flex;
             gap: 10px;
             flex-wrap: wrap;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid var(--surface-light);
         }
 
         .photo-thumb {
-            width: 80px;
-            height: 80px;
+            width: 100px;
+            height: 100px;
             border-radius: 8px;
             object-fit: cover;
             cursor: pointer;
-            transition: transform 0.2s;
+            border: 2px solid #e2e8f0;
+            transition: all 0.2s;
         }
 
         .photo-thumb:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
+            border-color: #1e3a5f;
         }
 
-        /* Historique badge */
-        .historique-badge {
-            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.8rem;
-            margin-top: 10px;
+        /* Documents */
+        .travail-documents {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .document-link {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-        }
-
-        /* Plan section */
-        .plan-container {
-            position: relative;
-            background: var(--background);
-            border-radius: 12px;
-            overflow: hidden;
-            min-height: 400px;
-        }
-
-        .plan-image {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-
-        .plan-marker {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background: var(--accent);
-            border: 3px solid white;
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            font-size: 0.8rem;
-            color: #000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            transition: transform 0.2s;
-        }
-
-        .plan-marker:hover {
-            transform: translate(-50%, -50%) scale(1.3);
-        }
-
-        /* Soumission form */
-        .soumission-form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
             gap: 8px;
-        }
-
-        .form-group label {
-            font-weight: 500;
-            color: var(--text-muted);
+            padding: 8px 15px;
+            background: #eff6ff;
+            color: #1e40af;
+            border-radius: 6px;
+            text-decoration: none;
             font-size: 0.9rem;
+            margin-right: 10px;
+            margin-bottom: 8px;
         }
 
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
-            background: var(--background);
-            border: 1px solid var(--surface-light);
-            border-radius: 8px;
-            padding: 12px;
-            color: var(--text);
-            font-size: 1rem;
+        .document-link:hover {
+            background: #dbeafe;
         }
 
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: var(--accent);
-        }
-
-        .form-group textarea {
-            min-height: 100px;
-            resize: vertical;
-        }
-
-        /* Soumission par travail */
-        .soumission-travail {
-            background: var(--background);
-            border-radius: 10px;
+        /* Commentaire */
+        .travail-commentaire {
+            margin-top: 15px;
             padding: 15px;
-            display: grid;
-            grid-template-columns: 1fr auto auto;
-            gap: 15px;
-            align-items: center;
-            border: 1px solid var(--surface-light);
+            background: #fffbeb;
+            border-radius: 8px;
+            border-left: 4px solid #f59e0b;
         }
 
-        .soumission-travail-info {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .soumission-travail-ot {
+        .commentaire-label {
+            font-size: 0.75rem;
+            color: #92400e;
+            text-transform: uppercase;
             font-weight: 600;
-            color: var(--accent);
+            margin-bottom: 5px;
         }
 
-        .soumission-travail-desc {
-            font-size: 0.9rem;
-            color: var(--text-muted);
+        .commentaire-text {
+            color: #78350f;
+            font-size: 0.95rem;
         }
 
-        .soumission-input {
-            width: 120px;
-            text-align: right;
+        /* Boutons */
+        .actions-bar {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
         }
 
-        /* Buttons */
         .btn {
-            padding: 12px 24px;
+            padding: 12px 25px;
             border: none;
             border-radius: 8px;
             font-size: 1rem;
@@ -440,83 +369,28 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
+            text-decoration: none;
         }
 
         .btn-primary {
-            background: var(--accent);
-            color: #000;
+            background: #1e3a5f;
+            color: white;
         }
 
         .btn-primary:hover {
-            background: #d97706;
-            transform: translateY(-2px);
+            background: #2d5a87;
         }
 
         .btn-secondary {
-            background: var(--surface-light);
-            color: var(--text);
+            background: #e2e8f0;
+            color: #475569;
         }
 
         .btn-secondary:hover {
-            background: #475569;
+            background: #cbd5e1;
         }
 
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #059669;
-        }
-
-        /* Actions bar */
-        .actions-bar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            padding-top: 20px;
-            border-top: 1px solid var(--surface-light);
-            margin-top: 20px;
-        }
-
-        /* Historique section */
-        .historique-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .historique-item {
-            background: var(--background);
-            border-radius: 10px;
-            padding: 15px;
-            border-left: 4px solid #8b5cf6;
-        }
-
-        .historique-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .historique-annee {
-            background: #8b5cf6;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 15px;
-            font-weight: 600;
-        }
-
-        .historique-prix {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--success);
-        }
-
-        /* Loading & Error states */
+        /* Loading */
         .loading-container {
             display: flex;
             flex-direction: column;
@@ -527,10 +401,10 @@
         }
 
         .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid var(--surface-light);
-            border-top-color: var(--accent);
+            width: 50px;
+            height: 50px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #1e3a5f;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -539,9 +413,15 @@
             to { transform: rotate(360deg); }
         }
 
+        .loading-text {
+            color: #64748b;
+            font-size: 1rem;
+        }
+
+        /* Error */
         .error-container {
             text-align: center;
-            padding: 60px 20px;
+            padding: 80px 20px;
         }
 
         .error-icon {
@@ -551,70 +431,12 @@
 
         .error-title {
             font-size: 1.5rem;
+            color: #1e293b;
             margin-bottom: 10px;
         }
 
         .error-message {
-            color: var(--text-muted);
-        }
-
-        /* Date limite */
-        .date-limite-banner {
-            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .date-limite-banner.urgent {
-            animation: pulse-urgent 2s infinite;
-        }
-
-        @keyframes pulse-urgent {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
-            50% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
-        }
-
-        .date-limite-text {
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        .date-limite-countdown {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-
-        /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--success);
-            color: white;
-            padding: 15px 25px;
-            border-radius: 10px;
-            font-weight: 500;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            transform: translateY(100px);
-            opacity: 0;
-            transition: all 0.3s;
-            z-index: 1000;
-        }
-
-        .toast.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .toast.error {
-            background: var(--danger);
+            color: #64748b;
         }
 
         /* Photo modal */
@@ -646,11 +468,39 @@
             position: absolute;
             top: 20px;
             right: 20px;
-            background: none;
+            background: white;
             border: none;
-            color: white;
-            font-size: 2rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.5rem;
             cursor: pointer;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-weight: 500;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.error {
+            background: #ef4444;
         }
 
         /* Responsive */
@@ -660,64 +510,40 @@
                 text-align: center;
             }
 
-            .portal-title {
-                flex-direction: column;
-            }
-
-            .header-info {
+            .header-stats {
                 justify-content: center;
             }
 
-            .portal-tabs {
-                justify-content: center;
-            }
-
-            .travail-header {
+            .info-banner {
                 flex-direction: column;
+                text-align: center;
             }
 
-            .soumission-travail {
-                grid-template-columns: 1fr;
+            .travail-infos {
+                grid-template-columns: 1fr 1fr;
             }
 
-            .soumission-input {
-                width: 100%;
+            .photo-thumb {
+                width: 80px;
+                height: 80px;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .portal-header {
+                background: #1e3a5f !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
 
             .actions-bar {
-                justify-content: center;
+                display: none;
             }
-        }
 
-        /* Soumission déjà envoyée */
-        .soumission-confirmee {
-            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-            border-radius: 16px;
-            padding: 40px;
-            text-align: center;
-        }
-
-        .soumission-confirmee-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-        }
-
-        .soumission-confirmee h2 {
-            font-size: 1.8rem;
-            margin-bottom: 10px;
-        }
-
-        .soumission-confirmee p {
-            color: rgba(255,255,255,0.8);
-            font-size: 1.1rem;
-        }
-
-        .soumission-resume {
-            background: rgba(0,0,0,0.2);
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            text-align: left;
+            .travail-card {
+                break-inside: avoid;
+            }
         }
     </style>
 </head>
@@ -725,48 +551,43 @@
     <div id="app">
         <div class="loading-container">
             <div class="loading-spinner"></div>
-            <p>Chargement du portail...</p>
+            <p class="loading-text">Chargement du portail...</p>
         </div>
     </div>
 
     <div class="toast" id="toast"></div>
 
     <div class="photo-modal" id="photoModal" onclick="PortailEntrepreneur.closePhotoModal()">
-        <button class="photo-modal-close">&times;</button>
+        <button class="photo-modal-close" onclick="PortailEntrepreneur.closePhotoModal()">&times;</button>
         <img id="photoModalImg" src="" alt="Photo">
     </div>
 
     <script src="firebase.js"></script>
     <script>
-        // Portail Entrepreneur - Application
         const PortailEntrepreneur = {
             appelId: null,
             appelData: null,
             entreprise: null,
             travaux: [],
-            historique: {},
-            soumissionEnvoyee: false,
 
             async init() {
-                // Récupérer l'ID de l'appel depuis l'URL
                 const params = new URLSearchParams(window.location.search);
                 this.appelId = params.get('id');
 
                 if (!this.appelId) {
-                    this.showError('Lien invalide', 'Ce lien de soumission n\'est pas valide. Veuillez contacter le gestionnaire.');
+                    this.showError('Lien invalide', 'Ce lien de soumission n\'est pas valide.');
                     return;
                 }
 
                 try {
                     await this.loadAppelData();
                 } catch (error) {
-                    console.error('Erreur chargement:', error);
-                    this.showError('Erreur de chargement', 'Impossible de charger les données. Veuillez réessayer.');
+                    console.error('Erreur:', error);
+                    this.showError('Erreur de chargement', 'Impossible de charger les données.');
                 }
             },
 
             async loadAppelData() {
-                // Charger les données de l'appel depuis Firebase
                 const doc = await firebase.firestore().collection('appels_soumission').doc(this.appelId).get();
 
                 if (!doc.exists) {
@@ -777,47 +598,7 @@
                 this.appelData = doc.data();
                 this.entreprise = this.appelData.entreprise;
                 this.travaux = this.appelData.travaux || [];
-
-                // Vérifier si une soumission existe déjà
-                const soumissionDoc = await firebase.firestore()
-                    .collection('soumissions_recues')
-                    .doc(this.appelId)
-                    .get();
-
-                if (soumissionDoc.exists) {
-                    this.soumissionEnvoyee = true;
-                    this.soumissionData = soumissionDoc.data();
-                }
-
-                // Charger l'historique des travaux similaires
-                await this.loadHistorique();
-
                 this.render();
-            },
-
-            async loadHistorique() {
-                // Charger l'historique par équipement (simplifié sans orderBy pour éviter erreur d'index)
-                try {
-                    const equipements = [...new Set(this.travaux.map(t => t.equipement).filter(e => e))];
-
-                    for (const equip of equipements) {
-                        try {
-                            const snapshot = await firebase.firestore()
-                                .collection('historique_travaux')
-                                .where('equipement', '==', equip)
-                                .limit(5)
-                                .get();
-
-                            if (!snapshot.empty) {
-                                this.historique[equip] = snapshot.docs.map(d => d.data());
-                            }
-                        } catch (e) {
-                            console.log('Pas d\'historique pour', equip);
-                        }
-                    }
-                } catch (error) {
-                    console.log('Historique non disponible:', error);
-                }
             },
 
             showError(title, message) {
@@ -831,367 +612,154 @@
             },
 
             render() {
-                const app = document.getElementById('app');
-                const dateLimite = this.appelData.dateLimite ? new Date(this.appelData.dateLimite) : null;
-                const joursRestants = dateLimite ? Math.ceil((dateLimite - new Date()) / (1000 * 60 * 60 * 24)) : null;
-                const isUrgent = joursRestants !== null && joursRestants <= 3;
-
                 const totalHeures = this.travaux.reduce((sum, t) => sum + (t.estimationHeures || 0), 0);
+                const dateLimite = this.appelData.dateLimite ? new Date(this.appelData.dateLimite) : null;
 
-                app.innerHTML = `
+                document.getElementById('app').innerHTML = `
                     <header class="portal-header">
                         <div class="header-content">
                             <div class="portal-title">
-                                <h1>🔧 Portail Soumission</h1>
-                                <span class="entreprise-badge">${this.entreprise}</span>
+                                <h1>📋 Appel de Soumission</h1>
+                                <p>${this.appelData.nomArret || 'Arrêt Annuel'}</p>
                             </div>
-                            <div class="header-info">
-                                <div class="info-item">
-                                    <span class="info-label">Arrêt</span>
-                                    <span class="info-value">${this.appelData.nomArret || 'Arrêt Annuel 2025'}</span>
+                            <span class="entreprise-badge">${this.entreprise}</span>
+                            <div class="header-stats">
+                                <div class="header-stat">
+                                    <div class="header-stat-num">${this.travaux.length}</div>
+                                    <div class="header-stat-label">Travaux</div>
                                 </div>
-                                <div class="info-item">
-                                    <span class="info-label">Travaux</span>
-                                    <span class="info-value">${this.travaux.length}</span>
-                                </div>
-                                <div class="info-item">
-                                    <span class="info-label">Heures estimées</span>
-                                    <span class="info-value">${totalHeures}h</span>
+                                <div class="header-stat">
+                                    <div class="header-stat-num">${totalHeures}h</div>
+                                    <div class="header-stat-label">Estimées</div>
                                 </div>
                             </div>
                         </div>
                     </header>
 
                     <main class="portal-content">
-                        ${dateLimite ? `
-                            <div class="date-limite-banner ${isUrgent ? 'urgent' : ''}">
-                                <span class="date-limite-text">
-                                    ⏰ Date limite de soumission: ${dateLimite.toLocaleDateString('fr-CA')}
-                                </span>
-                                <span class="date-limite-countdown">
-                                    ${joursRestants > 0 ? `${joursRestants} jour${joursRestants > 1 ? 's' : ''} restant${joursRestants > 1 ? 's' : ''}` : 'EXPIRÉ'}
-                                </span>
+                        <div class="info-banner">
+                            <div class="info-banner-left">
+                                <div class="info-banner-icon">📄</div>
+                                <div>
+                                    <h2>Liste des travaux à soumissionner</h2>
+                                    <p>Veuillez consulter les détails ci-dessous et soumettre votre offre.</p>
+                                </div>
                             </div>
-                        ` : ''}
+                            ${dateLimite ? `
+                                <div class="date-limite">
+                                    <div class="date-limite-label">Date limite</div>
+                                    <div class="date-limite-value">${dateLimite.toLocaleDateString('fr-CA')}</div>
+                                </div>
+                            ` : ''}
+                        </div>
 
-                        ${this.soumissionEnvoyee ? this.renderSoumissionConfirmee() : this.renderPortail()}
+                        <h2 class="section-title">📋 Travaux (${this.travaux.length})</h2>
+
+                        ${this.travaux.map((t, i) => this.renderTravailCard(t, i)).join('')}
+
+                        <div class="actions-bar">
+                            <button class="btn btn-primary" onclick="PortailEntrepreneur.exportPDF()">
+                                📄 Exporter en PDF
+                            </button>
+                            <button class="btn btn-secondary" onclick="window.print()">
+                                🖨️ Imprimer
+                            </button>
+                        </div>
                     </main>
-                `;
-
-                // Initialiser les événements
-                this.initEvents();
-            },
-
-            renderSoumissionConfirmee() {
-                return `
-                    <div class="soumission-confirmee">
-                        <div class="soumission-confirmee-icon">✅</div>
-                        <h2>Soumission envoyée avec succès!</h2>
-                        <p>Votre soumission a été reçue le ${new Date(this.soumissionData.dateEnvoi).toLocaleDateString('fr-CA')} à ${new Date(this.soumissionData.dateEnvoi).toLocaleTimeString('fr-CA')}</p>
-
-                        <div class="soumission-resume">
-                            <h3>Résumé de votre soumission</h3>
-                            <p><strong>Montant total:</strong> ${this.soumissionData.montantTotal?.toLocaleString() || 'N/A'} $</p>
-                            <p><strong>Délai estimé:</strong> ${this.soumissionData.delaiEstime || 'N/A'}</p>
-                            ${this.soumissionData.commentaires ? `<p><strong>Commentaires:</strong> ${this.soumissionData.commentaires}</p>` : ''}
-                        </div>
-
-                        <div class="actions-bar" style="justify-content: center; border: none; margin-top: 30px;">
-                            <button class="btn btn-secondary" onclick="PortailEntrepreneur.exportPDF()">
-                                📄 Télécharger PDF
-                            </button>
-                        </div>
-                    </div>
-                `;
-            },
-
-            renderPortail() {
-                return `
-                    <div class="portal-tabs">
-                        <button class="portal-tab active" data-tab="travaux">
-                            📋 Liste des travaux
-                        </button>
-                        <button class="portal-tab" data-tab="plan">
-                            🗺️ Plan / Localisation
-                        </button>
-                        <button class="portal-tab" data-tab="historique">
-                            📊 Historique
-                        </button>
-                        <button class="portal-tab" data-tab="soumission">
-                            💰 Soumettre
-                        </button>
-                    </div>
-
-                    <div id="tab-content">
-                        ${this.renderTravauxTab()}
-                    </div>
-                `;
-            },
-
-            renderTravauxTab() {
-                return `
-                    <div class="section-card">
-                        <div class="section-header">
-                            <h2 class="section-title">📋 Travaux à soumissionner</h2>
-                            <button class="btn btn-secondary" onclick="PortailEntrepreneur.exportPDF()">
-                                📄 Export PDF
-                            </button>
-                        </div>
-
-                        <div class="travaux-grid">
-                            ${this.travaux.map((t, index) => this.renderTravailCard(t, index)).join('')}
-                        </div>
-                    </div>
                 `;
             },
 
             renderTravailCard(travail, index) {
-                const prioriteClass = (travail.priorite || '').toLowerCase().includes('haute') ? 'priorite-haute' :
-                                      (travail.priorite || '').toLowerCase().includes('moyenne') ? 'priorite-moyenne' : 'priorite-basse';
+                const isTPAA = travail.discipline?.toLowerCase().includes('tpaa') ||
+                               travail.ot?.toLowerCase().includes('tpaa') ||
+                               travail.description?.toLowerCase().includes('tpaa');
 
-                const historiqueEquip = this.historique[travail.equipement] || [];
-                const photos = travail.photos || [];
+                // Déterminer si Jeudi ou Hors Jeudi (basé sur un champ ou la priorité)
+                const isJeudi = travail.jeudi === true || travail.jourArret === 'jeudi';
+                const isHorsJeudi = travail.jeudi === false || travail.jourArret === 'hors-jeudi';
+
+                const prioriteClass = (travail.priorite || '').toLowerCase().includes('haute') ? 'badge-priorite-haute' :
+                                      (travail.priorite || '').toLowerCase().includes('moyenne') ? 'badge-priorite-moyenne' : '';
 
                 return `
                     <div class="travail-card">
                         <div class="travail-header">
-                            <span class="travail-ot">${travail.ot || 'N/A'}</span>
-                            <span class="travail-priorite ${prioriteClass}">${travail.priorite || 'Normal'}</span>
-                        </div>
-
-                        <div class="travail-description">${travail.description || 'Aucune description'}</div>
-
-                        <div class="travail-details">
-                            <div class="detail-item">
-                                <span class="detail-label">Équipement</span>
-                                <span class="detail-value">${travail.equipement || '-'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Discipline</span>
-                                <span class="detail-value">${travail.discipline || '-'}</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Heures estimées</span>
-                                <span class="detail-value">${travail.estimationHeures || '-'}h</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="detail-label">Localisation</span>
-                                <span class="detail-value">${travail.localisation || travail.secteur || '-'}</span>
+                            <span class="travail-ot">${travail.ot || `#${index + 1}`}</span>
+                            <div class="travail-badges">
+                                ${isTPAA ? '<span class="badge badge-tpaa">TPAA</span>' : ''}
+                                ${isJeudi ? '<span class="badge badge-jeudi">🗓️ Jeudi d\'arrêt</span>' : ''}
+                                ${isHorsJeudi ? '<span class="badge badge-hors-jeudi">✓ Hors jeudi</span>' : ''}
+                                ${prioriteClass ? `<span class="badge ${prioriteClass}">${travail.priorite}</span>` : ''}
                             </div>
                         </div>
 
-                        ${travail.conditions ? `
-                            <div class="detail-item" style="margin-top: 10px;">
-                                <span class="detail-label">Conditions particulières</span>
-                                <span class="detail-value">${travail.conditions}</span>
+                        <div class="travail-body">
+                            <div class="travail-description">${travail.description || 'Aucune description'}</div>
+
+                            <div class="travail-infos">
+                                <div class="info-box">
+                                    <div class="info-box-label">Équipement</div>
+                                    <div class="info-box-value">${travail.equipement || '-'}</div>
+                                </div>
+                                <div class="info-box">
+                                    <div class="info-box-label">Opération</div>
+                                    <div class="info-box-value">${travail.operation || '-'}</div>
+                                </div>
+                                <div class="info-box">
+                                    <div class="info-box-label">Discipline</div>
+                                    <div class="info-box-value">${travail.discipline || '-'}</div>
+                                </div>
+                                <div class="info-box">
+                                    <div class="info-box-label">Heures estimées</div>
+                                    <div class="info-box-value">${travail.estimationHeures || '-'} h</div>
+                                </div>
+                                <div class="info-box">
+                                    <div class="info-box-label">Secteur / Localisation</div>
+                                    <div class="info-box-value">${travail.localisation || travail.secteur || '-'}</div>
+                                </div>
+                                <div class="info-box">
+                                    <div class="info-box-label">Priorité</div>
+                                    <div class="info-box-value">${travail.priorite || '-'}</div>
+                                </div>
+                                ${travail.conditions ? `
+                                <div class="info-box">
+                                    <div class="info-box-label">Conditions</div>
+                                    <div class="info-box-value">${travail.conditions}</div>
+                                </div>
+                                ` : ''}
                             </div>
-                        ` : ''}
 
-                        ${photos.length > 0 ? `
-                            <div class="travail-photos">
-                                ${photos.map(p => `
-                                    <img src="${p}" class="photo-thumb" onclick="PortailEntrepreneur.showPhoto('${p}')" alt="Photo travail">
-                                `).join('')}
-                            </div>
-                        ` : ''}
+                            ${travail.commentaire ? `
+                                <div class="travail-commentaire">
+                                    <div class="commentaire-label">💬 Commentaire</div>
+                                    <div class="commentaire-text">${travail.commentaire}</div>
+                                </div>
+                            ` : ''}
 
-                        ${historiqueEquip.length > 0 ? `
-                            <div class="historique-badge">
-                                📜 Historique: ${historiqueEquip.length} travaux similaires sur cet équipement
-                            </div>
-                        ` : ''}
-                    </div>
-                `;
-            },
-
-            renderPlanTab() {
-                const planImage = this.appelData.planImage || null;
-
-                return `
-                    <div class="section-card">
-                        <div class="section-header">
-                            <h2 class="section-title">🗺️ Localisation des travaux</h2>
-                        </div>
-
-                        ${planImage ? `
-                            <div class="plan-container" id="planContainer">
-                                <img src="${planImage}" class="plan-image" id="planImage" onload="PortailEntrepreneur.placerMarqueurs()">
-                            </div>
-                            <p style="color: var(--text-muted); margin-top: 10px; font-size: 0.9rem;">
-                                Cliquez sur un marqueur pour voir les détails du travail
-                            </p>
-                        ` : `
-                            <div style="text-align: center; padding: 60px; color: var(--text-muted);">
-                                <div style="font-size: 3rem; margin-bottom: 15px;">🗺️</div>
-                                <p>Aucun plan disponible pour cet appel</p>
-                            </div>
-                        `}
-                    </div>
-                `;
-            },
-
-            renderHistoriqueTab() {
-                const equipements = Object.keys(this.historique);
-
-                return `
-                    <div class="section-card">
-                        <div class="section-header">
-                            <h2 class="section-title">📊 Historique des travaux similaires</h2>
-                        </div>
-
-                        ${equipements.length > 0 ? `
-                            <div class="historique-list">
-                                ${equipements.map(equip => `
-                                    <div style="margin-bottom: 25px;">
-                                        <h3 style="margin-bottom: 15px; color: var(--accent);">📍 ${equip}</h3>
-                                        ${this.historique[equip].map(h => `
-                                            <div class="historique-item">
-                                                <div class="historique-header">
-                                                    <span class="historique-annee">${h.annee}</span>
-                                                    ${h.prix ? `<span class="historique-prix">${h.prix.toLocaleString()} $</span>` : ''}
-                                                </div>
-                                                <p style="margin-bottom: 8px;">${h.description || 'Travail similaire'}</p>
-                                                <div style="display: flex; gap: 20px; color: var(--text-muted); font-size: 0.85rem;">
-                                                    <span>🏢 ${h.entreprise || 'N/A'}</span>
-                                                    <span>⏱️ ${h.heures || 'N/A'}h</span>
-                                                    ${h.notes ? `<span>📝 ${h.notes}</span>` : ''}
-                                                </div>
-                                            </div>
+                            ${(travail.photos && travail.photos.length > 0) ? `
+                                <div class="travail-photos">
+                                    <div class="photos-title">📷 Photos (${travail.photos.length})</div>
+                                    <div class="photos-grid">
+                                        ${travail.photos.map(p => `
+                                            <img src="${p}" class="photo-thumb" onclick="PortailEntrepreneur.showPhoto('${p}')" alt="Photo">
                                         `).join('')}
                                     </div>
-                                `).join('')}
-                            </div>
-                        ` : `
-                            <div style="text-align: center; padding: 60px; color: var(--text-muted);">
-                                <div style="font-size: 3rem; margin-bottom: 15px;">📊</div>
-                                <p>Aucun historique disponible pour ces équipements</p>
-                                <p style="font-size: 0.85rem; margin-top: 10px;">L'historique se construit au fil des années</p>
-                            </div>
-                        `}
-                    </div>
-                `;
-            },
+                                </div>
+                            ` : ''}
 
-            renderSoumissionTab() {
-                return `
-                    <div class="section-card">
-                        <div class="section-header">
-                            <h2 class="section-title">💰 Votre soumission</h2>
+                            ${(travail.documents && travail.documents.length > 0) ? `
+                                <div class="travail-documents">
+                                    <div class="photos-title">📎 Documents</div>
+                                    ${travail.documents.map(d => `
+                                        <a href="${d.url}" target="_blank" class="document-link">
+                                            📄 ${d.nom || 'Document'}
+                                        </a>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
                         </div>
-
-                        <form class="soumission-form" id="soumissionForm" onsubmit="PortailEntrepreneur.envoyerSoumission(event)">
-                            <h3 style="margin-bottom: 15px;">Prix par travail (optionnel)</h3>
-                            <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 25px;">
-                                ${this.travaux.map((t, i) => `
-                                    <div class="soumission-travail">
-                                        <div class="soumission-travail-info">
-                                            <span class="soumission-travail-ot">${t.ot || 'N/A'}</span>
-                                            <span class="soumission-travail-desc">${(t.description || '').substring(0, 60)}...</span>
-                                        </div>
-                                        <input type="number" class="form-group soumission-input"
-                                               name="prix_${i}" placeholder="Prix $" min="0" step="0.01">
-                                        <input type="number" class="form-group soumission-input"
-                                               name="heures_${i}" placeholder="Heures" min="0" step="0.5">
-                                    </div>
-                                `).join('')}
-                            </div>
-
-                            <h3 style="margin-bottom: 15px;">Soumission globale</h3>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Montant total ($) *</label>
-                                    <input type="number" name="montantTotal" required min="0" step="0.01" placeholder="Ex: 15000">
-                                </div>
-                                <div class="form-group">
-                                    <label>Délai estimé *</label>
-                                    <input type="text" name="delaiEstime" required placeholder="Ex: 5 jours ouvrables">
-                                </div>
-                            </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Nombre de travailleurs prévus</label>
-                                    <input type="number" name="nbTravailleurs" min="1" placeholder="Ex: 4">
-                                </div>
-                                <div class="form-group">
-                                    <label>Date de début souhaitée</label>
-                                    <input type="date" name="dateDebut">
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Commentaires / Questions / Conditions</label>
-                                <textarea name="commentaires" placeholder="Ajoutez vos commentaires, questions ou conditions particulières..."></textarea>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Contact (Nom et téléphone)</label>
-                                <input type="text" name="contact" placeholder="Ex: Jean Tremblay - 514-555-1234">
-                            </div>
-
-                            <div class="actions-bar">
-                                <button type="button" class="btn btn-secondary" onclick="PortailEntrepreneur.sauvegarderBrouillon()">
-                                    💾 Sauvegarder brouillon
-                                </button>
-                                <button type="submit" class="btn btn-success">
-                                    ✅ Envoyer la soumission
-                                </button>
-                            </div>
-                        </form>
                     </div>
                 `;
-            },
-
-            initEvents() {
-                // Tab switching
-                document.querySelectorAll('.portal-tab').forEach(tab => {
-                    tab.addEventListener('click', (e) => {
-                        document.querySelectorAll('.portal-tab').forEach(t => t.classList.remove('active'));
-                        e.target.classList.add('active');
-
-                        const tabName = e.target.dataset.tab;
-                        const content = document.getElementById('tab-content');
-
-                        switch(tabName) {
-                            case 'travaux':
-                                content.innerHTML = this.renderTravauxTab();
-                                break;
-                            case 'plan':
-                                content.innerHTML = this.renderPlanTab();
-                                break;
-                            case 'historique':
-                                content.innerHTML = this.renderHistoriqueTab();
-                                break;
-                            case 'soumission':
-                                content.innerHTML = this.renderSoumissionTab();
-                                break;
-                        }
-                    });
-                });
-            },
-
-            placerMarqueurs() {
-                const container = document.getElementById('planContainer');
-                if (!container) return;
-
-                // Placer les marqueurs pour chaque travail avec position
-                this.travaux.forEach((t, i) => {
-                    if (t.positionPlan) {
-                        const marker = document.createElement('div');
-                        marker.className = 'plan-marker';
-                        marker.style.left = t.positionPlan.x + '%';
-                        marker.style.top = t.positionPlan.y + '%';
-                        marker.textContent = i + 1;
-                        marker.title = `${t.ot} - ${t.description}`;
-                        marker.onclick = () => this.showTravailDetail(i);
-                        container.appendChild(marker);
-                    }
-                });
-            },
-
-            showTravailDetail(index) {
-                const t = this.travaux[index];
-                alert(`OT: ${t.ot}\n\n${t.description}\n\nÉquipement: ${t.equipement}\nHeures: ${t.estimationHeures}h`);
             },
 
             showPhoto(src) {
@@ -1203,96 +771,42 @@
                 document.getElementById('photoModal').classList.remove('show');
             },
 
-            async envoyerSoumission(event) {
-                event.preventDefault();
-
-                const form = event.target;
-                const formData = new FormData(form);
-
-                const soumission = {
-                    appelId: this.appelId,
-                    entreprise: this.entreprise,
-                    dateEnvoi: new Date().toISOString(),
-                    montantTotal: parseFloat(formData.get('montantTotal')),
-                    delaiEstime: formData.get('delaiEstime'),
-                    nbTravailleurs: parseInt(formData.get('nbTravailleurs')) || null,
-                    dateDebut: formData.get('dateDebut') || null,
-                    commentaires: formData.get('commentaires'),
-                    contact: formData.get('contact'),
-                    prixParTravail: {}
-                };
-
-                // Collecter les prix par travail
-                this.travaux.forEach((t, i) => {
-                    const prix = parseFloat(formData.get(`prix_${i}`));
-                    const heures = parseFloat(formData.get(`heures_${i}`));
-                    if (prix || heures) {
-                        soumission.prixParTravail[t.ot] = { prix, heures };
-                    }
-                });
-
-                try {
-                    // Sauvegarder dans Firebase
-                    await firebase.firestore()
-                        .collection('soumissions_recues')
-                        .doc(this.appelId)
-                        .set(soumission);
-
-                    // Mettre à jour le statut de l'appel
-                    await firebase.firestore()
-                        .collection('appels_soumission')
-                        .doc(this.appelId)
-                        .update({
-                            soumissionRecue: true,
-                            dateSoumission: new Date().toISOString()
-                        });
-
-                    this.soumissionEnvoyee = true;
-                    this.soumissionData = soumission;
-                    this.showToast('Soumission envoyée avec succès!');
-                    this.render();
-
-                } catch (error) {
-                    console.error('Erreur envoi soumission:', error);
-                    this.showToast('Erreur lors de l\'envoi. Veuillez réessayer.', 'error');
-                }
-            },
-
-            sauvegarderBrouillon() {
-                const form = document.getElementById('soumissionForm');
-                const formData = new FormData(form);
-                const brouillon = {};
-                formData.forEach((value, key) => brouillon[key] = value);
-
-                localStorage.setItem(`brouillon_${this.appelId}`, JSON.stringify(brouillon));
-                this.showToast('Brouillon sauvegardé!');
-            },
-
             exportPDF() {
-                // Export simple en PDF
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
+                let y = 20;
 
                 doc.setFontSize(18);
-                doc.text(`Soumission - ${this.entreprise}`, 20, 20);
+                doc.setFont(undefined, 'bold');
+                doc.text(`Appel de Soumission - ${this.entreprise}`, 20, y);
+                y += 10;
 
                 doc.setFontSize(12);
-                doc.text(`Arrêt: ${this.appelData.nomArret || 'Arrêt Annuel'}`, 20, 35);
-                doc.text(`Nombre de travaux: ${this.travaux.length}`, 20, 45);
+                doc.setFont(undefined, 'normal');
+                doc.text(`${this.appelData.nomArret || 'Arrêt Annuel'} - ${this.travaux.length} travaux`, 20, y);
+                y += 15;
 
-                let y = 60;
                 this.travaux.forEach((t, i) => {
-                    if (y > 270) {
+                    if (y > 260) {
                         doc.addPage();
                         y = 20;
                     }
-                    doc.setFontSize(10);
-                    doc.text(`${i+1}. [${t.ot}] ${(t.description || '').substring(0, 70)}`, 20, y);
-                    doc.text(`   Équipement: ${t.equipement || '-'} | Heures: ${t.estimationHeures || '-'}h`, 20, y + 5);
-                    y += 15;
+
+                    doc.setFontSize(11);
+                    doc.setFont(undefined, 'bold');
+                    doc.text(`${i + 1}. [${t.ot || '-'}] ${(t.description || '').substring(0, 60)}`, 20, y);
+                    y += 6;
+
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'normal');
+                    doc.text(`Équipement: ${t.equipement || '-'} | Heures: ${t.estimationHeures || '-'}h | Priorité: ${t.priorite || '-'}`, 25, y);
+                    y += 5;
+                    doc.text(`Localisation: ${t.localisation || t.secteur || '-'} | Discipline: ${t.discipline || '-'}`, 25, y);
+                    y += 8;
                 });
 
                 doc.save(`Soumission_${this.entreprise}_${new Date().toISOString().split('T')[0]}.pdf`);
+                this.showToast('PDF téléchargé!');
             },
 
             showToast(message, type = 'success') {
@@ -1303,7 +817,6 @@
             }
         };
 
-        // Initialiser au chargement
         document.addEventListener('DOMContentLoaded', () => {
             PortailEntrepreneur.init();
         });

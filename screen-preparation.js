@@ -6146,7 +6146,15 @@ const ScreenPreparation = {
                 estimationHeures: t.estimationHeures || 0,
                 priorite: t.priorite || '',
                 secteur: t.secteur || '',
-                localisation: t.localisation || t.secteur || ''
+                localisation: t.localisation || t.secteur || '',
+                operation: t.operation || '',
+                commentaire: t.commentaire || t.notes || '',
+                photos: t.photos || [],
+                documents: t.documents || [],
+                // Détecter Jeudi/Hors Jeudi basé sur operation ou champ dédié
+                jourArret: t.jourArret || (t.operation?.toLowerCase().includes('jeudi') ? 'jeudi' :
+                           t.operation?.toLowerCase().includes('hors') ? 'hors-jeudi' : null),
+                conditions: t.conditions || t.contraintesAcces || ''
             })),
             dateCreation: new Date().toISOString(),
             soumissionRecue: false
