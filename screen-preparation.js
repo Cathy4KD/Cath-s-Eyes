@@ -6084,6 +6084,7 @@ const ScreenPreparation = {
                                                         <select class="mini-select jour-arret-select"
                                                                 onchange="ScreenPreparation.updateSoumissionJourArret('${travailKey}', this.value)">
                                                             <option value="" ${!soumData.jourArret ? 'selected' : ''}>-</option>
+                                                            <option value="aa" ${soumData.jourArret === 'aa' ? 'selected' : ''}>🔧 AA</option>
                                                             <option value="jeudi" ${soumData.jourArret === 'jeudi' ? 'selected' : ''}>🗓️ Jeudi</option>
                                                             <option value="hors-jeudi" ${soumData.jourArret === 'hors-jeudi' ? 'selected' : ''}>✓ Hors jeudi</option>
                                                         </select>

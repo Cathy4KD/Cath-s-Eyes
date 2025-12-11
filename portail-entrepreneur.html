@@ -204,6 +204,11 @@
             color: #1e40af;
         }
 
+        .badge-aa {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
         .badge-jeudi {
             background: #fef3c7;
             color: #92400e;
@@ -713,9 +718,10 @@
                                travail.ot?.toLowerCase().includes('tpaa') ||
                                travail.description?.toLowerCase().includes('tpaa');
 
-                // Déterminer si Jeudi ou Hors Jeudi (basé sur un champ ou la priorité)
-                const isJeudi = travail.jeudi === true || travail.jourArret === 'jeudi';
-                const isHorsJeudi = travail.jeudi === false || travail.jourArret === 'hors-jeudi';
+                // Déterminer le type de jour (AA, Jeudi, Hors Jeudi)
+                const isAA = travail.jourArret === 'aa';
+                const isJeudi = travail.jourArret === 'jeudi';
+                const isHorsJeudi = travail.jourArret === 'hors-jeudi';
 
                 const prioriteClass = (travail.priorite || '').toLowerCase().includes('haute') ? 'badge-priorite-haute' :
                                       (travail.priorite || '').toLowerCase().includes('moyenne') ? 'badge-priorite-moyenne' : '';
@@ -726,9 +732,9 @@
                             <span class="travail-ot">${travail.ot || `#${index + 1}`}</span>
                             <div class="travail-badges">
                                 ${isTPAA ? '<span class="badge badge-tpaa">TPAA</span>' : ''}
+                                ${isAA ? '<span class="badge badge-aa">🔧 Arrêt Annuel</span>' : ''}
                                 ${isJeudi ? '<span class="badge badge-jeudi">🗓️ Jeudi d\'arrêt</span>' : ''}
                                 ${isHorsJeudi ? '<span class="badge badge-hors-jeudi">✓ Hors jeudi</span>' : ''}
-                                ${prioriteClass ? `<span class="badge ${prioriteClass}">${travail.priorite}</span>` : ''}
                             </div>
                         </div>
 
