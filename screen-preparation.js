@@ -5820,6 +5820,9 @@ const ScreenPreparation = {
                                 <h3>${entrepreneurActif ? `Travaux - ${entrepreneurActif} (${travauxAffiches.length})` : 'Cliquez sur une entreprise pour voir ses travaux'}</h3>
                                 ${entrepreneurActif ? `
                                     <div class="btn-group">
+                                        <button class="btn btn-sm btn-primary" onclick="ScreenPreparation.creerAppelSoumission()" title="Créer un appel de soumission avec portail">
+                                            🚀 Portail Soumission
+                                        </button>
                                         <button class="btn btn-sm btn-outline" onclick="ScreenPreparation.exporterTravauxEntrepreneur('pdf')" title="Exporter en PDF">
                                             PDF
                                         </button>
@@ -6013,6 +6016,493 @@ const ScreenPreparation = {
         });
 
         App.showToast(checked ? `${entreprise} marqué comme soumis` : `${entreprise} non soumis`, 'success');
+    },
+
+    // ==========================================
+    // PORTAIL SOUMISSION ENTREPRENEURS
+    // ==========================================
+
+    async creerAppelSoumission() {
+        const entreprise = this.entrepreneurActif;
+        const travaux = this.getTravauxEntrepreneurActif();
+
+        if (!entreprise || travaux.length === 0) {
+            App.showToast('Sélectionnez une entreprise avec des travaux', 'error');
+            return;
+        }
+
+        // Vérifier si un appel existe déjà pour cette entreprise
+        const appelExistant = await this.getAppelExistant(entreprise);
+
+        const html = `
+            <div class="overlay-modal" id="appelSoumissionModal">
+                <div class="overlay-box overlay-box-large">
+                    <div class="overlay-header">
+                        <h3>🚀 Portail Soumission - ${entreprise}</h3>
+                        <button class="overlay-close" onclick="ScreenPreparation.fermerModalAppel()">×</button>
+                    </div>
+                    <div class="overlay-content">
+                        ${appelExistant ? `
+                            <div class="appel-existant-banner">
+                                <span>📋 Un appel existe déjà pour cette entreprise</span>
+                                ${appelExistant.soumissionRecue ? `<span class="badge badge-success">✅ Soumission reçue</span>` : `<span class="badge badge-warning">⏳ En attente</span>`}
+                            </div>
+                        ` : ''}
+
+                        <div class="appel-resume">
+                            <h4>Résumé de l'appel</h4>
+                            <div class="appel-stats">
+                                <div class="appel-stat">
+                                    <span class="stat-number">${travaux.length}</span>
+                                    <span class="stat-label">Travaux</span>
+                                </div>
+                                <div class="appel-stat">
+                                    <span class="stat-number">${travaux.reduce((s, t) => s + (t.estimationHeures || 0), 0)}</span>
+                                    <span class="stat-label">Heures estimées</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form id="appelSoumissionForm" class="appel-form">
+                            <div class="form-group">
+                                <label>Nom de l'arrêt</label>
+                                <input type="text" name="nomArret" value="${DataManager.data.processus?.nomArret || 'Arrêt Annuel 2025'}" required>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Date limite de soumission</label>
+                                    <input type="date" name="dateLimite" value="${this.getDateDansXJours(7)}">
+                                </div>
+                                <div class="form-group">
+                                    <label>Email de l'entrepreneur (optionnel)</label>
+                                    <input type="email" name="emailEntrepreneur" placeholder="entrepreneur@email.com">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Message personnalisé (optionnel)</label>
+                                <textarea name="message" rows="3" placeholder="Instructions ou informations supplémentaires pour l'entrepreneur..."></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" name="inclurePlan" ${DataManager.data.planConfig?.imageURL ? 'checked' : 'disabled'}>
+                                    Inclure le plan de l'usine avec positions des équipements
+                                    ${!DataManager.data.planConfig?.imageURL ? '<span style="color: #f59e0b;"> (Aucun plan configuré)</span>' : ''}
+                                </label>
+                            </div>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" name="inclurePhotos">
+                                    Inclure les photos des travaux (si disponibles)
+                                </label>
+                            </div>
+                        </form>
+
+                        ${appelExistant ? `
+                            <div class="appel-lien-existant">
+                                <h4>🔗 Lien du portail</h4>
+                                <div class="lien-container">
+                                    <input type="text" readonly value="${window.location.origin}/portail-entrepreneur.html?id=${appelExistant.id}" id="lienPortail">
+                                    <button class="btn btn-sm btn-outline" onclick="ScreenPreparation.copierLienPortail()">📋 Copier</button>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        ${appelExistant?.soumissionRecue ? `
+                            <div class="soumission-recue-section">
+                                <h4>💰 Soumission reçue</h4>
+                                <button class="btn btn-primary" onclick="ScreenPreparation.voirSoumissionRecue('${appelExistant.id}')">
+                                    👁️ Voir la soumission
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="overlay-footer">
+                        <button class="btn btn-outline" onclick="ScreenPreparation.fermerModalAppel()">Annuler</button>
+                        ${appelExistant ? `
+                            <button class="btn btn-warning" onclick="ScreenPreparation.mettreAJourAppel('${appelExistant.id}')">🔄 Mettre à jour</button>
+                        ` : ''}
+                        <button class="btn btn-primary" onclick="ScreenPreparation.genererAppelSoumission(${appelExistant ? `'${appelExistant.id}'` : 'null'})">
+                            ${appelExistant ? '🔗 Copier le lien' : '🚀 Créer le portail'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+    },
+
+    async getAppelExistant(entreprise) {
+        try {
+            const snapshot = await firebase.firestore()
+                .collection('appels_soumission')
+                .where('entreprise', '==', entreprise)
+                .orderBy('dateCreation', 'desc')
+                .limit(1)
+                .get();
+
+            if (!snapshot.empty) {
+                const doc = snapshot.docs[0];
+                return { id: doc.id, ...doc.data() };
+            }
+        } catch (error) {
+            console.error('Erreur récupération appel:', error);
+        }
+        return null;
+    },
+
+    getDateDansXJours(jours) {
+        const date = new Date();
+        date.setDate(date.getDate() + jours);
+        return date.toISOString().split('T')[0];
+    },
+
+    fermerModalAppel() {
+        const modal = document.getElementById('appelSoumissionModal');
+        if (modal) modal.remove();
+    },
+
+    async genererAppelSoumission(appelIdExistant) {
+        const form = document.getElementById('appelSoumissionForm');
+        const formData = new FormData(form);
+        const entreprise = this.entrepreneurActif;
+        const travaux = this.getTravauxEntrepreneurActif();
+
+        const appelData = {
+            entreprise: entreprise,
+            nomArret: formData.get('nomArret'),
+            dateLimite: formData.get('dateLimite'),
+            emailEntrepreneur: formData.get('emailEntrepreneur'),
+            message: formData.get('message'),
+            inclurePlan: formData.get('inclurePlan') === 'on',
+            inclurePhotos: formData.get('inclurePhotos') === 'on',
+            travaux: travaux.map(t => ({
+                ot: t.ot,
+                description: t.description,
+                equipement: t.equipement,
+                discipline: t.discipline,
+                estimationHeures: t.estimationHeures,
+                priorite: t.priorite,
+                secteur: t.secteur,
+                localisation: t.localisation || t.secteur,
+                conditions: t.conditions || '',
+                photos: formData.get('inclurePhotos') === 'on' ? (t.photos || []) : [],
+                positionPlan: DataManager.data.planConfig?.positions?.[t.equipement] || null
+            })),
+            dateCreation: new Date().toISOString(),
+            soumissionRecue: false
+        };
+
+        // Ajouter le plan si demandé
+        if (appelData.inclurePlan && DataManager.data.planConfig?.imageURL) {
+            appelData.planImage = DataManager.data.planConfig.imageURL;
+        }
+
+        try {
+            let appelId;
+
+            if (appelIdExistant) {
+                // Mise à jour
+                await firebase.firestore()
+                    .collection('appels_soumission')
+                    .doc(appelIdExistant)
+                    .update(appelData);
+                appelId = appelIdExistant;
+                App.showToast('Appel mis à jour!', 'success');
+            } else {
+                // Création
+                const docRef = await firebase.firestore()
+                    .collection('appels_soumission')
+                    .add(appelData);
+                appelId = docRef.id;
+                App.showToast('Portail créé!', 'success');
+            }
+
+            // Générer et copier le lien
+            const lien = `${window.location.origin}${window.location.pathname.replace('index.html', '')}portail-entrepreneur.html?id=${appelId}`;
+
+            try {
+                await navigator.clipboard.writeText(lien);
+                App.showToast('Lien copié dans le presse-papier!', 'success');
+            } catch (e) {
+                // Fallback: afficher le lien
+                prompt('Copiez ce lien pour l\'entrepreneur:', lien);
+            }
+
+            this.fermerModalAppel();
+
+            // Sauvegarder l'historique des appels
+            this.sauvegarderHistoriqueAppel(appelId, entreprise);
+
+        } catch (error) {
+            console.error('Erreur création appel:', error);
+            App.showToast('Erreur lors de la création', 'error');
+        }
+    },
+
+    async mettreAJourAppel(appelId) {
+        await this.genererAppelSoumission(appelId);
+    },
+
+    copierLienPortail() {
+        const input = document.getElementById('lienPortail');
+        input.select();
+        document.execCommand('copy');
+        App.showToast('Lien copié!', 'success');
+    },
+
+    async voirSoumissionRecue(appelId) {
+        try {
+            const doc = await firebase.firestore()
+                .collection('soumissions_recues')
+                .doc(appelId)
+                .get();
+
+            if (!doc.exists) {
+                App.showToast('Soumission non trouvée', 'error');
+                return;
+            }
+
+            const soumission = doc.data();
+
+            const html = `
+                <div class="overlay-modal" id="soumissionRecueModal">
+                    <div class="overlay-box overlay-box-large">
+                        <div class="overlay-header">
+                            <h3>💰 Soumission - ${soumission.entreprise}</h3>
+                            <button class="overlay-close" onclick="document.getElementById('soumissionRecueModal').remove()">×</button>
+                        </div>
+                        <div class="overlay-content">
+                            <div class="soumission-detail">
+                                <div class="soumission-info-grid">
+                                    <div class="soumission-info-item">
+                                        <span class="info-label">Montant total</span>
+                                        <span class="info-value montant">${soumission.montantTotal?.toLocaleString() || 'N/A'} $</span>
+                                    </div>
+                                    <div class="soumission-info-item">
+                                        <span class="info-label">Délai estimé</span>
+                                        <span class="info-value">${soumission.delaiEstime || 'N/A'}</span>
+                                    </div>
+                                    <div class="soumission-info-item">
+                                        <span class="info-label">Travailleurs</span>
+                                        <span class="info-value">${soumission.nbTravailleurs || 'N/A'}</span>
+                                    </div>
+                                    <div class="soumission-info-item">
+                                        <span class="info-label">Date début souhaitée</span>
+                                        <span class="info-value">${soumission.dateDebut || 'N/A'}</span>
+                                    </div>
+                                </div>
+
+                                <div class="soumission-info-item full-width">
+                                    <span class="info-label">Contact</span>
+                                    <span class="info-value">${soumission.contact || 'Non spécifié'}</span>
+                                </div>
+
+                                ${soumission.commentaires ? `
+                                    <div class="soumission-info-item full-width">
+                                        <span class="info-label">Commentaires</span>
+                                        <span class="info-value">${soumission.commentaires}</span>
+                                    </div>
+                                ` : ''}
+
+                                ${Object.keys(soumission.prixParTravail || {}).length > 0 ? `
+                                    <div class="soumission-prix-detail">
+                                        <h4>Détail par travail</h4>
+                                        <table class="mini-table">
+                                            <thead>
+                                                <tr><th>OT</th><th>Prix</th><th>Heures</th></tr>
+                                            </thead>
+                                            <tbody>
+                                                ${Object.entries(soumission.prixParTravail).map(([ot, data]) => `
+                                                    <tr>
+                                                        <td>${ot}</td>
+                                                        <td>${data.prix ? data.prix + ' $' : '-'}</td>
+                                                        <td>${data.heures ? data.heures + 'h' : '-'}</td>
+                                                    </tr>
+                                                `).join('')}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                ` : ''}
+
+                                <div class="soumission-meta">
+                                    <span>📅 Reçue le ${new Date(soumission.dateEnvoi).toLocaleDateString('fr-CA')} à ${new Date(soumission.dateEnvoi).toLocaleTimeString('fr-CA')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="overlay-footer">
+                            <button class="btn btn-outline" onclick="document.getElementById('soumissionRecueModal').remove()">Fermer</button>
+                            <button class="btn btn-primary" onclick="ScreenPreparation.accepterSoumission('${appelId}')">✅ Accepter</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.insertAdjacentHTML('beforeend', html);
+
+        } catch (error) {
+            console.error('Erreur:', error);
+            App.showToast('Erreur lors du chargement', 'error');
+        }
+    },
+
+    async accepterSoumission(appelId) {
+        try {
+            await firebase.firestore()
+                .collection('appels_soumission')
+                .doc(appelId)
+                .update({ soumissionAcceptee: true, dateAcceptation: new Date().toISOString() });
+
+            // Marquer l'entreprise comme soumise
+            const appel = await firebase.firestore().collection('appels_soumission').doc(appelId).get();
+            if (appel.exists) {
+                this.toggleEntrepriseSoumise(appel.data().entreprise, true);
+            }
+
+            App.showToast('Soumission acceptée!', 'success');
+            document.getElementById('soumissionRecueModal')?.remove();
+            this.fermerModalAppel();
+
+        } catch (error) {
+            console.error('Erreur:', error);
+            App.showToast('Erreur', 'error');
+        }
+    },
+
+    sauvegarderHistoriqueAppel(appelId, entreprise) {
+        // Sauvegarder localement pour référence rapide
+        if (!DataManager.data.processus) DataManager.data.processus = {};
+        if (!DataManager.data.processus.appelsEnvoyes) DataManager.data.processus.appelsEnvoyes = {};
+
+        DataManager.data.processus.appelsEnvoyes[entreprise] = {
+            appelId: appelId,
+            date: new Date().toISOString()
+        };
+
+        DataManager.saveToStorage();
+    },
+
+    // ==========================================
+    // HISTORIQUE DES TRAVAUX (année après année)
+    // ==========================================
+
+    async sauvegarderHistoriqueTravaux() {
+        // Sauvegarder l'historique de tous les travaux terminés pour référence future
+        const travaux = DataManager.data.travaux || [];
+        const annee = new Date().getFullYear();
+        const nomArret = DataManager.data.processus?.nomArret || `Arrêt ${annee}`;
+
+        const travauxTermines = travaux.filter(t =>
+            t.execution?.statutExec === 'termine' ||
+            DataManager.data.processus?.tpaa?.[`${t.ot}_${t.description}`]?.statut === 'Terminé'
+        );
+
+        if (travauxTermines.length === 0) {
+            App.showToast('Aucun travail terminé à archiver', 'warning');
+            return;
+        }
+
+        try {
+            // Sauvegarder par équipement pour faciliter la recherche
+            const parEquipement = {};
+            travauxTermines.forEach(t => {
+                const equip = t.equipement || 'Non spécifié';
+                if (!parEquipement[equip]) parEquipement[equip] = [];
+                parEquipement[equip].push({
+                    ot: t.ot,
+                    description: t.description,
+                    discipline: t.discipline,
+                    entreprise: t.entreprise,
+                    heuresEstimees: t.estimationHeures,
+                    heuresReelles: t.execution?.heuresReelles,
+                    secteur: t.secteur,
+                    priorite: t.priorite,
+                    annee: annee,
+                    nomArret: nomArret,
+                    dateArchivage: new Date().toISOString()
+                });
+            });
+
+            // Sauvegarder dans Firebase
+            for (const [equipement, travaux] of Object.entries(parEquipement)) {
+                for (const travail of travaux) {
+                    await firebase.firestore()
+                        .collection('historique_travaux')
+                        .add({
+                            equipement: equipement,
+                            ...travail
+                        });
+                }
+            }
+
+            App.showToast(`${travauxTermines.length} travaux archivés dans l'historique!`, 'success');
+        } catch (error) {
+            console.error('Erreur archivage:', error);
+            App.showToast('Erreur lors de l\'archivage', 'error');
+        }
+    },
+
+    async rechercherHistorique(equipement) {
+        try {
+            const snapshot = await firebase.firestore()
+                .collection('historique_travaux')
+                .where('equipement', '==', equipement)
+                .orderBy('annee', 'desc')
+                .limit(10)
+                .get();
+
+            return snapshot.docs.map(d => d.data());
+        } catch (error) {
+            console.error('Erreur recherche historique:', error);
+            return [];
+        }
+    },
+
+    async afficherHistoriqueEquipement(equipement) {
+        const historique = await this.rechercherHistorique(equipement);
+
+        if (historique.length === 0) {
+            App.showToast(`Aucun historique pour ${equipement}`, 'info');
+            return;
+        }
+
+        const html = `
+            <div class="overlay-modal" id="historiqueModal">
+                <div class="overlay-box overlay-box-large">
+                    <div class="overlay-header">
+                        <h3>📜 Historique - ${equipement}</h3>
+                        <button class="overlay-close" onclick="document.getElementById('historiqueModal').remove()">×</button>
+                    </div>
+                    <div class="overlay-content">
+                        <div class="historique-timeline">
+                            ${historique.map(h => `
+                                <div class="historique-entry">
+                                    <div class="historique-annee-badge">${h.annee}</div>
+                                    <div class="historique-content">
+                                        <div class="historique-titre">${h.description || 'Travail'}</div>
+                                        <div class="historique-details">
+                                            <span>🏢 ${h.entreprise || 'N/A'}</span>
+                                            <span>⏱️ ${h.heuresReelles || h.heuresEstimees || '?'}h</span>
+                                            <span>📋 ${h.discipline || 'N/A'}</span>
+                                        </div>
+                                        <div class="historique-arret">${h.nomArret}</div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div class="overlay-footer">
+                        <button class="btn btn-outline" onclick="document.getElementById('historiqueModal').remove()">Fermer</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
     },
 
     getTravauxEntrepreneurActif() {
