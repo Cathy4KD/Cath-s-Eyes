@@ -6003,33 +6003,41 @@ const ScreenPreparation = {
     exporterEntrepreneurExcel(travaux, entreprise, dateExport) {
         // Préparer les données pour Excel
         const headers = ['OT', 'Description', 'Équipement', 'Discipline', 'Heures', 'Priorité'];
-        const rows = travaux.map(t => [
-            t.ot || '',
-            t.description || '',
-            t.equipement || '',
-            t.discipline || '',
-            t.estimationHeures || '',
-            t.priorite || ''
-        ]);
+        const data = [
+            [`Travaux - ${entreprise}`],
+            [`Date d'export: ${dateExport}`],
+            [`Nombre de travaux: ${travaux.length}`],
+            [],
+            headers,
+            ...travaux.map(t => [
+                t.ot || '',
+                t.description || '',
+                t.equipement || '',
+                t.discipline || '',
+                t.estimationHeures || '',
+                t.priorite || ''
+            ])
+        ];
 
-        // Créer le contenu CSV (compatible Excel)
-        let csv = '\uFEFF'; // BOM pour UTF-8
-        csv += `Travaux - ${entreprise}\n`;
-        csv += `Date d'export: ${dateExport}\n`;
-        csv += `Nombre de travaux: ${travaux.length}\n\n`;
-        csv += headers.join(';') + '\n';
-        rows.forEach(row => {
-            csv += row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(';') + '\n';
-        });
+        // Créer le workbook Excel avec XLSX
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(data);
 
-        // Télécharger le fichier
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `Travaux_${entreprise.replace(/[^a-zA-Z0-9]/g, '_')}_${dateExport}.csv`;
-        link.click();
-        URL.revokeObjectURL(url);
+        // Ajuster la largeur des colonnes
+        ws['!cols'] = [
+            { wch: 12 },  // OT
+            { wch: 50 },  // Description
+            { wch: 20 },  // Équipement
+            { wch: 15 },  // Discipline
+            { wch: 10 },  // Heures
+            { wch: 12 }   // Priorité
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, 'Travaux');
+
+        // Télécharger le fichier Excel
+        const fileName = `Travaux_${entreprise.replace(/[^a-zA-Z0-9]/g, '_')}_${dateExport}.xlsx`;
+        XLSX.writeFile(wb, fileName);
 
         App.showToast('Export Excel téléchargé', 'success');
     },
