@@ -5259,7 +5259,9 @@ Actions à suivre:
                         description: t.description?.substring(0, 50),
                         type: 'tpaa',
                         icon: '🔧',
-                        statut: tpaaInfo.statut || 'a_faire'
+                        statut: tpaaInfo.statut || 'a_faire',
+                        tpaaId: uniqueId,
+                        ot: t.ot
                     });
                 }
             }
@@ -5352,16 +5354,75 @@ Actions à suivre:
 
         const dateStr = showDate ? `<span class="event-date">${this.formatDateCourte(new Date(event.date))}</span>` : '';
 
+        // Sélecteur de statut pour les TPAA
+        let statutSelect = '';
+        if (event.type === 'tpaa' && event.tpaaId) {
+            const statuts = {
+                'a_faire': 'À faire',
+                'planifie': 'Planifié',
+                'en_cours': 'En cours',
+                'termine': 'Terminé',
+                'annule': 'Annulé'
+            };
+            const statutClass = {
+                'a_faire': '',
+                'planifie': 'status-planifie',
+                'en_cours': 'status-encours',
+                'termine': 'status-termine',
+                'annule': 'status-annule'
+            };
+            statutSelect = `
+                <select class="tpaa-statut-select ${statutClass[event.statut] || ''}"
+                        onclick="event.stopPropagation()"
+                        onchange="Screens.changeTPAAStatutCalendrier('${event.tpaaId}', this.value)">
+                    ${Object.entries(statuts).map(([val, label]) =>
+                        `<option value="${val}" ${event.statut === val ? 'selected' : ''}>${label}</option>`
+                    ).join('')}
+                </select>
+            `;
+        }
+
         return `
-            <div class="rappel-event" style="border-left-color: ${typeColors[event.type] || '#94a3b8'}">
+            <div class="rappel-event ${event.type === 'tpaa' ? 'rappel-tpaa' : ''}" style="border-left-color: ${typeColors[event.type] || '#94a3b8'}">
                 <span class="event-icon">${event.icon}</span>
                 <div class="event-info">
                     <span class="event-titre">${event.titre}</span>
                     ${event.description ? `<span class="event-desc">${event.description}</span>` : ''}
                 </div>
+                ${statutSelect}
                 ${dateStr}
             </div>
         `;
+    },
+
+    changeTPAAStatutCalendrier(tpaaId, statut) {
+        if (!DataManager.data.processus) {
+            DataManager.data.processus = {};
+        }
+        if (!DataManager.data.processus.tpaa) {
+            DataManager.data.processus.tpaa = {};
+        }
+        if (!DataManager.data.processus.tpaa[tpaaId]) {
+            DataManager.data.processus.tpaa[tpaaId] = {};
+        }
+        DataManager.data.processus.tpaa[tpaaId].statut = statut;
+        DataManager.saveToStorage();
+
+        // Mettre à jour le select visuellement
+        const select = event.target;
+        select.className = 'tpaa-statut-select';
+        const statutClass = {
+            'a_faire': '',
+            'planifie': 'status-planifie',
+            'en_cours': 'status-encours',
+            'termine': 'status-termine',
+            'annule': 'status-annule'
+        };
+        if (statutClass[statut]) {
+            select.classList.add(statutClass[statut]);
+        }
+
+        App.showToast('Statut TPAA mis à jour', 'success');
     },
 
     renderCalendrierMois(evenements) {

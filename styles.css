@@ -9552,4 +9552,83 @@ tr:hover .btn-edit-comment {
     .photo-delete {
         opacity: 1;
     }
+
+    /* Select TPAA sur mobile */
+    .tpaa-statut-select {
+        font-size: 0.7rem;
+        padding: 4px 6px;
+        min-width: 70px;
+    }
+}
+
+/* ========================================
+   TPAA - Sélecteur de statut dans calendrier
+   ======================================== */
+
+.rappel-tpaa {
+    cursor: default;
+}
+
+.tpaa-statut-select {
+    padding: 5px 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: white;
+    font-size: 0.75rem;
+    cursor: pointer;
+    min-width: 85px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.tpaa-statut-select:focus {
+    outline: none;
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+}
+
+/* Couleurs selon le statut */
+.tpaa-statut-select.status-planifie {
+    background: #dbeafe;
+    border-color: #3b82f6;
+    color: #1d4ed8;
+}
+
+.tpaa-statut-select.status-encours {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #b45309;
+}
+
+.tpaa-statut-select.status-termine {
+    background: #d1fae5;
+    border-color: #10b981;
+    color: #047857;
+}
+
+.tpaa-statut-select.status-annule {
+    background: #fee2e2;
+    border-color: #ef4444;
+    color: #b91c1c;
+}
+
+/* Style dans le panneau Aujourd'hui (fond sombre) */
+.aujourdhui-events .tpaa-statut-select {
+    background: rgba(255,255,255,0.95);
+}
+
+.aujourdhui-events .tpaa-statut-select.status-planifie {
+    background: #dbeafe;
+}
+
+.aujourdhui-events .tpaa-statut-select.status-encours {
+    background: #fef3c7;
+}
+
+.aujourdhui-events .tpaa-statut-select.status-termine {
+    background: #d1fae5;
+}
+
+.aujourdhui-events .tpaa-statut-select.status-annule {
+    background: #fee2e2;
 }
