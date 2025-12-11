@@ -540,7 +540,7 @@ const Screens = {
     journalDate: new Date().toISOString().split('T')[0],
 
     renderExecution() {
-        const stats = DataManager.getExecutionStats();
+        const stats = DataManager.getExecutionStats() || { total: 0, termine: 0, enCours: 0, nonDemarre: 0, pourcentage: 0, heuresEstimees: 0, heuresReelles: 0 };
 
         return `
             <div class="execution-screen">
@@ -549,29 +549,29 @@ const Screens = {
                     <div class="stat-card mini">
                         <div class="stat-icon green">🏁</div>
                         <div class="stat-info">
-                            <h3>${stats.termine}</h3>
+                            <h3>${stats.termine || 0}</h3>
                             <p>Terminés</p>
                         </div>
                     </div>
                     <div class="stat-card mini">
                         <div class="stat-icon orange">⚡</div>
                         <div class="stat-info">
-                            <h3>${stats.enCours}</h3>
+                            <h3>${stats.enCours || 0}</h3>
                             <p>En Cours</p>
                         </div>
                     </div>
                     <div class="stat-card mini">
                         <div class="stat-icon blue">📊</div>
                         <div class="stat-info">
-                            <h3>${stats.pourcentage}%</h3>
+                            <h3>${stats.pourcentage || 0}%</h3>
                             <p>Avancement</p>
                         </div>
                     </div>
                     <div class="stat-card mini">
                         <div class="stat-icon purple">⏱️</div>
                         <div class="stat-info">
-                            <h3>${stats.heuresReelles.toLocaleString('fr-FR')}h</h3>
-                            <p>/ ${stats.heuresEstimees.toLocaleString('fr-FR')}h</p>
+                            <h3>${(stats.heuresReelles || 0).toLocaleString('fr-FR')}h</h3>
+                            <p>/ ${(stats.heuresEstimees || 0).toLocaleString('fr-FR')}h</p>
                         </div>
                     </div>
                 </div>
