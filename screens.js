@@ -720,9 +720,17 @@ const Screens = {
     },
 
     isTravauxPourDate(travail, date) {
-        const dateDebut = travail.execution?.dateDebut?.split('T')[0];
-        const dateFin = travail.execution?.dateFin?.split('T')[0];
-        const datePrevue = travail.datePrevue?.split('T')[0];
+        // Fonction helper pour extraire la date en format YYYY-MM-DD
+        const extractDate = (val) => {
+            if (!val) return null;
+            if (typeof val === 'string') return val.split('T')[0];
+            if (val instanceof Date) return val.toISOString().split('T')[0];
+            return null;
+        };
+
+        const dateDebut = extractDate(travail.execution?.dateDebut);
+        const dateFin = extractDate(travail.execution?.dateFin);
+        const datePrevue = extractDate(travail.datePrevue);
         const statut = travail.execution?.statutExec;
 
         // Travaux terminés ne sont pas affichés
