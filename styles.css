@@ -8517,6 +8517,31 @@ tr:hover .btn-edit-comment {
     gap: 8px;
 }
 
+/* Liste avec scrollbar pour "Cette semaine" */
+.rappel-liste-scroll {
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.rappel-liste-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.rappel-liste-scroll::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.05);
+    border-radius: 3px;
+}
+
+.rappel-liste-scroll::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 3px;
+}
+
+.rappel-liste-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(0,0,0,0.3);
+}
+
 .rappel-event {
     display: flex;
     align-items: flex-start;

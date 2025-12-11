@@ -5186,8 +5186,7 @@ Actions à suivre:
                         <h3>📆 Cette semaine (${eventsSemaine.length})</h3>
                         ${eventsSemaine.length === 0 ?
                             '<p class="rappel-vide">Aucun événement</p>' :
-                            `<div class="rappel-liste">${eventsSemaine.slice(0, 5).map(e => this.renderEventRappel(e, true)).join('')}
-                             ${eventsSemaine.length > 5 ? `<p class="rappel-more">+ ${eventsSemaine.length - 5} autres...</p>` : ''}</div>`
+                            `<div class="rappel-liste rappel-liste-scroll">${eventsSemaine.map(e => this.renderEventRappel(e, true)).join('')}</div>`
                         }
                     </div>
                 </div>
