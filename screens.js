@@ -5618,8 +5618,95 @@ Actions à suivre:
     },
 
     voirJour(dateStr) {
-        // TODO: Afficher les détails du jour
-        console.log('Voir jour:', dateStr);
+        const dateJour = new Date(dateStr);
+        dateJour.setHours(0, 0, 0, 0);
+
+        // Collecter les événements de ce jour
+        const evenements = this.collecterEvenements();
+        const eventsJour = evenements.filter(e => {
+            const dateEvent = new Date(e.date);
+            dateEvent.setHours(0, 0, 0, 0);
+            return dateEvent.getTime() === dateJour.getTime();
+        });
+
+        // Obtenir les notes du jour
+        const noteJour = DataManager.getNoteJour(dateJour);
+
+        const typeColors = {
+            arret: '#ef4444',
+            tpaa: '#f59e0b',
+            reunion: '#3b82f6',
+            jalon: '#8b5cf6',
+            travaux: '#10b981'
+        };
+
+        // Créer le modal
+        const modal = document.createElement('div');
+        modal.className = 'jour-detail-modal';
+        modal.innerHTML = `
+            <div class="jour-detail-content">
+                <div class="jour-detail-header">
+                    <div class="jour-detail-date">
+                        <span class="jour-detail-num">${dateJour.getDate()}</span>
+                        <div class="jour-detail-info">
+                            <span>${dateJour.toLocaleDateString('fr-FR', {weekday: 'long'})}</span>
+                            <span>${dateJour.toLocaleDateString('fr-FR', {month: 'long', year: 'numeric'})}</span>
+                        </div>
+                    </div>
+                    <button class="jour-detail-close" onclick="this.closest('.jour-detail-modal').remove()">×</button>
+                </div>
+
+                <div class="jour-detail-body">
+                    ${eventsJour.length === 0 ?
+                        '<p class="jour-detail-vide">Aucun événement ce jour</p>' :
+                        `<div class="jour-detail-events">
+                            ${eventsJour.map(e => `
+                                <div class="jour-detail-event" style="border-left-color: ${typeColors[e.type]}">
+                                    <span class="event-icon">${e.icon}</span>
+                                    <div class="event-info">
+                                        <span class="event-titre">${e.titre}</span>
+                                        ${e.description ? `<span class="event-desc">${e.description}</span>` : ''}
+                                    </div>
+                                    ${e.type === 'tpaa' && e.tpaaId ? `
+                                        <select class="tpaa-statut-select ${e.statut === 'planifie' ? 'status-planifie' : e.statut === 'en_cours' ? 'status-encours' : e.statut === 'termine' ? 'status-termine' : e.statut === 'annule' ? 'status-annule' : ''}"
+                                                onchange="Screens.changeTPAAStatutCalendrier('${e.tpaaId}', this.value)">
+                                            <option value="a_faire" ${e.statut === 'a_faire' ? 'selected' : ''}>À faire</option>
+                                            <option value="planifie" ${e.statut === 'planifie' ? 'selected' : ''}>Planifié</option>
+                                            <option value="en_cours" ${e.statut === 'en_cours' ? 'selected' : ''}>En cours</option>
+                                            <option value="termine" ${e.statut === 'termine' ? 'selected' : ''}>Terminé</option>
+                                            <option value="annule" ${e.statut === 'annule' ? 'selected' : ''}>Annulé</option>
+                                        </select>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>`
+                    }
+
+                    ${noteJour.note ? `
+                        <div class="jour-detail-notes">
+                            <h4>📝 Notes</h4>
+                            <p>${noteJour.note}</p>
+                        </div>
+                    ` : ''}
+
+                    ${noteJour.photos && noteJour.photos.length > 0 ? `
+                        <div class="jour-detail-photos">
+                            <h4>📷 Photos (${noteJour.photos.length})</h4>
+                            <div class="photos-grid">
+                                ${noteJour.photos.map(p => `
+                                    <div class="photo-item" onclick="Screens.viewPhoto('${p.id}')">
+                                        <img src="${p.data}" alt="Photo">
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+
+        modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+        document.body.appendChild(modal);
     },
 
     // === Notes et Photos du jour ===

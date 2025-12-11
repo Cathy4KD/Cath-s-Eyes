@@ -9696,3 +9696,193 @@ tr:hover .btn-edit-comment {
 .aujourdhui-events .tpaa-statut-select.status-annule {
     background: #fee2e2;
 }
+
+/* ========================================
+   MODAL DÉTAIL DU JOUR
+   ======================================== */
+
+.jour-detail-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+}
+
+.jour-detail-content {
+    background: white;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.jour-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+    color: white;
+}
+
+.jour-detail-date {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.jour-detail-num {
+    font-size: 2.5rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.jour-detail-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.jour-detail-info span:first-child {
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.jour-detail-info span:last-child {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    text-transform: capitalize;
+}
+
+.jour-detail-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.jour-detail-close:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+.jour-detail-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.jour-detail-vide {
+    text-align: center;
+    color: var(--text-light);
+    font-style: italic;
+    padding: 30px;
+}
+
+.jour-detail-events {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.jour-detail-event {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px;
+    background: var(--background);
+    border-radius: 10px;
+    border-left: 4px solid;
+}
+
+.jour-detail-event .event-icon {
+    font-size: 1.3rem;
+}
+
+.jour-detail-event .event-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.jour-detail-event .event-titre {
+    display: block;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.jour-detail-event .event-desc {
+    display: block;
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 2px;
+}
+
+.jour-detail-notes {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+}
+
+.jour-detail-notes h4 {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
+}
+
+.jour-detail-notes p {
+    background: var(--background);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+}
+
+.jour-detail-photos {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid var(--border);
+}
+
+.jour-detail-photos h4 {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .jour-detail-modal {
+        padding: 10px;
+    }
+
+    .jour-detail-content {
+        max-height: 90vh;
+    }
+
+    .jour-detail-header {
+        padding: 15px;
+    }
+
+    .jour-detail-num {
+        font-size: 2rem;
+    }
+
+    .jour-detail-body {
+        padding: 15px;
+    }
+}
