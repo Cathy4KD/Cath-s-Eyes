@@ -4219,7 +4219,114 @@ const ScreenPreparation = {
 
     filtrerTPAA(valeur) {
         this.tpaaFiltre = valeur;
-        this.refresh();
+        // Mettre à jour uniquement le tableau sans recharger toute la page
+        this.updateTPAATable();
+    },
+
+    updateTPAATable() {
+        const container = document.querySelector('#screen-preparation .table-container');
+        if (!container) {
+            this.refresh();
+            return;
+        }
+
+        // Récupérer les TPAA filtrés
+        const travaux = DataManager.data.travaux || [];
+        const tpaaTravaux = travaux.filter(t =>
+            t.description && t.description.toLowerCase().includes('tpaa')
+        );
+
+        // Appliquer le filtre de recherche
+        const filtre = (this.tpaaFiltre || '').toLowerCase();
+        let travauxFiltres = tpaaTravaux;
+        if (filtre) {
+            travauxFiltres = tpaaTravaux.filter(t =>
+                (t.ot && t.ot.toLowerCase().includes(filtre)) ||
+                (t.description && t.description.toLowerCase().includes(filtre)) ||
+                (t.entreprise && t.entreprise.toLowerCase().includes(filtre)) ||
+                (t.equipement && t.equipement.toLowerCase().includes(filtre)) ||
+                (t.operation && t.operation.toLowerCase().includes(filtre))
+            );
+        }
+
+        // Appliquer le tri
+        if (this.tpaaTri === 'date') {
+            travauxFiltres.sort((a, b) => {
+                const dateA = a.tpaaDatePrevue || '';
+                const dateB = b.tpaaDatePrevue || '';
+                return this.tpaaTriOrder === 'asc' ? dateA.localeCompare(dateB) : dateB.localeCompare(dateA);
+            });
+        } else if (this.tpaaTri === 'entreprise') {
+            travauxFiltres.sort((a, b) => {
+                const entA = (a.entreprise || '').toLowerCase();
+                const entB = (b.entreprise || '').toLowerCase();
+                return this.tpaaTriOrder === 'asc' ? entA.localeCompare(entB) : entB.localeCompare(entA);
+            });
+        }
+
+        // Stats
+        const stats = {
+            total: travauxFiltres.length,
+            a_faire: travauxFiltres.filter(t => !t.tpaaStatut || t.tpaaStatut === 'a_faire').length,
+            planifie: travauxFiltres.filter(t => t.tpaaStatut === 'planifie').length,
+            en_cours: travauxFiltres.filter(t => t.tpaaStatut === 'en_cours').length,
+            termine: travauxFiltres.filter(t => t.tpaaStatut === 'termine').length,
+            annule: travauxFiltres.filter(t => t.tpaaStatut === 'annule').length
+        };
+
+        // Mettre à jour les stats
+        const statsContainer = document.querySelector('.tpaa-stats-resume');
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <span>Total: <strong>${stats.total}</strong></span>
+                <span>À faire: <strong>${stats.a_faire}</strong></span>
+                <span>Planifiés: <strong>${stats.planifie}</strong></span>
+                <span>En cours: <strong>${stats.en_cours}</strong></span>
+                <span>Terminés: <strong>${stats.termine}</strong></span>
+                <span>Annulés: <strong>${stats.annule}</strong></span>
+            `;
+        }
+
+        // Mettre à jour le tableau
+        const tbody = container.querySelector('tbody');
+        if (tbody) {
+            tbody.innerHTML = travauxFiltres.map((t, index) => {
+                const travailIndex = travaux.indexOf(t);
+                const rowClass = t.tpaaStatut === 'termine' ? 'row-success' :
+                                t.tpaaStatut === 'annule' ? 'row-cancelled' :
+                                t.tpaaStatut === 'planifie' ? 'row-planifie' : '';
+
+                return `
+                    <tr class="${rowClass}" data-index="${travailIndex}">
+                        <td class="td-ot">${t.ot || '-'}</td>
+                        <td class="td-description td-wrap">${t.description || '-'}</td>
+                        <td class="td-entreprise hide-mobile">${t.entreprise || '-'}</td>
+                        <td class="td-equipement hide-mobile">${t.equipement || '-'}</td>
+                        <td class="td-date">
+                            <input type="date" class="date-input-mini"
+                                value="${t.tpaaDatePrevue || ''}"
+                                onchange="ScreenPreparation.updateTPAADateDirect(${travailIndex}, this.value)">
+                        </td>
+                        <td class="td-statut">
+                            <select class="statut-select-mini statut-${t.tpaaStatut || 'a_faire'}"
+                                onchange="ScreenPreparation.updateTPAAStatutDirect(${travailIndex}, this.value)">
+                                <option value="a_faire" ${(!t.tpaaStatut || t.tpaaStatut === 'a_faire') ? 'selected' : ''}>À faire</option>
+                                <option value="planifie" ${t.tpaaStatut === 'planifie' ? 'selected' : ''}>Planifié</option>
+                                <option value="en_cours" ${t.tpaaStatut === 'en_cours' ? 'selected' : ''}>En cours</option>
+                                <option value="termine" ${t.tpaaStatut === 'termine' ? 'selected' : ''}>Terminé</option>
+                                <option value="annule" ${t.tpaaStatut === 'annule' ? 'selected' : ''}>Annulé</option>
+                            </select>
+                        </td>
+                        <td class="td-commentaire">
+                            <input type="text" class="commentaire-input"
+                                value="${t.tpaaCommentaire || ''}"
+                                placeholder="Commentaire..."
+                                onchange="ScreenPreparation.updateTPAACommentaireDirect(${travailIndex}, this.value)">
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
     },
 
     trierTPAA(champ) {
@@ -4230,7 +4337,20 @@ const ScreenPreparation = {
             this.tpaaTri = champ;
             this.tpaaTriOrder = 'asc';
         }
-        this.refresh();
+        // Mettre à jour les boutons de tri
+        document.querySelectorAll('.sort-buttons .btn').forEach(btn => {
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-outline');
+        });
+        const activeBtn = document.querySelector(`.sort-buttons .btn[onclick*="'${champ}'"]`);
+        if (activeBtn) {
+            activeBtn.classList.remove('btn-outline');
+            activeBtn.classList.add('btn-primary');
+            activeBtn.innerHTML = champ === 'date' ?
+                `📅 Date ${this.tpaaTriOrder === 'asc' ? '↑' : '↓'}` :
+                `🏢 Entreprise ${this.tpaaTriOrder === 'asc' ? '↑' : '↓'}`;
+        }
+        this.updateTPAATable();
     },
 
     // Extraire le nombre de semaines avant l'arrêt depuis la description
@@ -4426,6 +4546,88 @@ const ScreenPreparation = {
 
         DataManager.data.processus.tpaa[uniqueId].commentaire = commentaire;
         DataManager.saveToStorage();
+    },
+
+    // Fonctions Direct - utilisent l'index du travail directement
+    updateTPAADateDirect(travailIndex, date) {
+        const travaux = DataManager.data.travaux || [];
+        if (travailIndex >= 0 && travailIndex < travaux.length) {
+            travaux[travailIndex].tpaaDatePrevue = date;
+            DataManager.saveToStorage();
+
+            // Flash la ligne pour indiquer la modification
+            const row = document.querySelector(`tr[data-index="${travailIndex}"]`);
+            if (row) {
+                row.classList.add('row-highlight');
+                setTimeout(() => row.classList.remove('row-highlight'), 1000);
+            }
+        }
+    },
+
+    updateTPAAStatutDirect(travailIndex, statut) {
+        const travaux = DataManager.data.travaux || [];
+        if (travailIndex >= 0 && travailIndex < travaux.length) {
+            travaux[travailIndex].tpaaStatut = statut;
+            DataManager.saveToStorage();
+
+            // Mettre à jour la ligne visuellement
+            const row = document.querySelector(`tr[data-index="${travailIndex}"]`);
+            if (row) {
+                row.classList.remove('row-success', 'row-cancelled', 'row-planifie');
+                if (statut === 'termine') row.classList.add('row-success');
+                else if (statut === 'annule') row.classList.add('row-cancelled');
+                else if (statut === 'planifie') row.classList.add('row-planifie');
+
+                // Flash la ligne
+                row.classList.add('row-highlight');
+                setTimeout(() => row.classList.remove('row-highlight'), 1000);
+
+                // Mettre à jour la classe du select
+                const select = row.querySelector('.statut-select-mini');
+                if (select) {
+                    select.className = `statut-select-mini statut-${statut}`;
+                }
+            }
+
+            // Mettre à jour les stats
+            this.updateTPAAStatsFromTable();
+        }
+    },
+
+    updateTPAACommentaireDirect(travailIndex, commentaire) {
+        const travaux = DataManager.data.travaux || [];
+        if (travailIndex >= 0 && travailIndex < travaux.length) {
+            travaux[travailIndex].tpaaCommentaire = commentaire;
+            DataManager.saveToStorage();
+        }
+    },
+
+    updateTPAAStatsFromTable() {
+        const travaux = DataManager.data.travaux || [];
+        const tpaaTravaux = travaux.filter(t =>
+            t.description && t.description.toLowerCase().includes('tpaa')
+        );
+
+        const stats = {
+            total: tpaaTravaux.length,
+            a_faire: tpaaTravaux.filter(t => !t.tpaaStatut || t.tpaaStatut === 'a_faire').length,
+            planifie: tpaaTravaux.filter(t => t.tpaaStatut === 'planifie').length,
+            en_cours: tpaaTravaux.filter(t => t.tpaaStatut === 'en_cours').length,
+            termine: tpaaTravaux.filter(t => t.tpaaStatut === 'termine').length,
+            annule: tpaaTravaux.filter(t => t.tpaaStatut === 'annule').length
+        };
+
+        const statsContainer = document.querySelector('.tpaa-stats-resume');
+        if (statsContainer) {
+            statsContainer.innerHTML = `
+                <span>Total: <strong>${stats.total}</strong></span>
+                <span>À faire: <strong>${stats.a_faire}</strong></span>
+                <span>Planifiés: <strong>${stats.planifie}</strong></span>
+                <span>En cours: <strong>${stats.en_cours}</strong></span>
+                <span>Terminés: <strong>${stats.termine}</strong></span>
+                <span>Annulés: <strong>${stats.annule}</strong></span>
+            `;
+        }
     },
 
     // ==========================================
