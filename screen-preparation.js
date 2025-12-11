@@ -6037,6 +6037,9 @@ const ScreenPreparation = {
                                         <button class="btn btn-sm btn-primary" onclick="ScreenPreparation.creerAppelSoumission()" title="Créer un appel de soumission avec portail">
                                             🚀 Portail Soumission
                                         </button>
+                                        <button class="btn btn-sm btn-secondary" onclick="ScreenPreparation.voirHistoriqueSoumissions()" title="Voir l'historique des soumissions passées">
+                                            📜 Historique
+                                        </button>
                                         <button class="btn btn-sm btn-outline" onclick="ScreenPreparation.exporterTravauxEntrepreneur('pdf')" title="Exporter en PDF">
                                             PDF
                                         </button>
@@ -8987,5 +8990,225 @@ Cordialement</textarea>
         DataManager.saveToStorage();
         this.refresh();
         App.showToast('Roulotte retirée du plan', 'success');
+    },
+
+    // ==========================================
+    // HISTORIQUE SOUMISSIONS - Consultation et pré-remplissage
+    // ==========================================
+
+    async voirHistoriqueSoumissions() {
+        const entreprise = this.entrepreneurActif;
+        if (!entreprise) {
+            App.showToast('Sélectionnez une entreprise', 'error');
+            return;
+        }
+
+        App.showToast('Chargement de l\'historique...', 'info');
+
+        try {
+            // Récupérer tous les appels passés pour cette entreprise
+            const snapshot = await firebase.firestore()
+                .collection('appels_soumission')
+                .where('entreprise', '==', entreprise)
+                .get();
+
+            const appels = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+            // Récupérer les commentaires entrepreneurs associés
+            const commentairesPromises = appels.map(async (appel) => {
+                try {
+                    const commentDoc = await firebase.firestore()
+                        .collection('commentaires_entrepreneurs')
+                        .doc(appel.id)
+                        .get();
+                    return { appelId: appel.id, data: commentDoc.exists ? commentDoc.data() : null };
+                } catch (e) {
+                    return { appelId: appel.id, data: null };
+                }
+            });
+
+            const commentaires = await Promise.all(commentairesPromises);
+            const commentairesMap = {};
+            commentaires.forEach(c => { commentairesMap[c.appelId] = c.data; });
+
+            this.afficherModalHistoriqueSoumissions(appels, commentairesMap, entreprise);
+
+        } catch (error) {
+            console.error('Erreur:', error);
+            App.showToast('Erreur lors du chargement de l\'historique', 'error');
+        }
+    },
+
+    afficherModalHistoriqueSoumissions(appels, commentairesMap, entreprise) {
+        // Trier par date décroissante
+        appels.sort((a, b) => new Date(b.dateCreation) - new Date(a.dateCreation));
+
+        const html = `
+            <div class="overlay-modal" id="historiquesoumissionsModal">
+                <div class="overlay-box overlay-box-large" style="max-width: 900px;">
+                    <div class="overlay-header">
+                        <h3>📜 Historique Soumissions - ${entreprise}</h3>
+                        <button class="overlay-close" onclick="document.getElementById('historiquesoumissionsModal').remove()">×</button>
+                    </div>
+                    <div class="overlay-content" style="max-height: 70vh; overflow-y: auto;">
+                        ${appels.length === 0 ? `
+                            <div class="empty-state" style="text-align: center; padding: 40px; color: #64748b;">
+                                <div style="font-size: 3rem; margin-bottom: 15px;">📭</div>
+                                <p>Aucun historique de soumission pour cette entreprise</p>
+                            </div>
+                        ` : appels.map(appel => {
+                            const date = new Date(appel.dateCreation).toLocaleDateString('fr-CA');
+                            const annee = new Date(appel.dateCreation).getFullYear();
+                            const commentaire = commentairesMap[appel.id];
+                            const nbTravaux = appel.travaux?.length || 0;
+                            const heuresTotal = appel.travaux?.reduce((sum, t) => sum + (parseFloat(t.estimationHeures) || 0), 0) || 0;
+
+                            return `
+                                <div class="historique-appel-card" style="background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); border-left: 4px solid #6366f1;">
+                                    <div class="historique-appel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                        <div>
+                                            <span class="annee-badge" style="background: #6366f1; color: white; padding: 4px 12px; border-radius: 20px; font-weight: 600;">${annee}</span>
+                                            <span style="margin-left: 10px; color: #64748b;">${appel.nomArret || 'Arrêt Annuel'}</span>
+                                        </div>
+                                        <span style="color: #94a3b8; font-size: 0.85rem;">${date}</span>
+                                    </div>
+
+                                    <div class="historique-stats" style="display: flex; gap: 20px; margin-bottom: 15px;">
+                                        <div style="background: #f1f5f9; padding: 10px 15px; border-radius: 8px;">
+                                            <div style="font-size: 1.5rem; font-weight: 700; color: #1e293b;">${nbTravaux}</div>
+                                            <div style="color: #64748b; font-size: 0.8rem;">travaux</div>
+                                        </div>
+                                        <div style="background: #f1f5f9; padding: 10px 15px; border-radius: 8px;">
+                                            <div style="font-size: 1.5rem; font-weight: 700; color: #1e293b;">${heuresTotal}</div>
+                                            <div style="color: #64748b; font-size: 0.8rem;">heures</div>
+                                        </div>
+                                    </div>
+
+                                    ${commentaire?.commentaire ? `
+                                        <div style="background: #f0fdf4; border-left: 3px solid #10b981; padding: 12px; border-radius: 6px; margin-bottom: 15px;">
+                                            <div style="color: #065f46; font-weight: 600; font-size: 0.8rem; margin-bottom: 5px;">💬 Commentaire entrepreneur</div>
+                                            <div style="color: #166534;">${commentaire.commentaire}</div>
+                                        </div>
+                                    ` : ''}
+
+                                    <details style="margin-top: 10px;">
+                                        <summary style="cursor: pointer; color: #6366f1; font-weight: 500;">Voir les ${nbTravaux} travaux</summary>
+                                        <div style="margin-top: 10px; max-height: 300px; overflow-y: auto;">
+                                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+                                                <thead>
+                                                    <tr style="background: #f8fafc;">
+                                                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0;">OT</th>
+                                                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0;">Description</th>
+                                                        <th style="padding: 8px; text-align: left; border-bottom: 1px solid #e2e8f0;">Équipement</th>
+                                                        <th style="padding: 8px; text-align: center; border-bottom: 1px solid #e2e8f0;">Type</th>
+                                                        <th style="padding: 8px; text-align: center; border-bottom: 1px solid #e2e8f0;">Jour</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    ${(appel.travaux || []).map((t, idx) => {
+                                                        const commentTravail = commentaire?.commentairesTravaux?.[idx] || '';
+                                                        return `
+                                                            <tr style="border-bottom: 1px solid #f1f5f9;">
+                                                                <td style="padding: 8px;">${t.ot || '-'}</td>
+                                                                <td style="padding: 8px;" title="${t.description || ''}">${(t.description || '-').substring(0, 40)}...</td>
+                                                                <td style="padding: 8px;">${t.equipement || '-'}</td>
+                                                                <td style="padding: 8px; text-align: center;">
+                                                                    ${t.typeTravail === 'aa' ? '<span style="background:#ede9fe;color:#6d28d9;padding:2px 6px;border-radius:4px;font-size:0.75rem;">AA</span>' : ''}
+                                                                    ${t.typeTravail === 'tpaa' ? '<span style="background:#dbeafe;color:#1e40af;padding:2px 6px;border-radius:4px;font-size:0.75rem;">TPAA</span>' : ''}
+                                                                    ${t.typeTravail === 'aa-tpaa' ? '<span style="background:linear-gradient(135deg,#ede9fe 50%,#dbeafe 50%);color:#4c1d95;padding:2px 6px;border-radius:4px;font-size:0.75rem;">AA/TPAA</span>' : ''}
+                                                                </td>
+                                                                <td style="padding: 8px; text-align: center;">
+                                                                    ${t.jourArret === 'jeudi' ? '<span style="background:#fef3c7;color:#92400e;padding:2px 6px;border-radius:4px;font-size:0.75rem;">Jeudi</span>' : ''}
+                                                                    ${t.jourArret === 'hors-jeudi' ? '<span style="background:#d1fae5;color:#065f46;padding:2px 6px;border-radius:4px;font-size:0.75rem;">Hors jeudi</span>' : ''}
+                                                                </td>
+                                                            </tr>
+                                                            ${commentTravail ? `
+                                                                <tr style="background: #f0fdf4;">
+                                                                    <td colspan="5" style="padding: 6px 8px; font-size: 0.8rem; color: #166534;">
+                                                                        ↳ <strong>Commentaire:</strong> ${commentTravail}
+                                                                    </td>
+                                                                </tr>
+                                                            ` : ''}
+                                                        `;
+                                                    }).join('')}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </details>
+
+                                    <div style="margin-top: 15px; display: flex; gap: 10px;">
+                                        <button class="btn btn-sm btn-outline" onclick="ScreenPreparation.appliquerHistorique('${appel.id}')" title="Pré-remplir les champs Type/Jour/Commentaire avec cet historique">
+                                            ♻️ Réutiliser ces données
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                    <div class="overlay-footer">
+                        <button class="btn btn-outline" onclick="document.getElementById('historiquesoumissionsModal').remove()">Fermer</button>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+    },
+
+    async appliquerHistorique(appelId) {
+        try {
+            const doc = await firebase.firestore()
+                .collection('appels_soumission')
+                .doc(appelId)
+                .get();
+
+            if (!doc.exists) {
+                App.showToast('Appel non trouvé', 'error');
+                return;
+            }
+
+            const appel = doc.data();
+            const travaux = appel.travaux || [];
+            let nbPreremplis = 0;
+
+            // Pour chaque travail de l'historique, pré-remplir les données si le travail existe encore
+            travaux.forEach(t => {
+                if (!t.equipement || !t.operation) return;
+
+                // Générer la clé
+                const travailKey = `${(t.equipement || '').toUpperCase().replace(/[^a-zA-Z0-9_]/g, '_')}_${(t.operation || '').toUpperCase().replace(/[^a-zA-Z0-9_]/g, '_')}`;
+
+                // Vérifier si ce travail existe dans les travaux actuels
+                const travauxActuels = this.getTravauxEntrepreneurActif();
+                const travailExiste = travauxActuels.some(ta => {
+                    const keyActuel = this.getTravailSoumissionKey(ta);
+                    return keyActuel === travailKey;
+                });
+
+                if (travailExiste && (t.typeTravail || t.jourArret || t.commentaire)) {
+                    // Pré-remplir les données
+                    this.saveSoumissionData(travailKey, {
+                        typeTravail: t.typeTravail || null,
+                        jourArret: t.jourArret || null,
+                        commentaire: t.commentaire || ''
+                    });
+                    nbPreremplis++;
+                }
+            });
+
+            document.getElementById('historiquesoumissionsModal')?.remove();
+
+            if (nbPreremplis > 0) {
+                App.showToast(`${nbPreremplis} travaux pré-remplis avec l'historique!`, 'success');
+                // Rafraîchir l'affichage
+                this.voirTravauxEntreprise(this.entrepreneurActif);
+            } else {
+                App.showToast('Aucun travail correspondant trouvé', 'warning');
+            }
+
+        } catch (error) {
+            console.error('Erreur:', error);
+            App.showToast('Erreur lors de l\'application de l\'historique', 'error');
+        }
     }
 };
