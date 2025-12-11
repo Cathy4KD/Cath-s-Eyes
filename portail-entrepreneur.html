@@ -383,6 +383,54 @@
             transform: scale(1.02);
         }
 
+        /* Section commentaire entrepreneur */
+        .entrepreneur-comment-section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border-left: 5px solid #10b981;
+        }
+
+        .comment-box {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .comment-box textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .comment-box textarea:focus {
+            outline: none;
+            border-color: #10b981;
+        }
+
+        .comment-box .btn {
+            align-self: flex-start;
+        }
+
+        .comment-saved {
+            color: #10b981;
+            font-weight: 500;
+            display: none;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .comment-saved.show {
+            display: flex;
+        }
+
         /* Boutons */
         .actions-bar {
             display: flex;
@@ -633,6 +681,10 @@
                 this.appelData = doc.data();
                 this.entreprise = this.appelData.entreprise;
                 this.travaux = this.appelData.travaux || [];
+
+                // Charger le commentaire entrepreneur s'il existe
+                await this.loadCommentaireEntrepreneur();
+
                 this.render();
             },
 
@@ -700,6 +752,19 @@
                         <h2 class="section-title">📋 Travaux (${this.travaux.length})</h2>
 
                         ${this.travaux.map((t, i) => this.renderTravailCard(t, i)).join('')}
+
+                        <!-- Section commentaire entrepreneur -->
+                        <div class="entrepreneur-comment-section">
+                            <h2 class="section-title">💬 Votre commentaire</h2>
+                            <div class="comment-box">
+                                <textarea id="commentaireEntrepreneur"
+                                          placeholder="Ajoutez vos remarques, questions ou commentaires ici..."
+                                          rows="4">${this.commentaireEntrepreneur || ''}</textarea>
+                                <button class="btn btn-primary" onclick="PortailEntrepreneur.sauvegarderCommentaire()">
+                                    💾 Enregistrer le commentaire
+                                </button>
+                            </div>
+                        </div>
 
                         <div class="actions-bar">
                             <button class="btn btn-primary" onclick="PortailEntrepreneur.exportPDF()">
@@ -797,6 +862,44 @@
                         </div>
                     </div>
                 `;
+            },
+
+            commentaireEntrepreneur: '',
+
+            async loadCommentaireEntrepreneur() {
+                try {
+                    const doc = await firebase.firestore()
+                        .collection('commentaires_entrepreneurs')
+                        .doc(this.appelId)
+                        .get();
+                    if (doc.exists) {
+                        this.commentaireEntrepreneur = doc.data().commentaire || '';
+                    }
+                } catch (e) {
+                    console.log('Pas de commentaire existant');
+                }
+            },
+
+            async sauvegarderCommentaire() {
+                const textarea = document.getElementById('commentaireEntrepreneur');
+                const commentaire = textarea.value.trim();
+
+                try {
+                    await firebase.firestore()
+                        .collection('commentaires_entrepreneurs')
+                        .doc(this.appelId)
+                        .set({
+                            commentaire: commentaire,
+                            entreprise: this.entreprise,
+                            dateModification: new Date().toISOString()
+                        });
+
+                    this.commentaireEntrepreneur = commentaire;
+                    this.showToast('✅ Commentaire enregistré!');
+                } catch (error) {
+                    console.error('Erreur sauvegarde:', error);
+                    this.showToast('❌ Erreur lors de la sauvegarde', 'error');
+                }
             },
 
             showPhoto(src) {
