@@ -1113,6 +1113,15 @@
             font-size: 0.9rem;
         }
 
+        .visite-btn-secondary {
+            border-color: #64748b;
+            color: #475569;
+        }
+
+        .visite-btn-secondary:hover {
+            background: #f1f5f9;
+        }
+
         /* Photos sur place */
         .visite-photos-container {
             margin-top: 12px;
@@ -3351,13 +3360,22 @@
                                     <div class="visite-section-title">📸 Photos et mesures sur place</div>
 
                                     <div class="visite-actions">
-                                        <label class="visite-btn" for="visite-photo-input-${index}">
+                                        <label class="visite-btn" for="visite-photo-capture-${index}">
                                             <span class="visite-btn-icon">📷</span>
                                             <span class="visite-btn-label">Prendre photo</span>
                                             <input type="file"
-                                                   id="visite-photo-input-${index}"
+                                                   id="visite-photo-capture-${index}"
                                                    accept="image/*"
                                                    capture="environment"
+                                                   style="display:none"
+                                                   onchange="PortailEntrepreneur.ajouterPhotoVisite(${index}, this.files)">
+                                        </label>
+                                        <label class="visite-btn visite-btn-secondary" for="visite-photo-select-${index}">
+                                            <span class="visite-btn-icon">📁</span>
+                                            <span class="visite-btn-label">Choisir fichier</span>
+                                            <input type="file"
+                                                   id="visite-photo-select-${index}"
+                                                   accept="image/*"
                                                    multiple
                                                    style="display:none"
                                                    onchange="PortailEntrepreneur.ajouterPhotoVisite(${index}, this.files)">
@@ -3615,12 +3633,20 @@
                             <div class="visite-section-title">📸 Photos et mesures sur place</div>
 
                             <div class="visite-actions" style="margin-bottom:12px;">
-                                <label class="visite-btn" for="detail-visite-photo-input-${index}">
+                                <label class="visite-btn" for="detail-visite-photo-capture-${index}">
                                     <span class="visite-icon">📷</span> Prendre photo
                                     <input type="file"
-                                           id="detail-visite-photo-input-${index}"
+                                           id="detail-visite-photo-capture-${index}"
                                            accept="image/*"
                                            capture="environment"
+                                           style="display:none"
+                                           onchange="PortailEntrepreneur.ajouterPhotoVisiteFromDetail(${index}, this.files)">
+                                </label>
+                                <label class="visite-btn visite-btn-secondary" for="detail-visite-photo-select-${index}">
+                                    <span class="visite-icon">📁</span> Choisir fichier
+                                    <input type="file"
+                                           id="detail-visite-photo-select-${index}"
+                                           accept="image/*"
                                            multiple
                                            style="display:none"
                                            onchange="PortailEntrepreneur.ajouterPhotoVisiteFromDetail(${index}, this.files)">
