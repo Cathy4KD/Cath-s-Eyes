@@ -6061,18 +6061,18 @@ const ScreenPreparation = {
 
                             ${entrepreneurActif ? `
                                 <div class="table-container" style="max-height: 500px;">
-                                    <table class="planifier-table table-soumission" id="tableTravauxEntrepreneur" style="table-layout: fixed; width: 100%;">
+                                    <table class="planifier-table table-soumission" id="tableTravauxEntrepreneur">
                                         <thead>
                                             <tr>
                                                 <th style="width: 70px;">OT</th>
-                                                <th style="width: auto; min-width: 250px;">Description</th>
+                                                <th style="min-width: 300px;">Description</th>
                                                 <th style="width: 120px;">Équipement</th>
-                                                <th style="width: 60px;">Heures</th>
-                                                <th style="width: 95px;">Type</th>
-                                                <th style="width: 100px;">Jour</th>
-                                                <th style="width: 130px;">Commentaire</th>
-                                                <th style="width: 65px;">Photos</th>
-                                                <th style="width: 60px;">Docs</th>
+                                                <th style="width: 55px;">Heures</th>
+                                                <th style="width: 90px;">Type</th>
+                                                <th style="width: 95px;">Jour</th>
+                                                <th style="width: 120px;">Commentaire</th>
+                                                <th style="width: 60px;">Photos</th>
+                                                <th style="width: 55px;">Docs</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -6086,8 +6086,8 @@ const ScreenPreparation = {
                                                 return `
                                                 <tr data-travail-key="${travailKey}">
                                                     <td><strong>${t.ot || '-'}</strong></td>
-                                                    <td style="white-space: normal; word-wrap: break-word;">${t.description || '-'}</td>
-                                                    <td style="white-space: normal; word-wrap: break-word;">${t.equipement || '-'}</td>
+                                                    <td title="${t.description || ''}">${(t.description || '-').substring(0, 80)}${(t.description || '').length > 80 ? '...' : ''}</td>
+                                                    <td>${t.equipement || '-'}</td>
                                                     <td class="center">${t.estimationHeures || '-'}</td>
                                                     <td>
                                                         <select class="mini-select type-travail-select"
