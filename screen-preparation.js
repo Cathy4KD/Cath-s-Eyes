@@ -7081,8 +7081,8 @@ const ScreenPreparation = {
         const entreprise = this.entrepreneurActif;
         const canvas = this.planEditor.canvas;
 
-        // Convertir le canvas en image
-        const planAnnoteImage = canvas.toDataURL('image/png');
+        // Convertir le canvas en image JPEG compressée (au lieu de PNG pour réduire la taille)
+        const planAnnoteImage = canvas.toDataURL('image/jpeg', 0.7);
 
         // Sauvegarder dans DataManager
         if (!DataManager.data.processus.plansAnnotes) {
@@ -7211,61 +7211,120 @@ const ScreenPreparation = {
         const btn = document.querySelector('.portail-btn-create');
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '⏳ Création...';
+            btn.innerHTML = '⏳ Création en cours...';
         }
+
+        // Générer un ID unique pour cet appel
+        const appelId = appelIdExistant || firebase.firestore().collection('appels_soumission').doc().id;
+        const storage = firebase.storage();
+
+        // Fonction pour uploader une image base64 vers Firebase Storage
+        const uploadImageToStorage = async (base64Data, path) => {
+            if (!base64Data || !base64Data.startsWith('data:image')) {
+                return base64Data; // Retourner tel quel si c'est déjà une URL
+            }
+            try {
+                const response = await fetch(base64Data);
+                const blob = await response.blob();
+                const storageRef = storage.ref(path);
+                await storageRef.put(blob);
+                return await storageRef.getDownloadURL();
+            } catch (e) {
+                console.error('Erreur upload image:', e);
+                return null; // Ne pas inclure l'image si erreur
+            }
+        };
+
+        // Compteur pour la progression
+        let totalImages = 0;
+        let uploadedImages = 0;
+
+        // Compter le nombre total d'images
+        travaux.forEach(t => {
+            const travailKey = this.getTravailSoumissionKey(t);
+            const soumData = this.getSoumissionData(travailKey);
+            if (soumData.photos) totalImages += soumData.photos.length;
+        });
+        if (formData.get('inclurePlan') === 'on') totalImages++;
+
+        const updateProgress = () => {
+            uploadedImages++;
+            if (btn && totalImages > 0) {
+                btn.innerHTML = `⏳ Upload ${uploadedImages}/${totalImages}...`;
+            }
+        };
+
+        // Préparer les travaux - uploader photos vers Storage
+        const travauxPrepares = await Promise.all(travaux.map(async (t, index) => {
+            const travailKey = this.getTravailSoumissionKey(t);
+            const soumData = this.getSoumissionData(travailKey);
+
+            // Uploader les photos vers Storage
+            let photosUrls = [];
+            if (soumData.photos && soumData.photos.length > 0) {
+                for (let i = 0; i < soumData.photos.length; i++) {
+                    const photoPath = `appels/${appelId}/travaux/${index}/photo_${i}.jpg`;
+                    const url = await uploadImageToStorage(soumData.photos[i], photoPath);
+                    if (url) photosUrls.push(url);
+                    updateProgress();
+                }
+            }
+
+            return {
+                ot: t.ot || '',
+                description: t.description || '',
+                equipement: t.equipement || '',
+                estimationHeures: t.estimationHeures || 0,
+                secteur: t.secteur || '',
+                localisation: t.localisation || t.secteur || '',
+                operation: t.operation || '',
+                typeTravail: soumData.typeTravail || null,
+                jourArret: soumData.jourArret || null,
+                commentaire: soumData.commentaire || '',
+                photos: photosUrls, // URLs au lieu de base64
+                conditions: t.conditions || t.contraintesAcces || ''
+            };
+        }));
 
         const appelData = {
             entreprise: entreprise,
             nomArret: formData.get('nomArret') || 'Arrêt Annuel 2025',
             dateLimite: formData.get('dateLimite') || null,
             inclurePlan: formData.get('inclurePlan') === 'on',
-            travaux: travaux.map(t => {
-                // Récupérer les données de soumission saisies dans le tableau
-                const travailKey = this.getTravailSoumissionKey(t);
-                const soumData = this.getSoumissionData(travailKey);
-
-                return {
-                    ot: t.ot || '',
-                    description: t.description || '',
-                    equipement: t.equipement || '',
-                    estimationHeures: t.estimationHeures || 0,
-                    secteur: t.secteur || '',
-                    localisation: t.localisation || t.secteur || '',
-                    operation: t.operation || '',
-                    // Données saisies dans l'écran PL9.0
-                    typeTravail: soumData.typeTravail || null, // 'aa' ou 'tpaa'
-                    jourArret: soumData.jourArret || null, // 'jeudi' ou 'hors-jeudi'
-                    commentaire: soumData.commentaire || '',
-                    photos: soumData.photos || [],
-                    conditions: t.conditions || t.contraintesAcces || ''
-                };
-            }),
+            travaux: travauxPrepares,
             dateCreation: new Date().toISOString(),
             soumissionRecue: false
         };
 
-        // Ajouter le plan si demandé - priorité au plan annoté
+        // Ajouter le plan si demandé - uploader vers Storage
         if (appelData.inclurePlan) {
-            // Verifier si un plan annoté existe pour cette entreprise
+            let planImage = null;
             const planAnnote = DataManager.data.processus?.plansAnnotes?.[entreprise]?.imageData;
             if (planAnnote) {
-                appelData.planImage = planAnnote;
+                planImage = planAnnote;
             } else {
-                // Sinon utiliser le plan original
-                const planImage = DataManager.data.processus?.planConfig?.imageURL || DataManager.data.processus?.planConfig?.imageData;
-                if (planImage) {
-                    appelData.planImage = planImage;
-                }
+                planImage = DataManager.data.processus?.planConfig?.imageURL || DataManager.data.processus?.planConfig?.imageData;
+            }
+
+            if (planImage && planImage.startsWith('data:image')) {
+                const planPath = `appels/${appelId}/plan.jpg`;
+                appelData.planImage = await uploadImageToStorage(planImage, planPath);
+                updateProgress();
+            } else if (planImage) {
+                appelData.planImage = planImage; // Déjà une URL
             }
         }
 
-        try {
-            // Création dans Firebase
-            const docRef = await firebase.firestore()
-                .collection('appels_soumission')
-                .add(appelData);
+        // Vérifier la taille du document (sans images, devrait être petit maintenant)
+        const docSize = JSON.stringify(appelData).length;
+        console.log(`Taille du document: ${(docSize / 1024).toFixed(1)} KB`);
 
-            const appelId = docRef.id;
+        try {
+            // Création dans Firebase avec l'ID prédéfini
+            await firebase.firestore()
+                .collection('appels_soumission')
+                .doc(appelId)
+                .set(appelData);
 
             // Sauvegarder l'appelId pour afficher le lien sur la carte entrepreneur
             if (!DataManager.data.processus) DataManager.data.processus = {};
