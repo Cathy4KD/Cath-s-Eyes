@@ -274,56 +274,62 @@
 
         .bilan-repartition {
             display: flex;
-            gap: 15px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+            align-items: stretch;
+            margin-bottom: 15px;
+            background: #f8fafc;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #e2e8f0;
         }
 
         .bilan-type {
-            padding: 10px 20px;
-            border-radius: 8px;
+            padding: 12px 20px;
             text-align: center;
-            min-width: 100px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-right: 1px solid #cbd5e1;
+        }
+
+        .bilan-type:last-child {
+            border-right: none;
         }
 
         .bilan-type-label {
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             font-weight: 600;
             text-transform: uppercase;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
         }
 
         .bilan-type-value {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 800;
         }
 
         .bilan-type-aa {
-            background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
-            border: 2px solid #8b5cf6;
+            background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
         }
-        .bilan-type-aa .bilan-type-label { color: #6d28d9; }
+        .bilan-type-aa .bilan-type-label { color: #7c3aed; }
         .bilan-type-aa .bilan-type-value { color: #5b21b6; }
 
         .bilan-type-tpaa {
-            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-            border: 2px solid #3b82f6;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
         }
-        .bilan-type-tpaa .bilan-type-label { color: #1d4ed8; }
+        .bilan-type-tpaa .bilan-type-label { color: #2563eb; }
         .bilan-type-tpaa .bilan-type-value { color: #1e40af; }
 
         .bilan-type-mixte {
-            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-            border: 2px solid #f59e0b;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
         }
-        .bilan-type-mixte .bilan-type-label { color: #b45309; }
+        .bilan-type-mixte .bilan-type-label { color: #d97706; }
         .bilan-type-mixte .bilan-type-value { color: #92400e; }
 
         .bilan-type-total {
             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
-            border: 2px solid #0369a1;
         }
-        .bilan-type-total .bilan-type-label { color: rgba(255,255,255,0.9); }
+        .bilan-type-total .bilan-type-label { color: rgba(255,255,255,0.85); }
         .bilan-type-total .bilan-type-value { color: #ffffff; }
 
         /* Section title */
