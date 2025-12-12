@@ -1966,21 +1966,25 @@
                     </div>
                 </div>
 
-                <!-- Section 8: Sauvegarde -->
+                <!-- Section 9: Sauvegarde et synchronisation -->
                 <div class="help-section">
-                    <h3 class="help-section-title"><span class="icon">💾</span> Sauvegarde automatique</h3>
+                    <h3 class="help-section-title"><span class="icon">💾</span> Sauvegarde et synchronisation</h3>
                     <div class="help-text">
                         <div class="help-tip">
-                            <div class="help-tip-title">Bonne nouvelle !</div>
-                            Vos donnees sont sauvegardees automatiquement :
+                            <div class="help-tip-title">Synchronisation temps reel!</div>
+                            Toutes les modifications sont synchronisees instantanement entre tous les appareils :
                             <ul style="margin-top: 10px;">
-                                <li>Les cases "A voir sur place" - sauvegarde immediate</li>
-                                <li>Les photos prises - sauvegarde immediate</li>
-                                <li>Les notes de terrain - sauvegarde quand vous quittez le champ</li>
-                                <li>Commentaires par travail - sauvegarde avec le bouton "Enregistrer"</li>
+                                <li>Les cases "A voir sur place" - mise a jour immediate</li>
+                                <li>Les photos et documents - visibles instantanement</li>
+                                <li>Les notes de terrain - synchronisees en temps reel</li>
+                                <li>Commentaires - partages entre mobile et ordinateur</li>
                             </ul>
                         </div>
-                        <p>Vous pouvez fermer le portail et revenir plus tard, toutes vos donnees seront conservees.</p>
+                        <div class="help-highlight">
+                            <div class="help-highlight-title">Indicateur de synchronisation</div>
+                            Un indicateur vert "Synchronise" apparait en haut de l'ecran. Quand une modification arrive d'un autre appareil, vous verrez "Mise a jour recue".
+                        </div>
+                        <p>Vous pouvez travailler sur plusieurs appareils simultanement - les changements sont visibles partout en temps reel.</p>
                     </div>
                 </div>
 
@@ -2016,6 +2020,8 @@
             appelData: null,
             entreprise: null,
             travaux: [],
+            unsubscribeCommentaires: null, // Listener temps réel
+            isUpdatingFromServer: false, // Flag pour éviter les boucles
 
             async init() {
                 const params = new URLSearchParams(window.location.search);
@@ -2028,6 +2034,8 @@
 
                 try {
                     await this.loadAppelData();
+                    // Démarrer l'écoute temps réel
+                    this.startRealtimeSync();
                 } catch (error) {
                     console.error('Erreur:', error);
                     this.showError('Erreur de chargement', 'Impossible de charger les données.');
@@ -2050,6 +2058,181 @@
                 await this.loadCommentaireEntrepreneur();
 
                 this.render();
+            },
+
+            // ========== SYNCHRONISATION TEMPS RÉEL ==========
+
+            startRealtimeSync() {
+                // Écouter les changements sur le document commentaires_entrepreneurs
+                this.unsubscribeCommentaires = firebase.firestore()
+                    .collection('commentaires_entrepreneurs')
+                    .doc(this.appelId)
+                    .onSnapshot((doc) => {
+                        if (doc.exists && !this.isUpdatingFromServer) {
+                            const data = doc.data();
+                            this.handleRealtimeUpdate(data);
+                        }
+                    }, (error) => {
+                        console.error('Erreur sync temps réel:', error);
+                    });
+
+                // Afficher indicateur de connexion
+                this.showSyncStatus('connected');
+            },
+
+            handleRealtimeUpdate(data) {
+                // Comparer et mettre à jour seulement si différent
+                const newCommentaire = data.commentaire || '';
+                const newCommentairesTravaux = data.commentairesTravaux || [];
+                const newVisitesData = data.visitesData || [];
+                const newUploadsData = data.uploadsData || [];
+
+                let hasChanges = false;
+
+                // Vérifier si le commentaire global a changé
+                if (newCommentaire !== this.commentaireEntrepreneur) {
+                    this.commentaireEntrepreneur = newCommentaire;
+                    const textarea = document.getElementById('commentaireEntrepreneur');
+                    if (textarea && document.activeElement !== textarea) {
+                        textarea.value = newCommentaire;
+                    }
+                    hasChanges = true;
+                }
+
+                // Vérifier les commentaires par travail
+                if (JSON.stringify(newCommentairesTravaux) !== JSON.stringify(this.commentairesTravaux)) {
+                    this.commentairesTravaux = newCommentairesTravaux;
+                    newCommentairesTravaux.forEach((comment, index) => {
+                        const textarea = document.getElementById(`comment-travail-${index}`);
+                        if (textarea && document.activeElement !== textarea) {
+                            textarea.value = comment || '';
+                        }
+                    });
+                    hasChanges = true;
+                }
+
+                // Vérifier les données de visite
+                if (JSON.stringify(newVisitesData) !== JSON.stringify(this.visitesData)) {
+                    this.visitesData = newVisitesData;
+                    this.updateAllVisitesUI();
+                    hasChanges = true;
+                }
+
+                // Vérifier les uploads
+                if (JSON.stringify(newUploadsData) !== JSON.stringify(this.uploadsData)) {
+                    this.uploadsData = newUploadsData;
+                    this.updateAllUploadsUI();
+                    hasChanges = true;
+                }
+
+                if (hasChanges) {
+                    this.showSyncNotification();
+                    this.updateVisitesCounter();
+                }
+            },
+
+            updateAllVisitesUI() {
+                this.travaux.forEach((t, index) => {
+                    const container = document.getElementById(`visite-container-${index}`);
+                    const section = document.getElementById(`visite-section-${index}`);
+                    const card = document.querySelector(`.travail-card[data-index="${index}"]`);
+                    const isChecked = this.visitesData[index]?.aVoirSurPlace || false;
+
+                    if (container) {
+                        container.classList.toggle('checked', isChecked);
+                    }
+                    if (section) {
+                        section.classList.toggle('show', isChecked);
+                    }
+
+                    // Badge
+                    const badgesDiv = card?.querySelector('.travail-badges');
+                    if (badgesDiv) {
+                        const existingBadge = badgesDiv.querySelector('.badge-visite');
+                        if (isChecked && !existingBadge) {
+                            badgesDiv.innerHTML = '<span class="badge badge-visite">📍 À voir sur place</span>' + badgesDiv.innerHTML;
+                        } else if (!isChecked && existingBadge) {
+                            existingBadge.remove();
+                        }
+                    }
+
+                    // Photos visite
+                    this.updateVisitePhotosUI(index);
+
+                    // Mesures
+                    const mesuresInput = document.getElementById(`visite-mesures-${index}`);
+                    if (mesuresInput && document.activeElement !== mesuresInput) {
+                        mesuresInput.value = this.visitesData[index]?.mesures || '';
+                    }
+                });
+            },
+
+            updateAllUploadsUI() {
+                this.travaux.forEach((t, index) => {
+                    this.updateEntrepreneurPhotosUI(index);
+                    this.updateEntrepreneurDocsUI(index);
+                });
+            },
+
+            showSyncStatus(status) {
+                // Créer indicateur si n'existe pas
+                let indicator = document.getElementById('syncIndicator');
+                if (!indicator) {
+                    indicator = document.createElement('div');
+                    indicator.id = 'syncIndicator';
+                    indicator.style.cssText = `
+                        position: fixed;
+                        top: 10px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        padding: 6px 15px;
+                        border-radius: 20px;
+                        font-size: 0.8rem;
+                        font-weight: 600;
+                        z-index: 1000;
+                        transition: all 0.3s;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                    `;
+                    document.body.appendChild(indicator);
+                }
+
+                if (status === 'connected') {
+                    indicator.innerHTML = '🟢 Synchronisé';
+                    indicator.style.background = '#d1fae5';
+                    indicator.style.color = '#065f46';
+                    // Masquer après 3 secondes
+                    setTimeout(() => {
+                        indicator.style.opacity = '0';
+                    }, 3000);
+                }
+            },
+
+            showSyncNotification() {
+                const indicator = document.getElementById('syncIndicator');
+                if (indicator) {
+                    indicator.innerHTML = '🔄 Mise à jour reçue';
+                    indicator.style.background = '#dbeafe';
+                    indicator.style.color = '#1e40af';
+                    indicator.style.opacity = '1';
+                    setTimeout(() => {
+                        indicator.innerHTML = '🟢 Synchronisé';
+                        indicator.style.background = '#d1fae5';
+                        indicator.style.color = '#065f46';
+                        setTimeout(() => {
+                            indicator.style.opacity = '0';
+                        }, 2000);
+                    }, 1500);
+                }
+            },
+
+            // Arrêter l'écoute quand on quitte la page
+            stopRealtimeSync() {
+                if (this.unsubscribeCommentaires) {
+                    this.unsubscribeCommentaires();
+                    this.unsubscribeCommentaires = null;
+                }
             },
 
             showError(title, message) {
@@ -2980,6 +3163,11 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             PortailEntrepreneur.init();
+        });
+
+        // Arrêter la synchronisation quand on quitte la page
+        window.addEventListener('beforeunload', () => {
+            PortailEntrepreneur.stopRealtimeSync();
         });
     </script>
 </body>
