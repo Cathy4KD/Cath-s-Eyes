@@ -418,6 +418,41 @@
             color: white;
         }
 
+        /* Sélecteur durée journée (8h/10h/12h) */
+        .bilan-duree-selector {
+            display: flex;
+            gap: 4px;
+            margin-left: 10px;
+        }
+
+        .bilan-duree-btn {
+            padding: 4px 8px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #64748b;
+        }
+
+        .bilan-duree-btn:hover {
+            border-color: #94a3b8;
+        }
+
+        .bilan-duree-btn.active-aa {
+            border-color: #7c3aed;
+            background: #7c3aed;
+            color: white;
+        }
+
+        .bilan-duree-btn.active-tpaa {
+            border-color: #2563eb;
+            background: #2563eb;
+            color: white;
+        }
+
         @media (max-width: 600px) {
             .bilan-calculateurs {
                 flex-direction: column;
@@ -508,23 +543,284 @@
             display: inline-block;
         }
 
-        /* Grille de travaux - 2 colonnes sur desktop */
+        /* Layout Master-Detail pour Desktop */
+        .travaux-master-detail {
+            display: none;
+        }
+
+        /* Mobile: affichage cartes classique */
         #travauxContainer {
-            display: grid;
-            grid-template-columns: 1fr;
+            display: flex;
+            flex-direction: column;
             gap: 15px;
         }
 
+        /* Desktop: layout master-detail */
         @media (min-width: 1024px) {
             #travauxContainer {
-                grid-template-columns: repeat(2, 1fr);
+                display: none !important;
+            }
+
+            .travaux-master-detail {
+                display: flex;
                 gap: 20px;
+                min-height: 600px;
+                max-height: calc(100vh - 400px);
+            }
+
+            /* Panneau gauche: tableau Excel */
+            .travaux-list-panel {
+                width: 45%;
+                min-width: 400px;
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .travaux-table-container {
+                flex: 1;
+                overflow-y: auto;
+            }
+
+            .travaux-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 0.85rem;
+            }
+
+            .travaux-table thead {
+                position: sticky;
+                top: 0;
+                background: #1e3a5f;
+                color: white;
+                z-index: 10;
+            }
+
+            .travaux-table th {
+                padding: 10px 8px;
+                text-align: left;
+                font-weight: 600;
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                white-space: nowrap;
+            }
+
+            .travaux-table td {
+                padding: 10px 8px;
+                border-bottom: 1px solid #e2e8f0;
+                vertical-align: middle;
+            }
+
+            .travaux-table tbody tr {
+                cursor: pointer;
+                transition: background 0.15s;
+            }
+
+            .travaux-table tbody tr:hover {
+                background: #f1f5f9;
+            }
+
+            .travaux-table tbody tr.selected {
+                background: #dbeafe;
+                border-left: 3px solid #3b82f6;
+            }
+
+            .travaux-table .col-ot {
+                font-weight: 700;
+                color: #1e3a5f;
+                width: 70px;
+            }
+
+            .travaux-table .col-desc {
+                max-width: 250px;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+
+            .travaux-table .col-heures {
+                text-align: center;
+                width: 50px;
+                font-weight: 600;
+            }
+
+            .travaux-table .col-type {
+                width: 60px;
+            }
+
+            .travaux-table .col-visite {
+                width: 40px;
+                text-align: center;
+            }
+
+            .travaux-table .badge-mini {
+                font-size: 0.7rem;
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+
+            .travaux-table .badge-mini-aa {
+                background: #ede9fe;
+                color: #6d28d9;
+            }
+
+            .travaux-table .badge-mini-tpaa {
+                background: #dbeafe;
+                color: #1e40af;
+            }
+
+            .travaux-table .badge-mini-mixte {
+                background: #fef3c7;
+                color: #92400e;
+            }
+
+            /* Panneau droit: détails */
+            .travaux-detail-panel {
+                flex: 1;
+                background: white;
+                border-radius: 10px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+
+            .detail-panel-header {
+                padding: 15px 20px;
+                background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+                color: white;
+            }
+
+            .detail-panel-header h3 {
+                margin: 0;
+                font-size: 1.1rem;
+            }
+
+            .detail-panel-header .detail-ot {
+                background: #f59e0b;
+                color: #000;
+                padding: 4px 12px;
+                border-radius: 4px;
+                font-weight: 700;
+                display: inline-block;
+                margin-bottom: 8px;
+            }
+
+            .detail-panel-body {
+                flex: 1;
+                overflow-y: auto;
+                padding: 20px;
+            }
+
+            .detail-empty-state {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                color: #94a3b8;
+                text-align: center;
+                padding: 40px;
+            }
+
+            .detail-empty-state .icon {
+                font-size: 4rem;
+                margin-bottom: 15px;
+            }
+
+            .detail-section {
+                margin-bottom: 20px;
+            }
+
+            .detail-section-title {
+                font-size: 0.75rem;
+                text-transform: uppercase;
+                color: #64748b;
+                font-weight: 600;
+                margin-bottom: 8px;
+                padding-bottom: 5px;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            .detail-info-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .detail-info-item {
+                background: #f8fafc;
+                padding: 10px;
+                border-radius: 6px;
+            }
+
+            .detail-info-label {
+                font-size: 0.7rem;
+                color: #64748b;
+                text-transform: uppercase;
+            }
+
+            .detail-info-value {
+                font-weight: 600;
+                color: #1e293b;
+                margin-top: 2px;
+            }
+
+            .detail-description {
+                font-size: 1rem;
+                line-height: 1.5;
+                color: #1e293b;
+            }
+
+            .detail-photos-grid {
+                display: flex;
+                gap: 10px;
+                flex-wrap: wrap;
+            }
+
+            .detail-photo-thumb {
+                width: 100px;
+                height: 100px;
+                object-fit: cover;
+                border-radius: 8px;
+                cursor: pointer;
+                border: 2px solid #e2e8f0;
+                transition: all 0.2s;
+            }
+
+            .detail-photo-thumb:hover {
+                transform: scale(1.05);
+                border-color: #3b82f6;
+            }
+
+            .detail-comment-box {
+                margin-top: 15px;
+            }
+
+            .detail-comment-box textarea {
+                width: 100%;
+                padding: 12px;
+                border: 2px solid #d1fae5;
+                border-radius: 8px;
+                font-size: 0.95rem;
+                font-family: inherit;
+                resize: vertical;
+                min-height: 100px;
+            }
+
+            .detail-comment-box textarea:focus {
+                outline: none;
+                border-color: #10b981;
             }
         }
 
-        @media (min-width: 1600px) {
-            #travauxContainer {
-                grid-template-columns: repeat(3, 1fr);
+        /* Écrans très larges */
+        @media (min-width: 1400px) {
+            .travaux-list-panel {
+                width: 50%;
             }
         }
 
@@ -2725,6 +3021,11 @@
                                             <span class="bilan-calc-input-label">Tech.</span>
                                             <input type="number" class="bilan-calc-input" id="bilanTechAA" value="1" min="1" max="50" onchange="PortailEntrepreneur.calculerBilan()">
                                         </div>
+                                        <div class="bilan-duree-selector" id="dureeAA">
+                                            <button class="bilan-duree-btn active-aa" data-duree="8" onclick="PortailEntrepreneur.setDureeJour('AA', 8)">8h</button>
+                                            <button class="bilan-duree-btn" data-duree="10" onclick="PortailEntrepreneur.setDureeJour('AA', 10)">10h</button>
+                                            <button class="bilan-duree-btn" data-duree="12" onclick="PortailEntrepreneur.setDureeJour('AA', 12)">12h</button>
+                                        </div>
                                         <div class="bilan-calc-stats">
                                             <div class="bilan-calc-stat">
                                                 <div class="bilan-calc-stat-value" id="bilanHeuresParTechAA">${heuresAA}</div>
@@ -2752,6 +3053,11 @@
                                         <div class="bilan-calc-input-group">
                                             <span class="bilan-calc-input-label">Tech.</span>
                                             <input type="number" class="bilan-calc-input" id="bilanTechTPAA" value="1" min="1" max="50" onchange="PortailEntrepreneur.calculerBilan()">
+                                        </div>
+                                        <div class="bilan-duree-selector" id="dureeTPAA">
+                                            <button class="bilan-duree-btn active-tpaa" data-duree="8" onclick="PortailEntrepreneur.setDureeJour('TPAA', 8)">8h</button>
+                                            <button class="bilan-duree-btn" data-duree="10" onclick="PortailEntrepreneur.setDureeJour('TPAA', 10)">10h</button>
+                                            <button class="bilan-duree-btn" data-duree="12" onclick="PortailEntrepreneur.setDureeJour('TPAA', 12)">12h</button>
                                         </div>
                                         <div class="bilan-calc-stats">
                                             <div class="bilan-calc-stat">
@@ -2824,6 +3130,41 @@
                             <span class="filter-count" id="filterCount">${this.travaux.length} travaux</span>
                         </div>
 
+                        <!-- Layout Master-Detail pour Desktop -->
+                        <div class="travaux-master-detail">
+                            <!-- Panneau gauche: tableau -->
+                            <div class="travaux-list-panel">
+                                <div class="travaux-table-container">
+                                    <table class="travaux-table">
+                                        <thead>
+                                            <tr>
+                                                <th>OT</th>
+                                                <th>Description</th>
+                                                <th>Équip.</th>
+                                                <th>Heures</th>
+                                                <th>Type</th>
+                                                <th>📍</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="travauxTableBody">
+                                            ${this.travaux.map((t, i) => this.renderTravailRow(t, i)).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Panneau droit: détails -->
+                            <div class="travaux-detail-panel">
+                                <div id="travailDetailContent">
+                                    <div class="detail-empty-state">
+                                        <div class="icon">👈</div>
+                                        <p>Sélectionnez un travail dans la liste pour voir ses détails</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Layout Mobile: cartes classiques -->
                         <div id="travauxContainer">
                             ${this.travaux.map((t, i) => this.renderTravailCard(t, i)).join('')}
                         </div>
@@ -3063,6 +3404,201 @@
                         </div>
                     </div>
                 `;
+            },
+
+            // Render une ligne du tableau pour le layout desktop
+            renderTravailRow(travail, index) {
+                const aVoirSurPlace = this.visitesData[index]?.aVoirSurPlace || false;
+                const typeBadge = travail.typeTravail === 'aa' ? '<span class="badge-mini badge-mini-aa">AA</span>' :
+                                  travail.typeTravail === 'tpaa' ? '<span class="badge-mini badge-mini-tpaa">TPAA</span>' :
+                                  travail.typeTravail === 'aa-tpaa' ? '<span class="badge-mini badge-mini-mixte">AA/TPAA</span>' : '-';
+
+                return `
+                    <tr data-index="${index}" onclick="PortailEntrepreneur.selectTravail(${index})">
+                        <td class="col-ot">${travail.ot || '#' + (index + 1)}</td>
+                        <td class="col-desc" title="${travail.description || ''}">${(travail.description || '-').substring(0, 60)}${(travail.description || '').length > 60 ? '...' : ''}</td>
+                        <td>${(travail.equipement || '-').substring(0, 15)}</td>
+                        <td class="col-heures">${travail.estimationHeures || '-'}</td>
+                        <td class="col-type">${typeBadge}</td>
+                        <td class="col-visite">${aVoirSurPlace ? '📍' : ''}</td>
+                    </tr>
+                `;
+            },
+
+            selectedTravailIndex: null,
+
+            selectTravail(index) {
+                this.selectedTravailIndex = index;
+
+                // Mettre à jour la sélection visuelle dans le tableau
+                document.querySelectorAll('.travaux-table tbody tr').forEach(tr => {
+                    tr.classList.remove('selected');
+                });
+                const selectedRow = document.querySelector(`.travaux-table tbody tr[data-index="${index}"]`);
+                if (selectedRow) {
+                    selectedRow.classList.add('selected');
+                }
+
+                // Afficher les détails
+                const travail = this.travaux[index];
+                document.getElementById('travailDetailContent').innerHTML = this.renderTravailDetail(travail, index);
+            },
+
+            renderTravailDetail(travail, index) {
+                const isTypeAA = travail.typeTravail === 'aa';
+                const isTypeTPAA = travail.typeTravail === 'tpaa';
+                const isTypeAaOuTpaa = travail.typeTravail === 'aa-tpaa';
+                const isJeudi = travail.jourArret === 'jeudi';
+                const isHorsJeudi = travail.jourArret === 'hors-jeudi';
+                const hasPhotos = travail.photos && travail.photos.length > 0;
+                const aVoirSurPlace = this.visitesData[index]?.aVoirSurPlace || false;
+
+                return `
+                    <div class="detail-panel-header">
+                        <span class="detail-ot">${travail.ot || '#' + (index + 1)}</span>
+                        ${aVoirSurPlace ? '<span class="badge badge-visite" style="margin-left:10px;">📍 À voir sur place</span>' : ''}
+                        <h3>${(travail.description || 'Aucune description').substring(0, 100)}</h3>
+                    </div>
+                    <div class="detail-panel-body">
+                        <!-- Description complète -->
+                        <div class="detail-section">
+                            <div class="detail-section-title">Description</div>
+                            <p class="detail-description">${travail.description || 'Aucune description'}</p>
+                        </div>
+
+                        <!-- Informations -->
+                        <div class="detail-section">
+                            <div class="detail-section-title">Informations</div>
+                            <div class="detail-info-grid">
+                                <div class="detail-info-item">
+                                    <div class="detail-info-label">Équipement</div>
+                                    <div class="detail-info-value">${travail.equipement || '-'}</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-info-label">Opération</div>
+                                    <div class="detail-info-value">${travail.operation || '-'}</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-info-label">Heures estimées</div>
+                                    <div class="detail-info-value">${travail.estimationHeures || '-'} h</div>
+                                </div>
+                                <div class="detail-info-item">
+                                    <div class="detail-info-label">Secteur / Localisation</div>
+                                    <div class="detail-info-value">${travail.localisation || travail.secteur || '-'}</div>
+                                </div>
+                                ${travail.conditions ? `
+                                <div class="detail-info-item">
+                                    <div class="detail-info-label">Conditions</div>
+                                    <div class="detail-info-value">${travail.conditions}</div>
+                                </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <!-- Type de travail -->
+                        ${(isTypeAA || isTypeTPAA || isTypeAaOuTpaa) ? `
+                        <div class="detail-section">
+                            <div class="detail-section-title">Type de travail</div>
+                            <div class="type-row">
+                                ${isTypeAA ? '<span class="badge badge-aa badge-large">🔧 Arrêt Annuel</span>' : ''}
+                                ${isTypeTPAA ? '<span class="badge badge-tpaa badge-large">📋 TPAA</span>' : ''}
+                                ${isTypeAaOuTpaa ? '<span class="badge badge-aa-tpaa badge-large">🔧📋 AA ou TPAA</span>' : ''}
+                                ${isJeudi ? '<span class="badge badge-jeudi badge-large" style="margin-left:8px;">🗓️ Jeudi d\'arrêt</span>' : ''}
+                                ${isHorsJeudi ? '<span class="badge badge-hors-jeudi badge-large" style="margin-left:8px;">✓ Hors jeudi</span>' : ''}
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- Photos -->
+                        ${hasPhotos ? `
+                        <div class="detail-section">
+                            <div class="detail-section-title">Photos (${travail.photos.length})</div>
+                            <div class="detail-photos-grid">
+                                ${travail.photos.map(p => `
+                                    <img src="${p}" class="detail-photo-thumb" onclick="PortailEntrepreneur.showPhoto('${p}')" alt="Photo">
+                                `).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- Documents -->
+                        ${(travail.documents && travail.documents.length > 0) ? `
+                        <div class="detail-section">
+                            <div class="detail-section-title">Documents</div>
+                            ${travail.documents.map(d => `
+                                <a href="${d.url}" target="_blank" class="document-link">
+                                    📄 ${d.nom || 'Document'}
+                                </a>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+
+                        <!-- Note du gestionnaire -->
+                        ${travail.commentaire ? `
+                        <div class="detail-section">
+                            <div class="travail-commentaire" style="margin-top:0;">
+                                <div class="commentaire-label">💬 Note du gestionnaire</div>
+                                <div class="commentaire-text">${travail.commentaire}</div>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        <!-- Votre commentaire -->
+                        <div class="detail-section">
+                            <div class="detail-section-title">✏️ Votre commentaire</div>
+                            <div class="detail-comment-box">
+                                <textarea id="detail-comment-${index}"
+                                          placeholder="Remarques, questions ou prix..."
+                                          onchange="PortailEntrepreneur.updateCommentFromDetail(${index}, this.value)"
+                                >${this.commentairesTravaux[index] || ''}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- Case à voir sur place -->
+                        <div class="detail-section">
+                            <div class="visite-checkbox-container ${aVoirSurPlace ? 'checked' : ''}"
+                                 onclick="PortailEntrepreneur.toggleVisiteFromDetail(${index})"
+                                 id="detail-visite-container-${index}">
+                                <div class="visite-checkbox">
+                                    <span class="visite-checkbox-check">✓</span>
+                                </div>
+                                <span class="visite-icon">📍</span>
+                                <div>
+                                    <div class="visite-label">À voir sur place</div>
+                                    <div class="visite-sublabel">Cochez si vous devez venir sur site</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            updateCommentFromDetail(index, value) {
+                this.commentairesTravaux[index] = value;
+                // Synchroniser avec le textarea de la carte mobile si existant
+                const mobileTextarea = document.getElementById(`comment-travail-${index}`);
+                if (mobileTextarea) {
+                    mobileTextarea.value = value;
+                }
+                // Sauvegarde automatique
+                this.sauvegarderTousCommentaires();
+            },
+
+            toggleVisiteFromDetail(index) {
+                this.toggleVisite(index);
+                // Mettre à jour le panneau de détail
+                const container = document.getElementById(`detail-visite-container-${index}`);
+                if (container) {
+                    container.classList.toggle('checked', this.visitesData[index]?.aVoirSurPlace);
+                }
+                // Mettre à jour le tableau (colonne visite)
+                const row = document.querySelector(`.travaux-table tbody tr[data-index="${index}"]`);
+                if (row) {
+                    const visiteCell = row.querySelector('.col-visite');
+                    if (visiteCell) {
+                        visiteCell.textContent = this.visitesData[index]?.aVoirSurPlace ? '📍' : '';
+                    }
+                }
             },
 
             commentaireEntrepreneur: '',
@@ -3699,6 +4235,33 @@
                 setTimeout(() => toast.classList.remove('show'), 3000);
             },
 
+            // Durées de journée sélectionnées
+            dureeJourAA: 8,
+            dureeJourTPAA: 8,
+
+            setDureeJour(type, duree) {
+                if (type === 'AA') {
+                    this.dureeJourAA = duree;
+                    // Mettre à jour les boutons
+                    document.querySelectorAll('#dureeAA .bilan-duree-btn').forEach(btn => {
+                        btn.classList.remove('active-aa');
+                        if (parseInt(btn.dataset.duree) === duree) {
+                            btn.classList.add('active-aa');
+                        }
+                    });
+                } else {
+                    this.dureeJourTPAA = duree;
+                    // Mettre à jour les boutons
+                    document.querySelectorAll('#dureeTPAA .bilan-duree-btn').forEach(btn => {
+                        btn.classList.remove('active-tpaa');
+                        if (parseInt(btn.dataset.duree) === duree) {
+                            btn.classList.add('active-tpaa');
+                        }
+                    });
+                }
+                this.calculerBilan();
+            },
+
             calculerBilan() {
                 // Calculer heures par type
                 const heuresAA = this.travaux.filter(t => t.typeTravail === 'aa').reduce((sum, t) => sum + (parseFloat(t.estimationHeures) || 0), 0);
@@ -3708,10 +4271,14 @@
                 const nbTechAA = parseInt(document.getElementById('bilanTechAA')?.value) || 1;
                 const nbTechTPAA = parseInt(document.getElementById('bilanTechTPAA')?.value) || 1;
 
+                // Récupérer les durées de journée
+                const dureeAA = this.dureeJourAA || 8;
+                const dureeTPAA = this.dureeJourTPAA || 8;
+
                 // Calculs pour AA
                 const heuresParTechAA = heuresAA / nbTechAA;
-                const journeesAA = Math.floor(heuresParTechAA / 8);
-                const resteAA = Math.round((heuresParTechAA % 8) * 10) / 10;
+                const journeesAA = Math.floor(heuresParTechAA / dureeAA);
+                const resteAA = Math.round((heuresParTechAA % dureeAA) * 10) / 10;
 
                 // Mettre à jour les valeurs AA
                 if (document.getElementById('bilanHeuresParTechAA')) {
@@ -3722,8 +4289,8 @@
 
                 // Calculs pour TPAA
                 const heuresParTechTPAA = heuresTPAA / nbTechTPAA;
-                const journeesTPAA = Math.floor(heuresParTechTPAA / 8);
-                const resteTPAA = Math.round((heuresParTechTPAA % 8) * 10) / 10;
+                const journeesTPAA = Math.floor(heuresParTechTPAA / dureeTPAA);
+                const resteTPAA = Math.round((heuresParTechTPAA % dureeTPAA) * 10) / 10;
 
                 // Mettre à jour les valeurs TPAA
                 if (document.getElementById('bilanHeuresParTechTPAA')) {
