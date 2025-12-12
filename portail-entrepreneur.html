@@ -2684,40 +2684,307 @@
 
             exportPDF() {
                 const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                let y = 20;
+                // Format paysage pour style présentation
+                const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                const pageWidth = 297;
+                const pageHeight = 210;
+                const margin = 15;
 
-                doc.setFontSize(18);
-                doc.setFont(undefined, 'bold');
-                doc.text(`Appel de Soumission - ${this.entreprise}`, 20, y);
-                y += 10;
+                // === PAGE DE TITRE ===
+                this.renderPDFTitlePage(doc, pageWidth, pageHeight);
 
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'normal');
-                doc.text(`${this.appelData.nomArret || 'Arrêt Annuel'} - ${this.travaux.length} travaux`, 20, y);
-                y += 15;
-
-                this.travaux.forEach((t, i) => {
-                    if (y > 260) {
-                        doc.addPage();
-                        y = 20;
-                    }
-
-                    doc.setFontSize(11);
-                    doc.setFont(undefined, 'bold');
-                    doc.text(`${i + 1}. [${t.ot || '-'}] ${(t.description || '').substring(0, 60)}`, 20, y);
-                    y += 6;
-
-                    doc.setFontSize(9);
-                    doc.setFont(undefined, 'normal');
-                    doc.text(`Équipement: ${t.equipement || '-'} | Heures: ${t.estimationHeures || '-'}h | Priorité: ${t.priorite || '-'}`, 25, y);
-                    y += 5;
-                    doc.text(`Localisation: ${t.localisation || t.secteur || '-'} | Discipline: ${t.discipline || '-'}`, 25, y);
-                    y += 8;
+                // === UNE PAGE PAR TRAVAIL ===
+                this.travaux.forEach((t, index) => {
+                    doc.addPage();
+                    this.renderPDFTravailPage(doc, t, index, pageWidth, pageHeight, margin);
                 });
 
+                // === PAGE DE RÉSUMÉ (optionnelle) ===
+                doc.addPage();
+                this.renderPDFSummaryPage(doc, pageWidth, pageHeight, margin);
+
                 doc.save(`Soumission_${this.entreprise}_${new Date().toISOString().split('T')[0]}.pdf`);
-                this.showToast('PDF téléchargé!');
+                this.showToast('📄 PDF PowerPoint téléchargé!');
+            },
+
+            renderPDFTitlePage(doc, pageWidth, pageHeight) {
+                // Fond bleu foncé en haut
+                doc.setFillColor(30, 58, 95);
+                doc.rect(0, 0, pageWidth, 80, 'F');
+
+                // Titre principal
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(32);
+                doc.setFont(undefined, 'bold');
+                doc.text('Appel de Soumission', pageWidth / 2, 35, { align: 'center' });
+
+                // Sous-titre
+                doc.setFontSize(20);
+                doc.setFont(undefined, 'normal');
+                doc.text(this.appelData.nomArret || 'Arrêt Annuel 2025', pageWidth / 2, 55, { align: 'center' });
+
+                // Nom entreprise (badge orange)
+                doc.setFillColor(245, 158, 11);
+                doc.roundedRect(pageWidth / 2 - 50, 90, 100, 20, 5, 5, 'F');
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(16);
+                doc.setFont(undefined, 'bold');
+                doc.text(this.entreprise, pageWidth / 2, 103, { align: 'center' });
+
+                // Stats
+                doc.setTextColor(30, 58, 95);
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'normal');
+                const totalHeures = this.travaux.reduce((sum, t) => sum + (t.estimationHeures || 0), 0);
+                const nbVisites = this.visitesData.filter(v => v?.aVoirSurPlace).length;
+
+                doc.text(`${this.travaux.length} travaux`, pageWidth / 2 - 60, 135, { align: 'center' });
+                doc.text(`${totalHeures}h estimées`, pageWidth / 2, 135, { align: 'center' });
+                doc.text(`${nbVisites} visites terrain`, pageWidth / 2 + 60, 135, { align: 'center' });
+
+                // Date limite si existe
+                if (this.appelData.dateLimite) {
+                    const dateLimite = new Date(this.appelData.dateLimite);
+                    doc.setFontSize(12);
+                    doc.setTextColor(180, 83, 9);
+                    doc.text(`Date limite: ${dateLimite.toLocaleDateString('fr-CA')}`, pageWidth / 2, 155, { align: 'center' });
+                }
+
+                // Footer
+                doc.setFontSize(10);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Généré le ${new Date().toLocaleDateString('fr-CA')}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
+            },
+
+            renderPDFTravailPage(doc, travail, index, pageWidth, pageHeight, margin) {
+                const visiteData = this.visitesData[index] || {};
+                const uploadData = this.uploadsData[index] || {};
+                const commentaire = this.commentairesTravaux[index] || '';
+
+                // En-tête coloré
+                doc.setFillColor(30, 58, 95);
+                doc.rect(0, 0, pageWidth, 35, 'F');
+
+                // Numéro de page et OT
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(12);
+                doc.text(`Travail ${index + 1} / ${this.travaux.length}`, margin, 12);
+
+                doc.setFontSize(20);
+                doc.setFont(undefined, 'bold');
+                doc.text(`OT: ${travail.ot || 'N/A'}`, pageWidth / 2, 15, { align: 'center' });
+
+                // Badge visite si applicable
+                if (visiteData.aVoirSurPlace) {
+                    doc.setFillColor(252, 231, 243);
+                    doc.roundedRect(pageWidth - 60, 8, 45, 12, 3, 3, 'F');
+                    doc.setTextColor(190, 24, 93);
+                    doc.setFontSize(9);
+                    doc.text('A voir sur place', pageWidth - 37.5, 16, { align: 'center' });
+                }
+
+                // Description
+                doc.setTextColor(30, 41, 59);
+                doc.setFontSize(14);
+                doc.setFont(undefined, 'bold');
+                const descLines = doc.splitTextToSize(travail.description || 'Sans description', pageWidth - 40);
+                doc.text(descLines.slice(0, 2), pageWidth / 2, 28, { align: 'center' });
+
+                let y = 50;
+
+                // === SECTION INFOS ===
+                doc.setFillColor(248, 250, 252);
+                doc.roundedRect(margin, y, pageWidth - margin * 2, 35, 3, 3, 'F');
+
+                doc.setTextColor(100, 116, 139);
+                doc.setFontSize(10);
+                doc.setFont(undefined, 'normal');
+
+                const col1 = margin + 10;
+                const col2 = margin + 80;
+                const col3 = margin + 160;
+
+                y += 10;
+                doc.text('Équipement:', col1, y);
+                doc.text('Opération:', col2, y);
+                doc.text('Localisation:', col3, y);
+
+                doc.setTextColor(30, 41, 59);
+                doc.setFont(undefined, 'bold');
+                y += 7;
+                doc.text(travail.equipement || '-', col1, y);
+                doc.text((travail.operation || '-').substring(0, 25), col2, y);
+                doc.text((travail.localisation || travail.secteur || '-').substring(0, 25), col3, y);
+
+                doc.setTextColor(100, 116, 139);
+                doc.setFont(undefined, 'normal');
+                y += 10;
+                doc.text('Heures estimées:', col1, y);
+                doc.text('Priorité:', col2, y);
+                doc.text('Discipline:', col3, y);
+
+                doc.setTextColor(30, 41, 59);
+                doc.setFont(undefined, 'bold');
+                y += 7;
+                doc.text(`${travail.estimationHeures || 0}h`, col1, y);
+                doc.text(travail.priorite || '-', col2, y);
+                doc.text(travail.discipline || '-', col3, y);
+
+                y += 15;
+
+                // === TYPE / JOUR ===
+                if (travail.typeTravail) {
+                    const typeLabels = { 'aa': 'Arrêt Annuel', 'tpaa': 'TPAA', 'aa-tpaa': 'AA ou TPAA' };
+                    const jourLabels = { 'jeudi': 'Jeudi d\'arrêt', 'hors-jeudi': 'Hors jeudi' };
+
+                    doc.setFillColor(237, 233, 254);
+                    doc.roundedRect(margin, y, 70, 15, 3, 3, 'F');
+                    doc.setTextColor(109, 40, 217);
+                    doc.setFontSize(11);
+                    doc.text(typeLabels[travail.typeTravail] || travail.typeTravail, margin + 35, y + 10, { align: 'center' });
+
+                    if (travail.jourArret && travail.typeTravail !== 'aa') {
+                        doc.setFillColor(254, 243, 199);
+                        doc.roundedRect(margin + 75, y, 60, 15, 3, 3, 'F');
+                        doc.setTextColor(146, 64, 14);
+                        doc.text(jourLabels[travail.jourArret] || travail.jourArret, margin + 105, y + 10, { align: 'center' });
+                    }
+                    y += 20;
+                }
+
+                // === COMMENTAIRE GESTIONNAIRE ===
+                if (travail.commentaire) {
+                    doc.setFillColor(254, 249, 195);
+                    doc.roundedRect(margin, y, (pageWidth - margin * 2) / 2 - 5, 30, 3, 3, 'F');
+                    doc.setTextColor(146, 64, 14);
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('Note du gestionnaire:', margin + 5, y + 8);
+                    doc.setFont(undefined, 'normal');
+                    const noteLines = doc.splitTextToSize(travail.commentaire, (pageWidth - margin * 2) / 2 - 15);
+                    doc.text(noteLines.slice(0, 3), margin + 5, y + 15);
+                }
+
+                // === COMMENTAIRE ENTREPRENEUR ===
+                if (commentaire) {
+                    const xComment = travail.commentaire ? pageWidth / 2 + 5 : margin;
+                    const wComment = travail.commentaire ? (pageWidth - margin * 2) / 2 - 5 : pageWidth - margin * 2;
+                    doc.setFillColor(220, 252, 231);
+                    doc.roundedRect(xComment, y, wComment, 30, 3, 3, 'F');
+                    doc.setTextColor(6, 95, 70);
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('Commentaire entrepreneur:', xComment + 5, y + 8);
+                    doc.setFont(undefined, 'normal');
+                    const entLines = doc.splitTextToSize(commentaire, wComment - 10);
+                    doc.text(entLines.slice(0, 3), xComment + 5, y + 15);
+                }
+
+                if (travail.commentaire || commentaire) y += 35;
+
+                // === VISITE SUR PLACE ===
+                if (visiteData.aVoirSurPlace) {
+                    doc.setFillColor(252, 231, 243);
+                    doc.roundedRect(margin, y, pageWidth - margin * 2, 25, 3, 3, 'F');
+                    doc.setTextColor(190, 24, 93);
+                    doc.setFontSize(10);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('À VOIR SUR PLACE', margin + 10, y + 8);
+
+                    if (visiteData.mesures) {
+                        doc.setFont(undefined, 'normal');
+                        doc.setFontSize(9);
+                        const mesuresLines = doc.splitTextToSize(`Notes terrain: ${visiteData.mesures}`, pageWidth - margin * 2 - 20);
+                        doc.text(mesuresLines.slice(0, 2), margin + 10, y + 16);
+                    }
+
+                    const nbPhotosVisite = (visiteData.photos || []).length;
+                    if (nbPhotosVisite > 0) {
+                        doc.text(`${nbPhotosVisite} photo(s) terrain`, pageWidth - margin - 50, y + 8);
+                    }
+                    y += 30;
+                }
+
+                // === PIÈCES JOINTES ===
+                const nbPhotos = (uploadData.photos || []).length;
+                const nbDocs = (uploadData.documents || []).length;
+                if (nbPhotos > 0 || nbDocs > 0) {
+                    doc.setTextColor(3, 105, 161);
+                    doc.setFontSize(10);
+                    doc.text(`Pièces jointes: ${nbPhotos} photo(s), ${nbDocs} document(s)`, margin, y + 5);
+                }
+
+                // Footer page
+                doc.setTextColor(150, 150, 150);
+                doc.setFontSize(8);
+                doc.text(`${this.entreprise} - ${this.appelData.nomArret || 'Arrêt Annuel'}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
+            },
+
+            renderPDFSummaryPage(doc, pageWidth, pageHeight, margin) {
+                // En-tête
+                doc.setFillColor(30, 58, 95);
+                doc.rect(0, 0, pageWidth, 30, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(18);
+                doc.setFont(undefined, 'bold');
+                doc.text('Résumé de la soumission', pageWidth / 2, 20, { align: 'center' });
+
+                let y = 45;
+
+                // Stats globales
+                doc.setTextColor(30, 41, 59);
+                doc.setFontSize(12);
+                doc.setFont(undefined, 'bold');
+                doc.text('Statistiques:', margin, y);
+                y += 10;
+
+                doc.setFont(undefined, 'normal');
+                doc.setFontSize(11);
+                const totalHeures = this.travaux.reduce((sum, t) => sum + (t.estimationHeures || 0), 0);
+                const nbVisites = this.visitesData.filter(v => v?.aVoirSurPlace).length;
+                const nbAA = this.travaux.filter(t => t.typeTravail === 'aa').length;
+                const nbTPAA = this.travaux.filter(t => t.typeTravail === 'tpaa').length;
+
+                doc.text(`• Total travaux: ${this.travaux.length}`, margin + 10, y); y += 7;
+                doc.text(`• Heures estimées: ${totalHeures}h`, margin + 10, y); y += 7;
+                doc.text(`• Travaux AA: ${nbAA}`, margin + 10, y); y += 7;
+                doc.text(`• Travaux TPAA: ${nbTPAA}`, margin + 10, y); y += 7;
+                doc.text(`• Visites terrain prévues: ${nbVisites}`, margin + 10, y); y += 15;
+
+                // Liste des travaux à visiter
+                if (nbVisites > 0) {
+                    doc.setFont(undefined, 'bold');
+                    doc.text('Travaux à voir sur place:', margin, y);
+                    y += 8;
+                    doc.setFont(undefined, 'normal');
+                    doc.setFontSize(10);
+
+                    this.travaux.forEach((t, i) => {
+                        if (this.visitesData[i]?.aVoirSurPlace) {
+                            if (y > pageHeight - 20) return;
+                            doc.text(`• [${t.ot || '-'}] ${(t.description || '').substring(0, 50)}...`, margin + 10, y);
+                            y += 6;
+                        }
+                    });
+                }
+
+                // Commentaire global
+                if (this.commentaireEntrepreneur) {
+                    y += 10;
+                    doc.setFontSize(12);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('Commentaire global:', margin, y);
+                    y += 8;
+                    doc.setFont(undefined, 'normal');
+                    doc.setFontSize(10);
+                    const globalLines = doc.splitTextToSize(this.commentaireEntrepreneur, pageWidth - margin * 2);
+                    doc.text(globalLines.slice(0, 5), margin, y);
+                }
+
+                // Footer
+                doc.setTextColor(150, 150, 150);
+                doc.setFontSize(8);
+                doc.text(`${this.entreprise} - Généré le ${new Date().toLocaleDateString('fr-CA')}`, pageWidth / 2, pageHeight - 8, { align: 'center' });
             },
 
             showToast(message, type = 'success') {
