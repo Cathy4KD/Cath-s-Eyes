@@ -6300,7 +6300,8 @@ const ScreenPreparation = {
         startY: 0,
         scale: 1,
         offsetX: 0,
-        offsetY: 0
+        offsetY: 0,
+        selectedTravail: null  // Travail sélectionné pour placement
     },
 
     ouvrirEditeurPlan() {
@@ -6321,6 +6322,9 @@ const ScreenPreparation = {
         // Charger les annotations existantes pour cette entreprise
         const savedAnnotations = DataManager.data.processus?.plansAnnotes?.[entreprise]?.annotations || [];
         this.planEditor.annotations = [...savedAnnotations];
+
+        // Récupérer les travaux de l'entreprise
+        const travaux = DataManager.data.travaux.filter(t => t.entreprise && t.entreprise.trim() === entreprise);
 
         const html = `
             <div class="plan-editor-overlay" id="planEditorModal">
@@ -6347,6 +6351,10 @@ const ScreenPreparation = {
                             <button class="tool-btn" data-tool="text" onclick="ScreenPreparation.setToolPlan('text')" title="Texte">
                                 T
                             </button>
+                            <span class="tool-separator">|</span>
+                            <button class="tool-btn" data-tool="travail" onclick="ScreenPreparation.setToolPlan('travail')" title="Placer un travail">
+                                🔧
+                            </button>
                         </div>
                         <div class="tool-group">
                             <label>Couleur:</label>
@@ -6366,13 +6374,43 @@ const ScreenPreparation = {
                         </div>
                     </div>
 
-                    <div class="plan-editor-canvas-container" id="planCanvasContainer">
-                        <canvas id="planEditorCanvas"></canvas>
+                    <div class="plan-editor-main">
+                        <!-- Panneau latéral des travaux -->
+                        <div class="plan-travaux-panel" id="planTravauxPanel">
+                            <div class="plan-travaux-header">
+                                <h4>Travaux à placer (${travaux.length})</h4>
+                                <input type="text" id="planTravauxFilter" placeholder="Filtrer..." oninput="ScreenPreparation.filtrerTravauxPlan()">
+                            </div>
+                            <div class="plan-travaux-list" id="planTravauxList">
+                                ${travaux.map((t, idx) => {
+                                    const isPlaced = savedAnnotations.some(a => a.type === 'travail' && a.travailOT === t.ot);
+                                    return `
+                                        <div class="plan-travail-item ${isPlaced ? 'placed' : ''}"
+                                             data-ot="${t.ot || ''}"
+                                             data-description="${(t.description || '').toLowerCase()}"
+                                             onclick="ScreenPreparation.selectTravailPourPlan('${t.ot}', '${this.escapeHtml((t.description || '').substring(0, 30))}')">
+                                            <div class="plan-travail-ot">${t.ot || '#' + (idx + 1)}</div>
+                                            <div class="plan-travail-desc">${(t.description || '-').substring(0, 50)}${(t.description || '').length > 50 ? '...' : ''}</div>
+                                            ${isPlaced ? '<span class="plan-travail-placed">✓ Placé</span>' : ''}
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                            <div class="plan-travaux-info" id="planTravailSelected">
+                                Cliquez sur un travail puis sur le plan pour le placer
+                            </div>
+                        </div>
+
+                        <!-- Zone du canvas -->
+                        <div class="plan-editor-canvas-container" id="planCanvasContainer">
+                            <canvas id="planEditorCanvas"></canvas>
+                        </div>
                     </div>
 
                     <div class="plan-editor-footer">
                         <div class="plan-editor-info">
                             <span id="planAnnotationCount">${savedAnnotations.length} annotation(s)</span>
+                            <span id="planTravauxPlaces"> | ${savedAnnotations.filter(a => a.type === 'travail').length} travaux placés</span>
                         </div>
                         <div class="plan-editor-actions">
                             <button class="btn btn-outline" onclick="ScreenPreparation.fermerEditeurPlan()">Annuler</button>
@@ -6476,6 +6514,104 @@ const ScreenPreparation = {
                 .tool-btn-color:hover {
                     transform: scale(1.1);
                 }
+                .plan-editor-main {
+                    flex: 1;
+                    display: flex;
+                    overflow: hidden;
+                }
+                .plan-travaux-panel {
+                    width: 280px;
+                    background: #f8fafc;
+                    border-right: 1px solid #e2e8f0;
+                    display: flex;
+                    flex-direction: column;
+                    flex-shrink: 0;
+                }
+                .plan-travaux-header {
+                    padding: 12px;
+                    border-bottom: 1px solid #e2e8f0;
+                    background: white;
+                }
+                .plan-travaux-header h4 {
+                    margin: 0 0 8px 0;
+                    font-size: 0.9rem;
+                    color: #1e3a5f;
+                }
+                .plan-travaux-header input {
+                    width: 100%;
+                    padding: 8px 10px;
+                    border: 1px solid #e2e8f0;
+                    border-radius: 6px;
+                    font-size: 0.85rem;
+                }
+                .plan-travaux-list {
+                    flex: 1;
+                    overflow-y: auto;
+                    padding: 8px;
+                }
+                .plan-travail-item {
+                    background: white;
+                    border: 2px solid #e2e8f0;
+                    border-radius: 8px;
+                    padding: 10px;
+                    margin-bottom: 8px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                .plan-travail-item:hover {
+                    border-color: #3b82f6;
+                    background: #eff6ff;
+                }
+                .plan-travail-item.selected {
+                    border-color: #3b82f6;
+                    background: #3b82f6;
+                    color: white;
+                }
+                .plan-travail-item.selected .plan-travail-ot {
+                    color: white;
+                }
+                .plan-travail-item.selected .plan-travail-desc {
+                    color: rgba(255,255,255,0.9);
+                }
+                .plan-travail-item.placed {
+                    border-color: #22c55e;
+                    background: #f0fdf4;
+                }
+                .plan-travail-item.placed .plan-travail-placed {
+                    color: #16a34a;
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                }
+                .plan-travail-ot {
+                    font-weight: 700;
+                    color: #1e3a5f;
+                    font-size: 0.85rem;
+                    margin-bottom: 4px;
+                }
+                .plan-travail-desc {
+                    font-size: 0.8rem;
+                    color: #64748b;
+                    line-height: 1.3;
+                }
+                .plan-travaux-info {
+                    padding: 12px;
+                    background: #fef3c7;
+                    border-top: 1px solid #fcd34d;
+                    font-size: 0.8rem;
+                    color: #92400e;
+                    text-align: center;
+                }
+                .plan-travaux-info.active {
+                    background: #dbeafe;
+                    border-color: #3b82f6;
+                    color: #1e40af;
+                    font-weight: 600;
+                }
+                .tool-separator {
+                    color: #cbd5e1;
+                    font-size: 1.5rem;
+                    margin: 0 5px;
+                }
                 .plan-editor-canvas-container {
                     flex: 1;
                     overflow: auto;
@@ -6489,6 +6625,9 @@ const ScreenPreparation = {
                     background: white;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
                     cursor: crosshair;
+                }
+                #planEditorCanvas.placing-travail {
+                    cursor: copy;
                 }
                 .plan-editor-footer {
                     display: flex;
@@ -6608,6 +6747,41 @@ const ScreenPreparation = {
                 ctx.font = 'bold 16px Arial';
                 ctx.fillText(ann.text, ann.x * scale, ann.y * scale);
                 break;
+
+            case 'travail':
+                // Marqueur de travail avec numéro OT
+                const px = ann.x * scale;
+                const py = ann.y * scale;
+
+                // Fond du marqueur (forme de goutte/pin)
+                ctx.fillStyle = ann.color || '#3b82f6';
+                ctx.beginPath();
+                ctx.arc(px, py - 15, 18, Math.PI, 0, false);
+                ctx.lineTo(px, py + 5);
+                ctx.closePath();
+                ctx.fill();
+
+                // Bordure
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // Cercle intérieur blanc
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(px, py - 15, 12, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Texte OT
+                ctx.fillStyle = ann.color || '#3b82f6';
+                ctx.font = 'bold 9px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const otText = (ann.travailOT || '').substring(0, 8);
+                ctx.fillText(otText, px, py - 15);
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'alphabetic';
+                break;
         }
     },
 
@@ -6668,6 +6842,31 @@ const ScreenPreparation = {
                 this.updateAnnotationCount();
             }
             this.planEditor.isDrawing = false;
+        } else if (this.planEditor.currentTool === 'travail' && this.planEditor.selectedTravail) {
+            // Placer le travail sélectionné sur le plan
+            const travail = this.planEditor.selectedTravail;
+
+            // Vérifier si ce travail est déjà placé et le supprimer
+            const existingIdx = this.planEditor.annotations.findIndex(a => a.type === 'travail' && a.travailOT === travail.ot);
+            if (existingIdx !== -1) {
+                this.planEditor.annotations.splice(existingIdx, 1);
+            }
+
+            this.planEditor.annotations.push({
+                type: 'travail',
+                x: x,
+                y: y,
+                travailOT: travail.ot,
+                travailDesc: travail.desc,
+                color: this.planEditor.currentColor
+            });
+            this.redrawPlanCanvas();
+            this.updateAnnotationCount();
+            this.updateTravauxPlaces();
+            this.planEditor.isDrawing = false;
+
+            // Désélectionner le travail après placement
+            this.clearTravailSelection();
         }
     },
 
@@ -6767,6 +6966,7 @@ const ScreenPreparation = {
             this.planEditor.annotations.pop();
             this.redrawPlanCanvas();
             this.updateAnnotationCount();
+            this.updateTravauxPlaces();
         }
     },
 
@@ -6775,12 +6975,106 @@ const ScreenPreparation = {
             this.planEditor.annotations = [];
             this.redrawPlanCanvas();
             this.updateAnnotationCount();
+            this.updateTravauxPlaces();
+            this.clearTravailSelection();
         }
     },
 
     updateAnnotationCount() {
         const count = this.planEditor.annotations.length;
         document.getElementById('planAnnotationCount').textContent = `${count} annotation(s)`;
+    },
+
+    // Sélectionner un travail pour le placer sur le plan
+    selectTravailPourPlan(ot, desc) {
+        // Désélectionner les autres
+        document.querySelectorAll('.plan-travail-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+
+        // Sélectionner celui-ci
+        const item = document.querySelector(`.plan-travail-item[data-ot="${ot}"]`);
+        if (item) {
+            item.classList.add('selected');
+        }
+
+        // Stocker le travail sélectionné
+        this.planEditor.selectedTravail = { ot, desc };
+
+        // Activer l'outil travail
+        this.setToolPlan('travail');
+
+        // Mettre à jour l'info
+        const infoEl = document.getElementById('planTravailSelected');
+        if (infoEl) {
+            infoEl.textContent = `${ot} sélectionné - Cliquez sur le plan pour placer`;
+            infoEl.classList.add('active');
+        }
+
+        // Changer le curseur du canvas
+        const canvas = document.getElementById('planEditorCanvas');
+        if (canvas) {
+            canvas.classList.add('placing-travail');
+        }
+    },
+
+    // Effacer la sélection du travail
+    clearTravailSelection() {
+        document.querySelectorAll('.plan-travail-item').forEach(item => {
+            item.classList.remove('selected');
+        });
+        this.planEditor.selectedTravail = null;
+
+        const infoEl = document.getElementById('planTravailSelected');
+        if (infoEl) {
+            infoEl.textContent = 'Cliquez sur un travail puis sur le plan pour le placer';
+            infoEl.classList.remove('active');
+        }
+
+        const canvas = document.getElementById('planEditorCanvas');
+        if (canvas) {
+            canvas.classList.remove('placing-travail');
+        }
+    },
+
+    // Mettre à jour la liste des travaux placés
+    updateTravauxPlaces() {
+        const travauxPlaces = this.planEditor.annotations.filter(a => a.type === 'travail');
+
+        // Mettre à jour le compteur
+        const countEl = document.getElementById('planTravauxPlaces');
+        if (countEl) {
+            countEl.textContent = ` | ${travauxPlaces.length} travaux placés`;
+        }
+
+        // Mettre à jour les items de la liste
+        document.querySelectorAll('.plan-travail-item').forEach(item => {
+            const ot = item.dataset.ot;
+            const isPlaced = travauxPlaces.some(a => a.travailOT === ot);
+            item.classList.toggle('placed', isPlaced);
+
+            // Ajouter/supprimer le badge "Placé"
+            let badge = item.querySelector('.plan-travail-placed');
+            if (isPlaced && !badge) {
+                const badgeEl = document.createElement('span');
+                badgeEl.className = 'plan-travail-placed';
+                badgeEl.textContent = '✓ Placé';
+                item.appendChild(badgeEl);
+            } else if (!isPlaced && badge) {
+                badge.remove();
+            }
+        });
+    },
+
+    // Filtrer les travaux dans le panneau latéral
+    filtrerTravauxPlan() {
+        const filterValue = (document.getElementById('planTravauxFilter')?.value || '').toLowerCase();
+        document.querySelectorAll('.plan-travail-item').forEach(item => {
+            const ot = (item.dataset.ot || '').toLowerCase();
+            const desc = (item.dataset.description || '').toLowerCase();
+            const matches = ot.includes(filterValue) || desc.includes(filterValue);
+            item.style.display = matches ? 'block' : 'none';
+        });
     },
 
     async sauvegarderPlanAnnote() {
@@ -6814,6 +7108,7 @@ const ScreenPreparation = {
         this.planEditor.canvas = null;
         this.planEditor.ctx = null;
         this.planEditor.image = null;
+        this.planEditor.selectedTravail = null;
     },
 
     // ==========================================
