@@ -583,8 +583,10 @@
             .travaux-master-detail {
                 display: flex;
                 gap: 20px;
-                min-height: 600px;
-                max-height: calc(100vh - 400px);
+                height: calc(100vh - 350px);
+                min-height: 400px;
+                max-height: calc(100vh - 300px);
+                overflow: hidden; /* Force les panneaux enfants à gérer leur propre scroll */
             }
 
             /* Panneau gauche: tableau Excel */
@@ -725,12 +727,40 @@
                 display: flex;
                 flex-direction: column;
                 overflow: hidden;
+                min-height: 0; /* Important pour permettre le scroll dans flex */
+                max-height: 100%; /* Contraint à la hauteur du parent */
+            }
+
+            #travailDetailContent {
+                flex: 1;
+                overflow-y: scroll;
+                scrollbar-width: thin;
+                scrollbar-color: #94a3b8 #f1f5f9;
+            }
+
+            #travailDetailContent::-webkit-scrollbar {
+                width: 10px;
+            }
+
+            #travailDetailContent::-webkit-scrollbar-track {
+                background: #f1f5f9;
+                border-radius: 5px;
+            }
+
+            #travailDetailContent::-webkit-scrollbar-thumb {
+                background: #94a3b8;
+                border-radius: 5px;
+            }
+
+            #travailDetailContent::-webkit-scrollbar-thumb:hover {
+                background: #64748b;
             }
 
             .detail-panel-header {
                 padding: 15px 20px;
                 background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
                 color: white;
+                flex-shrink: 0; /* Ne pas réduire le header */
             }
 
             .detail-panel-header h3 {
@@ -749,28 +779,10 @@
             }
 
             .detail-panel-body {
-                flex: 1;
-                overflow-y: auto;
                 padding: 20px;
-                scrollbar-width: thin;
-                scrollbar-color: #94a3b8 #f1f5f9;
             }
 
-            .detail-panel-body::-webkit-scrollbar {
-                width: 10px;
-            }
-
-            .detail-panel-body::-webkit-scrollbar-track {
-                background: #f1f5f9;
-                border-radius: 5px;
-            }
-
-            .detail-panel-body::-webkit-scrollbar-thumb {
-                background: #94a3b8;
-                border-radius: 5px;
-            }
-
-            .detail-panel-body::-webkit-scrollbar-thumb:hover {
+            .detail-panel-body-old::-webkit-scrollbar-thumb:hover {
                 background: #64748b;
             }
 
@@ -3219,8 +3231,8 @@
                             </div>
 
                             <!-- Panneau droit: détails -->
-                            <div class="travaux-detail-panel">
-                                <div id="travailDetailContent">
+                            <div class="travaux-detail-panel" style="border: 3px solid red;">
+                                <div id="travailDetailContent" style="height: 100%; overflow-y: scroll; border: 3px solid blue;">
                                     <div class="detail-empty-state">
                                         <div class="icon">👈</div>
                                         <p>Sélectionnez un travail dans la liste pour voir ses détails</p>
