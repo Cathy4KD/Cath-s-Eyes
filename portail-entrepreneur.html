@@ -124,10 +124,17 @@
             font-size: 0.9rem;
         }
 
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
         .date-limite {
             background: #fef3c7;
             border: 2px solid #f59e0b;
-            padding: 12px 20px;
+            padding: 10px 16px;
             border-radius: 10px;
             text-align: center;
         }
@@ -143,6 +150,25 @@
             font-size: 1.1rem;
             font-weight: 700;
             color: #b45309;
+        }
+
+        .btn-pdf {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-pdf:hover {
+            background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
         }
 
         /* Section title */
@@ -2290,12 +2316,17 @@
                                     <p>Veuillez consulter les détails ci-dessous et soumettre votre offre.</p>
                                 </div>
                             </div>
-                            ${dateLimite ? `
-                                <div class="date-limite">
-                                    <div class="date-limite-label">Date limite</div>
-                                    <div class="date-limite-value">${dateLimite.toLocaleDateString('fr-CA')}</div>
-                                </div>
-                            ` : ''}
+                            <div class="header-actions">
+                                ${dateLimite ? `
+                                    <div class="date-limite">
+                                        <div class="date-limite-label">Date limite</div>
+                                        <div class="date-limite-value">${dateLimite.toLocaleDateString('fr-CA')}</div>
+                                    </div>
+                                ` : ''}
+                                <button class="btn btn-pdf" onclick="PortailEntrepreneur.exportPDF()">
+                                    Exporter PDF
+                                </button>
+                            </div>
                         </div>
 
                         ${this.appelData.planImage ? `
@@ -2368,11 +2399,8 @@
                         </div>
 
                         <div class="actions-bar">
-                            <button class="btn btn-primary" onclick="PortailEntrepreneur.exportPDF()">
-                                📄 Exporter en PDF
-                            </button>
                             <button class="btn btn-secondary" onclick="window.print()">
-                                🖨️ Imprimer
+                                Imprimer
                             </button>
                         </div>
                     </main>
