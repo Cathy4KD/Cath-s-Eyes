@@ -274,26 +274,25 @@
 
         .bilan-repartition {
             display: flex;
-            align-items: stretch;
+            align-items: center;
+            gap: 0;
             margin-bottom: 15px;
-            background: #f8fafc;
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid #e2e8f0;
         }
 
         .bilan-type {
-            padding: 12px 20px;
+            background: white;
+            border-radius: 10px;
+            padding: 10px 15px;
             text-align: center;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            border-right: 1px solid #cbd5e1;
+            min-width: 80px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
-        .bilan-type:last-child {
-            border-right: none;
+        .bilan-separator {
+            width: 1px;
+            height: 40px;
+            background: #cbd5e1;
+            margin: 0 10px;
         }
 
         .bilan-type-label {
@@ -2505,16 +2504,19 @@
                                     <div class="bilan-type-label">Arret Annuel</div>
                                     <div class="bilan-type-value">${heuresAA}h</div>
                                 </div>
+                                <div class="bilan-separator"></div>
                                 <div class="bilan-type bilan-type-tpaa">
                                     <div class="bilan-type-label">TPAA</div>
                                     <div class="bilan-type-value">${heuresTPAA}h</div>
                                 </div>
                                 ${heuresAAouTPAA > 0 ? `
+                                <div class="bilan-separator"></div>
                                 <div class="bilan-type bilan-type-mixte">
                                     <div class="bilan-type-label">AA ou TPAA</div>
                                     <div class="bilan-type-value">${heuresAAouTPAA}h</div>
                                 </div>
                                 ` : ''}
+                                <div class="bilan-separator"></div>
                                 <div class="bilan-type bilan-type-total">
                                     <div class="bilan-type-label">TOTAL</div>
                                     <div class="bilan-type-value">${totalHeures}h</div>
