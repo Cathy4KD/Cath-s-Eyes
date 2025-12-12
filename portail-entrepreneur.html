@@ -3729,15 +3729,27 @@
                     commentairesTravaux[index] = textarea ? textarea.value.trim() : '';
                 });
 
+                // Nettoyer les données pour éviter les undefined (Firebase les refuse)
+                const cleanVisitesData = this.visitesData.map(v => {
+                    if (!v) return { aVoirSurPlace: false, photos: [], mesures: '' };
+                    return {
+                        aVoirSurPlace: v.aVoirSurPlace || false,
+                        photos: v.photos || [],
+                        mesures: v.mesures || ''
+                    };
+                });
+
+                const cleanCommentairesTravaux = commentairesTravaux.map(c => c || '');
+
                 try {
                     await firebase.firestore()
                         .collection('commentaires_entrepreneurs')
                         .doc(this.appelId)
                         .set({
-                            commentaire: commentaireGlobal,
-                            commentairesTravaux: commentairesTravaux,
-                            visitesData: this.visitesData,
-                            entreprise: this.entreprise,
+                            commentaire: commentaireGlobal || '',
+                            commentairesTravaux: cleanCommentairesTravaux,
+                            visitesData: cleanVisitesData,
+                            entreprise: this.entreprise || '',
                             dateModification: new Date().toISOString()
                         });
 
@@ -4714,14 +4726,26 @@
 
             async sauvegarderVisitesData() {
                 try {
+                    // Nettoyer les données pour éviter les undefined (Firebase les refuse)
+                    const cleanVisitesData = this.visitesData.map(v => {
+                        if (!v) return { aVoirSurPlace: false, photos: [], mesures: '' };
+                        return {
+                            aVoirSurPlace: v.aVoirSurPlace || false,
+                            photos: v.photos || [],
+                            mesures: v.mesures || ''
+                        };
+                    });
+
+                    const cleanCommentairesTravaux = this.commentairesTravaux.map(c => c || '');
+
                     await firebase.firestore()
                         .collection('commentaires_entrepreneurs')
                         .doc(this.appelId)
                         .set({
-                            commentaire: this.commentaireEntrepreneur,
-                            commentairesTravaux: this.commentairesTravaux,
-                            visitesData: this.visitesData,
-                            entreprise: this.entreprise,
+                            commentaire: this.commentaireEntrepreneur || '',
+                            commentairesTravaux: cleanCommentairesTravaux,
+                            visitesData: cleanVisitesData,
+                            entreprise: this.entreprise || '',
                             dateModification: new Date().toISOString()
                         }, { merge: true });
                 } catch (error) {
