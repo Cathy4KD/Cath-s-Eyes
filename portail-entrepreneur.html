@@ -234,6 +234,553 @@
             color: #b45309;
         }
 
+        .badge-visite {
+            background: #fce7f3;
+            color: #be185d;
+        }
+
+        /* Case à cocher "À voir sur place" */
+        .visite-checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            background: linear-gradient(135deg, #fce7f3 0%, #fdf2f8 100%);
+            border-radius: 8px;
+            margin-top: 12px;
+            border: 2px solid #f9a8d4;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .visite-checkbox-container:hover {
+            border-color: #ec4899;
+            background: linear-gradient(135deg, #fbcfe8 0%, #fce7f3 100%);
+        }
+
+        .visite-checkbox-container.checked {
+            background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+            border-color: #be185d;
+        }
+
+        .visite-checkbox-container.checked .visite-label {
+            color: white;
+        }
+
+        .visite-checkbox-container.checked .visite-icon {
+            color: white;
+        }
+
+        .visite-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 3px solid #ec4899;
+            border-radius: 6px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .visite-checkbox-container.checked .visite-checkbox {
+            background: white;
+            border-color: white;
+        }
+
+        .visite-checkbox-check {
+            display: none;
+            color: #ec4899;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .visite-checkbox-container.checked .visite-checkbox-check {
+            display: block;
+        }
+
+        .visite-icon {
+            font-size: 1.5rem;
+            color: #ec4899;
+        }
+
+        .visite-label {
+            font-weight: 600;
+            color: #be185d;
+            font-size: 1rem;
+        }
+
+        .visite-sublabel {
+            font-size: 0.8rem;
+            color: #9d174d;
+            opacity: 0.8;
+        }
+
+        .visite-checkbox-container.checked .visite-sublabel {
+            color: rgba(255,255,255,0.9);
+        }
+
+        /* Section visite sur place (photos + mesures) */
+        .visite-section {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #fdf2f8;
+            border-radius: 10px;
+            border: 2px dashed #f9a8d4;
+        }
+
+        .visite-section.show {
+            display: block;
+        }
+
+        .visite-section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #be185d;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .visite-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .visite-btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 15px 20px;
+            border: 2px solid #ec4899;
+            border-radius: 10px;
+            background: white;
+            color: #be185d;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .visite-btn:hover {
+            background: #fce7f3;
+            transform: translateY(-2px);
+        }
+
+        .visite-btn:active {
+            transform: translateY(0);
+        }
+
+        .visite-btn-icon {
+            font-size: 2rem;
+        }
+
+        .visite-btn-label {
+            font-size: 0.9rem;
+        }
+
+        /* Photos sur place */
+        .visite-photos-container {
+            margin-top: 12px;
+        }
+
+        .visite-photos-grid {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .visite-photo-item {
+            position: relative;
+            width: 100px;
+            height: 100px;
+        }
+
+        .visite-photo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #f9a8d4;
+            cursor: pointer;
+        }
+
+        .visite-photo-delete {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Mesures sur place */
+        .visite-mesures-container {
+            margin-top: 12px;
+        }
+
+        .visite-mesure-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #f9a8d4;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            resize: vertical;
+            min-height: 80px;
+            background: white;
+        }
+
+        .visite-mesure-input:focus {
+            outline: none;
+            border-color: #ec4899;
+        }
+
+        .visite-mesure-input::placeholder {
+            color: #d946ef;
+            opacity: 0.6;
+        }
+
+        /* Mobile optimizations pour visite et utilisation terrain */
+        @media (max-width: 600px) {
+            .visite-checkbox-container {
+                padding: 18px;
+            }
+
+            .visite-label {
+                font-size: 1.2rem;
+            }
+
+            .visite-sublabel {
+                font-size: 0.9rem;
+            }
+
+            .visite-btn {
+                padding: 25px;
+                min-width: 100%;
+            }
+
+            .visite-btn-icon {
+                font-size: 3rem;
+            }
+
+            .visite-btn-label {
+                font-size: 1.1rem;
+            }
+
+            .visite-photo-item {
+                width: 90px;
+                height: 90px;
+            }
+
+            .visite-photo-delete {
+                width: 30px;
+                height: 30px;
+                font-size: 18px;
+            }
+
+            .visite-mesure-input {
+                font-size: 1.1rem;
+                min-height: 100px;
+                padding: 15px;
+            }
+
+            /* Boutons et inputs plus grands pour le tactile */
+            .filter-input, .filter-select {
+                padding: 12px 15px;
+                font-size: 1rem;
+                min-height: 48px;
+            }
+
+            .comment-travail-input {
+                font-size: 1rem;
+                padding: 12px;
+                min-height: 100px;
+            }
+
+            .btn {
+                padding: 15px 25px;
+                font-size: 1.1rem;
+                min-height: 52px;
+            }
+
+            /* Header stats plus compact */
+            .header-stats {
+                gap: 15px;
+            }
+
+            .header-stat-num {
+                font-size: 1.5rem;
+            }
+
+            /* Info boxes plus lisibles */
+            .info-box {
+                padding: 10px 14px;
+            }
+
+            .info-box-value {
+                font-size: 0.95rem;
+            }
+
+            /* Toast plus visible */
+            .toast {
+                bottom: 80px;
+                left: 20px;
+                right: 20px;
+                text-align: center;
+                font-size: 1rem;
+            }
+        }
+
+        /* Très petits écrans */
+        @media (max-width: 400px) {
+            .portal-header {
+                padding: 15px;
+            }
+
+            .portal-title h1 {
+                font-size: 1.3rem;
+            }
+
+            .entreprise-badge {
+                font-size: 1rem;
+                padding: 8px 15px;
+            }
+
+            .visite-actions {
+                flex-direction: column;
+            }
+
+            .visite-btn {
+                min-width: 100%;
+            }
+        }
+
+        /* Mode paysage mobile - optimisé terrain */
+        @media (max-width: 900px) and (orientation: landscape) {
+            .visite-actions {
+                flex-direction: row;
+            }
+
+            .visite-btn {
+                min-width: auto;
+                flex: 1;
+            }
+        }
+
+        /* Section upload photos/documents entrepreneur */
+        .entrepreneur-uploads-section {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f0f9ff;
+            border-radius: 10px;
+            border: 2px solid #bae6fd;
+        }
+
+        .uploads-section-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #0369a1;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .uploads-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .upload-btn {
+            flex: 1;
+            min-width: 140px;
+            padding: 12px 15px;
+            border: 2px dashed #0ea5e9;
+            border-radius: 10px;
+            background: white;
+            color: #0369a1;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .upload-btn:hover {
+            background: #e0f2fe;
+            border-color: #0284c7;
+        }
+
+        .upload-btn .icon {
+            font-size: 1.3rem;
+        }
+
+        /* Grille photos entrepreneur */
+        .entrepreneur-photos-grid {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .entrepreneur-photo-item {
+            position: relative;
+            width: 90px;
+            height: 90px;
+        }
+
+        .entrepreneur-photo-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #0ea5e9;
+            cursor: pointer;
+        }
+
+        .entrepreneur-photo-delete {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            width: 24px;
+            height: 24px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Liste documents entrepreneur */
+        .entrepreneur-docs-list {
+            margin-top: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .entrepreneur-doc-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #bae6fd;
+        }
+
+        .entrepreneur-doc-icon {
+            font-size: 1.5rem;
+        }
+
+        .entrepreneur-doc-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .entrepreneur-doc-name {
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .entrepreneur-doc-size {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .entrepreneur-doc-delete {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .entrepreneur-doc-delete:hover {
+            background: #fee2e2;
+        }
+
+        .entrepreneur-doc-view {
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            color: #1d4ed8;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .entrepreneur-doc-view:hover {
+            background: #dbeafe;
+        }
+
+        /* Mobile uploads */
+        @media (max-width: 600px) {
+            .uploads-row {
+                flex-direction: column;
+            }
+
+            .upload-btn {
+                min-width: 100%;
+                padding: 15px;
+            }
+
+            .entrepreneur-photo-item {
+                width: 80px;
+                height: 80px;
+            }
+
+            .entrepreneur-doc-item {
+                flex-wrap: wrap;
+            }
+
+            .entrepreneur-doc-info {
+                width: 100%;
+                order: 1;
+            }
+
+            .entrepreneur-doc-view,
+            .entrepreneur-doc-delete {
+                order: 2;
+                flex: 1;
+                text-align: center;
+            }
+        }
+
         .travail-body {
             padding: 12px 15px;
         }
@@ -863,6 +1410,326 @@
             .travail-card {
                 break-inside: avoid;
             }
+
+            .help-btn {
+                display: none !important;
+            }
+        }
+
+        /* Bouton d'aide flottant */
+        .help-btn {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.8rem;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+            z-index: 999;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .help-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 25px rgba(59, 130, 246, 0.5);
+        }
+
+        .help-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Modal d'aide */
+        .help-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .help-modal.show {
+            display: flex;
+        }
+
+        .help-modal-content {
+            background: white;
+            border-radius: 16px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .help-modal-header {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 16px 16px 0 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .help-modal-header h2 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .help-modal-header p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .help-modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .help-modal-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .help-modal-body {
+            padding: 30px;
+        }
+
+        .help-section {
+            margin-bottom: 30px;
+        }
+
+        .help-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .help-section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e3a5f;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .help-section-title .icon {
+            font-size: 1.5rem;
+        }
+
+        .help-text {
+            color: #475569;
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        .help-text p {
+            margin-bottom: 12px;
+        }
+
+        .help-text ul {
+            margin: 12px 0;
+            padding-left: 25px;
+        }
+
+        .help-text li {
+            margin-bottom: 8px;
+        }
+
+        .help-highlight {
+            background: #fef3c7;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #f59e0b;
+            margin: 15px 0;
+        }
+
+        .help-highlight-title {
+            font-weight: 600;
+            color: #92400e;
+            margin-bottom: 8px;
+        }
+
+        .help-tip {
+            background: #ecfdf5;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #10b981;
+            margin: 15px 0;
+        }
+
+        .help-tip-title {
+            font-weight: 600;
+            color: #065f46;
+            margin-bottom: 8px;
+        }
+
+        .help-warning {
+            background: #fef2f2;
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #ef4444;
+            margin: 15px 0;
+        }
+
+        .help-warning-title {
+            font-weight: 600;
+            color: #b91c1c;
+            margin-bottom: 8px;
+        }
+
+        .help-feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .help-feature-card {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid #e2e8f0;
+        }
+
+        .help-feature-card .icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .help-feature-card h4 {
+            color: #1e3a5f;
+            margin-bottom: 8px;
+        }
+
+        .help-feature-card p {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .help-step {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: flex-start;
+        }
+
+        .help-step-num {
+            background: #1e3a5f;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .help-step-content h4 {
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .help-step-content p {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .help-badge-demo {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin: 3px;
+        }
+
+        .help-badge-demo.visite {
+            background: #fce7f3;
+            color: #be185d;
+        }
+
+        .help-badge-demo.aa {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
+        .help-badge-demo.tpaa {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .help-badge-demo.jeudi {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        /* Mobile pour aide */
+        @media (max-width: 600px) {
+            .help-btn {
+                bottom: 20px;
+                right: 20px;
+                width: 55px;
+                height: 55px;
+                font-size: 1.6rem;
+            }
+
+            .help-modal-content {
+                max-height: 95vh;
+                margin: 10px;
+            }
+
+            .help-modal-header {
+                padding: 20px;
+            }
+
+            .help-modal-header h2 {
+                font-size: 1.3rem;
+            }
+
+            .help-modal-body {
+                padding: 20px;
+            }
+
+            .help-section-title {
+                font-size: 1.1rem;
+            }
+
+            .help-feature-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -875,6 +1742,267 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- Bouton d'aide flottant -->
+    <button class="help-btn" onclick="PortailEntrepreneur.openHelp()" title="Aide et guide d'utilisation">?</button>
+
+    <!-- Modal d'aide -->
+    <div class="help-modal" id="helpModal" onclick="PortailEntrepreneur.closeHelpOnBackdrop(event)">
+        <div class="help-modal-content" onclick="event.stopPropagation()">
+            <div class="help-modal-header">
+                <h2>Guide d'utilisation du portail</h2>
+                <p>Tout ce que vous devez savoir pour bien utiliser ce portail</p>
+                <button class="help-modal-close" onclick="PortailEntrepreneur.closeHelp()">&times;</button>
+            </div>
+            <div class="help-modal-body">
+                <!-- Section 1: Apercu -->
+                <div class="help-section">
+                    <h3 class="help-section-title"><span class="icon">📋</span> Qu'est-ce que ce portail ?</h3>
+                    <div class="help-text">
+                        <p>Ce portail vous permet de consulter les travaux pour lesquels une soumission est demandee et d'y repondre directement en ligne.</p>
+
+                        <div class="help-feature-grid">
+                            <div class="help-feature-card">
+                                <div class="icon">📄</div>
+                                <h4>Consulter</h4>
+                                <p>Voir tous les details des travaux a soumissionner</p>
+                            </div>
+                            <div class="help-feature-card">
+                                <div class="icon">💬</div>
+                                <h4>Commenter</h4>
+                                <p>Ajouter vos remarques et questions</p>
+                            </div>
+                            <div class="help-feature-card">
+                                <div class="icon">📍</div>
+                                <h4>Planifier</h4>
+                                <p>Marquer les travaux a voir sur place</p>
+                            </div>
+                            <div class="help-feature-card">
+                                <div class="icon">📷</div>
+                                <h4>Documenter</h4>
+                                <p>Prendre des photos et notes sur le terrain</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 2: En-tete -->
+                <div class="help-section">
+                    <h3 class="help-section-title"><span class="icon">🔝</span> L'en-tete du portail</h3>
+                    <div class="help-text">
+                        <p>L'en-tete affiche les informations principales :</p>
+                        <ul>
+                            <li><strong>Nom de votre entreprise</strong> - Badge orange avec le nom de l'entrepreneur</li>
+                            <li><strong>Nombre de travaux</strong> - Combien de travaux sont inclus dans cet appel</li>
+                            <li><strong>Heures estimees</strong> - Total des heures estimees pour l'ensemble</li>
+                            <li><strong>Visites</strong> - Nombre de travaux marques "a voir sur place"</li>
+                        </ul>
+
+                        <div class="help-highlight">
+                            <div class="help-highlight-title">Date limite</div>
+                            Si une date limite est definie, elle s'affiche dans un encadre jaune. Assurez-vous de completer votre soumission avant cette date.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Filtres -->
+                <div class="help-section">
+                    <h3 class="help-section-title"><span class="icon">🔍</span> Les filtres de recherche</h3>
+                    <div class="help-text">
+                        <p>Utilisez les filtres pour trouver rapidement les travaux qui vous interessent :</p>
+                        <ul>
+                            <li><strong>Recherche</strong> - Tapez un mot-cle (OT, description, equipement)</li>
+                            <li><strong>Equipement</strong> - Filtrer par equipement specifique</li>
+                            <li><strong>Type</strong> - AA (Arret Annuel), TPAA, ou les deux</li>
+                            <li><strong>Jour</strong> - Jeudi d'arret ou Hors jeudi</li>
+                            <li><strong>Visite sur place</strong> - Voir uniquement les travaux a visiter</li>
+                        </ul>
+
+                        <div class="help-tip">
+                            <div class="help-tip-title">Astuce terrain</div>
+                            Utilisez le filtre "A voir sur place" quand vous etes sur le site pour voir uniquement les travaux que vous devez inspecter.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 4: Cartes de travaux -->
+                <div class="help-section">
+                    <h3 class="help-section-title"><span class="icon">📝</span> Les cartes de travaux</h3>
+                    <div class="help-text">
+                        <p>Chaque travail est presente dans une carte contenant :</p>
+                        <ul>
+                            <li><strong>Numero OT</strong> - Identifiant du bon de travail (en haut a gauche)</li>
+                            <li><strong>Description</strong> - Detail du travail a realiser</li>
+                            <li><strong>Informations</strong> - Equipement, operation, heures, localisation</li>
+                            <li><strong>Photos</strong> - Images fournies par le gestionnaire (si disponibles)</li>
+                            <li><strong>Type et Jour</strong> - Quand le travail doit etre fait</li>
+                        </ul>
+
+                        <p><strong>Badges de statut :</strong></p>
+                        <div style="margin: 10px 0;">
+                            <span class="help-badge-demo aa">AA</span>
+                            <span class="help-badge-demo tpaa">TPAA</span>
+                            <span class="help-badge-demo jeudi">Jeudi</span>
+                            <span class="help-badge-demo visite">A voir sur place</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 5: Commentaires -->
+                <div class="help-section">
+                    <h3 class="help-section-title"><span class="icon">💬</span> Les commentaires</h3>
+                    <div class="help-text">
+                        <p>Deux types de commentaires sont disponibles :</p>
+
+                        <div class="help-step">
+                            <div class="help-step-num" style="background: #f59e0b;">1</div>
+                            <div class="help-step-content">
+                                <h4>Note du gestionnaire (jaune)</h4>
+                                <p>Informations importantes du gestionnaire concernant ce travail specifique. Lisez-les attentivement.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-num" style="background: #10b981;">2</div>
+                            <div class="help-step-content">
+                                <h4>Votre commentaire (vert)</h4>
+                                <p>Zone pour ajouter vos remarques, questions ou informations de prix pour ce travail.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-num" style="background: #1e3a5f;">3</div>
+                            <div class="help-step-content">
+                                <h4>Commentaire global (en bas)</h4>
+                                <p>Section pour vos remarques generales sur l'ensemble de la soumission.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-warning">
+                            <div class="help-warning-title">Important</div>
+                            N'oubliez pas de cliquer sur "Enregistrer le commentaire" pour sauvegarder vos remarques globales.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 6: Visite sur place -->
+                <div class="help-section">
+                    <h3 class="help-section-title"><span class="icon">📍</span> Fonction "A voir sur place"</h3>
+                    <div class="help-text">
+                        <p>Cette fonction vous permet de marquer les travaux que vous devez visiter physiquement avant de soumettre votre offre.</p>
+
+                        <div class="help-step">
+                            <div class="help-step-num">1</div>
+                            <div class="help-step-content">
+                                <h4>Cocher la case</h4>
+                                <p>Cliquez sur la zone rose "A voir sur place" pour marquer un travail. Un badge apparaitra sur la carte.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-num">2</div>
+                            <div class="help-step-content">
+                                <h4>Prendre des photos</h4>
+                                <p>Une fois coche, vous pouvez prendre des photos directement avec votre telephone (jusqu'a 10 par travail).</p>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-num">3</div>
+                            <div class="help-step-content">
+                                <h4>Noter vos mesures</h4>
+                                <p>Utilisez la zone de texte pour noter vos mesures, observations et remarques prises sur le terrain.</p>
+                            </div>
+                        </div>
+
+                        <div class="help-tip">
+                            <div class="help-tip-title">Utilisation sur mobile</div>
+                            Cette fonction est optimisee pour le terrain. Sur votre telephone, le bouton "Prendre photo" ouvrira directement l'appareil photo.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 7: Upload photos et documents -->
+                <div class="help-section">
+                    <h3 class="help-section-title"><span class="icon">📎</span> Ajouter des pieces jointes</h3>
+                    <div class="help-text">
+                        <p>Pour chaque travail, vous pouvez joindre des photos et des documents :</p>
+
+                        <div class="help-step">
+                            <div class="help-step-num" style="background: #0ea5e9;">1</div>
+                            <div class="help-step-content">
+                                <h4>Ajouter des photos</h4>
+                                <p>Cliquez sur "Ajouter photos" pour selectionner plusieurs images depuis votre appareil (jusqu'a 20 par travail).</p>
+                            </div>
+                        </div>
+
+                        <div class="help-step">
+                            <div class="help-step-num" style="background: #0ea5e9;">2</div>
+                            <div class="help-step-content">
+                                <h4>Ajouter des documents</h4>
+                                <p>Cliquez sur "Ajouter documents" pour joindre des fichiers PDF, Word, Excel ou texte (jusqu'a 10 par travail, max 5MB chacun).</p>
+                            </div>
+                        </div>
+
+                        <div class="help-tip">
+                            <div class="help-tip-title">Formats acceptes</div>
+                            <ul style="margin-top: 8px;">
+                                <li><strong>Photos</strong> : JPG, PNG, GIF et autres formats image</li>
+                                <li><strong>Documents</strong> : PDF, DOC, DOCX, XLS, XLSX, TXT</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section 8: Export -->
+                <div class="help-section">
+                    <h3 class="help-section-title"><span class="icon">📄</span> Export et impression</h3>
+                    <div class="help-text">
+                        <p>En bas de page, vous trouverez deux options :</p>
+                        <ul>
+                            <li><strong>Exporter en PDF</strong> - Genere un document PDF avec tous les travaux</li>
+                            <li><strong>Imprimer</strong> - Ouvre la fenetre d'impression de votre navigateur</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Section 8: Sauvegarde -->
+                <div class="help-section">
+                    <h3 class="help-section-title"><span class="icon">💾</span> Sauvegarde automatique</h3>
+                    <div class="help-text">
+                        <div class="help-tip">
+                            <div class="help-tip-title">Bonne nouvelle !</div>
+                            Vos donnees sont sauvegardees automatiquement :
+                            <ul style="margin-top: 10px;">
+                                <li>Les cases "A voir sur place" - sauvegarde immediate</li>
+                                <li>Les photos prises - sauvegarde immediate</li>
+                                <li>Les notes de terrain - sauvegarde quand vous quittez le champ</li>
+                                <li>Commentaires par travail - sauvegarde avec le bouton "Enregistrer"</li>
+                            </ul>
+                        </div>
+                        <p>Vous pouvez fermer le portail et revenir plus tard, toutes vos donnees seront conservees.</p>
+                    </div>
+                </div>
+
+                <!-- Section 9: Support -->
+                <div class="help-section">
+                    <h3 class="help-section-title"><span class="icon">🆘</span> Besoin d'aide ?</h3>
+                    <div class="help-text">
+                        <p>Si vous rencontrez des difficultes ou avez des questions concernant les travaux :</p>
+                        <ul>
+                            <li>Utilisez le champ commentaire pour poser vos questions</li>
+                            <li>Contactez le gestionnaire qui vous a envoye ce lien</li>
+                        </ul>
+
+                        <div class="help-highlight">
+                            <div class="help-highlight-title">Rappel</div>
+                            Ce portail est accessible uniquement via le lien unique qui vous a ete envoye. Conservez ce lien pour pouvoir y revenir.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="photo-modal" id="photoModal" onclick="PortailEntrepreneur.closePhotoModal()">
         <button class="photo-modal-close" onclick="PortailEntrepreneur.closePhotoModal()">&times;</button>
@@ -937,6 +2065,7 @@
             render() {
                 const totalHeures = this.travaux.reduce((sum, t) => sum + (t.estimationHeures || 0), 0);
                 const dateLimite = this.appelData.dateLimite ? new Date(this.appelData.dateLimite) : null;
+                const nbVisites = this.visitesData.filter(v => v?.aVoirSurPlace).length;
 
                 document.getElementById('app').innerHTML = `
                     <header class="portal-header">
@@ -954,6 +2083,10 @@
                                 <div class="header-stat">
                                     <div class="header-stat-num">${totalHeures}h</div>
                                     <div class="header-stat-label">Estimées</div>
+                                </div>
+                                <div class="header-stat" id="header-visites" style="color: ${nbVisites > 0 ? '#fce7f3' : 'inherit'}">
+                                    <div class="header-stat-num">${nbVisites}</div>
+                                    <div class="header-stat-label">📍 Visites</div>
                                 </div>
                             </div>
                         </div>
@@ -1017,6 +2150,14 @@
                                     <option value="hors-jeudi">Hors jeudi</option>
                                 </select>
                             </div>
+                            <div class="filter-group">
+                                <span class="filter-label">Visite sur place</span>
+                                <select class="filter-select" id="filterVisite" onchange="PortailEntrepreneur.filterTravaux()">
+                                    <option value="">Tous</option>
+                                    <option value="oui">À voir sur place</option>
+                                    <option value="non">Sans visite</option>
+                                </select>
+                            </div>
                             <span class="filter-count" id="filterCount">${this.travaux.length} travaux</span>
                         </div>
 
@@ -1061,10 +2202,15 @@
 
                 const hasPhotos = travail.photos && travail.photos.length > 0;
 
+                const aVoirSurPlace = this.visitesData[index]?.aVoirSurPlace || false;
+
                 return `
-                    <div class="travail-card ${hasPhotos ? 'has-photo' : ''}">
+                    <div class="travail-card ${hasPhotos ? 'has-photo' : ''}" data-index="${index}">
                         <div class="travail-header">
                             <span class="travail-ot">${travail.ot || `#${index + 1}`}</span>
+                            <div class="travail-badges">
+                                ${aVoirSurPlace ? '<span class="badge badge-visite">📍 À voir sur place</span>' : ''}
+                            </div>
                         </div>
 
                         <div class="travail-content-wrapper">
@@ -1144,6 +2290,99 @@
                                                   rows="2">${this.commentairesTravaux[index] || ''}</textarea>
                                     </div>
                                 </div>
+
+                                <!-- Case à cocher "À voir sur place" -->
+                                <div class="visite-checkbox-container ${this.visitesData[index]?.aVoirSurPlace ? 'checked' : ''}"
+                                     onclick="PortailEntrepreneur.toggleVisite(${index})"
+                                     id="visite-container-${index}">
+                                    <div class="visite-checkbox">
+                                        <span class="visite-checkbox-check">✓</span>
+                                    </div>
+                                    <span class="visite-icon">📍</span>
+                                    <div>
+                                        <div class="visite-label">À voir sur place</div>
+                                        <div class="visite-sublabel">Cochez si vous devez venir sur site</div>
+                                    </div>
+                                </div>
+
+                                <!-- Section visite (photos + mesures) - visible si coché -->
+                                <div class="visite-section ${this.visitesData[index]?.aVoirSurPlace ? 'show' : ''}" id="visite-section-${index}">
+                                    <div class="visite-section-title">📸 Photos et mesures sur place</div>
+
+                                    <div class="visite-actions">
+                                        <label class="visite-btn" for="visite-photo-input-${index}">
+                                            <span class="visite-btn-icon">📷</span>
+                                            <span class="visite-btn-label">Prendre photo</span>
+                                            <input type="file"
+                                                   id="visite-photo-input-${index}"
+                                                   accept="image/*"
+                                                   capture="environment"
+                                                   multiple
+                                                   style="display:none"
+                                                   onchange="PortailEntrepreneur.ajouterPhotoVisite(${index}, this.files)">
+                                        </label>
+                                    </div>
+
+                                    <!-- Photos prises sur place -->
+                                    <div class="visite-photos-container" id="visite-photos-${index}">
+                                        ${(this.visitesData[index]?.photos || []).length > 0 ? `
+                                            <div class="visite-photos-grid">
+                                                ${(this.visitesData[index]?.photos || []).map((photo, photoIndex) => `
+                                                    <div class="visite-photo-item">
+                                                        <img src="${photo}" class="visite-photo-img" onclick="PortailEntrepreneur.showPhoto('${photo}')">
+                                                        <button class="visite-photo-delete" onclick="PortailEntrepreneur.supprimerPhotoVisite(${index}, ${photoIndex})">×</button>
+                                                    </div>
+                                                `).join('')}
+                                            </div>
+                                        ` : ''}
+                                    </div>
+
+                                    <!-- Zone mesures/notes terrain -->
+                                    <div class="visite-mesures-container">
+                                        <div class="visite-section-title" style="margin-top:15px">📏 Notes et mesures terrain</div>
+                                        <textarea class="visite-mesure-input"
+                                                  id="visite-mesures-${index}"
+                                                  placeholder="Notez vos mesures, observations ou remarques prises sur place..."
+                                                  onchange="PortailEntrepreneur.sauvegarderMesures(${index}, this.value)">${this.visitesData[index]?.mesures || ''}</textarea>
+                                    </div>
+                                </div>
+
+                                <!-- Section upload photos et documents entrepreneur -->
+                                <div class="entrepreneur-uploads-section">
+                                    <div class="uploads-section-title">📎 Vos pièces jointes</div>
+                                    <div class="uploads-row">
+                                        <label class="upload-btn" for="entrepreneur-photos-input-${index}">
+                                            <span class="icon">🖼️</span>
+                                            Ajouter photos
+                                            <input type="file"
+                                                   id="entrepreneur-photos-input-${index}"
+                                                   accept="image/*"
+                                                   multiple
+                                                   style="display:none"
+                                                   onchange="PortailEntrepreneur.ajouterPhotosEntrepreneur(${index}, this.files)">
+                                        </label>
+                                        <label class="upload-btn" for="entrepreneur-docs-input-${index}">
+                                            <span class="icon">📄</span>
+                                            Ajouter documents
+                                            <input type="file"
+                                                   id="entrepreneur-docs-input-${index}"
+                                                   accept=".pdf,.doc,.docx,.xls,.xlsx,.txt"
+                                                   multiple
+                                                   style="display:none"
+                                                   onchange="PortailEntrepreneur.ajouterDocsEntrepreneur(${index}, this.files)">
+                                        </label>
+                                    </div>
+
+                                    <!-- Photos uploadées -->
+                                    <div id="entrepreneur-photos-${index}">
+                                        ${this.renderEntrepreneurPhotos(index)}
+                                    </div>
+
+                                    <!-- Documents uploadés -->
+                                    <div id="entrepreneur-docs-${index}">
+                                        ${this.renderEntrepreneurDocs(index)}
+                                    </div>
+                                </div>
                             </div>
 
                             <!-- Colonne droite : photo -->
@@ -1169,6 +2408,8 @@
 
             commentaireEntrepreneur: '',
             commentairesTravaux: [],
+            visitesData: [], // Données des visites sur place (aVoirSurPlace, photos, mesures)
+            uploadsData: [], // Données des uploads (photos et documents par travail)
 
             async loadCommentaireEntrepreneur() {
                 try {
@@ -1180,6 +2421,8 @@
                         const data = doc.data();
                         this.commentaireEntrepreneur = data.commentaire || '';
                         this.commentairesTravaux = data.commentairesTravaux || [];
+                        this.visitesData = data.visitesData || [];
+                        this.uploadsData = data.uploadsData || [];
                     }
                 } catch (e) {
                     console.log('Pas de commentaire existant');
@@ -1205,6 +2448,7 @@
                         .set({
                             commentaire: commentaireGlobal,
                             commentairesTravaux: commentairesTravaux,
+                            visitesData: this.visitesData,
                             entreprise: this.entreprise,
                             dateModification: new Date().toISOString()
                         });
@@ -1230,6 +2474,24 @@
 
             closePhotoModal() {
                 document.getElementById('photoModal').classList.remove('show');
+            },
+
+            // ========== FONCTIONS AIDE ==========
+
+            openHelp() {
+                document.getElementById('helpModal').classList.add('show');
+                document.body.style.overflow = 'hidden';
+            },
+
+            closeHelp() {
+                document.getElementById('helpModal').classList.remove('show');
+                document.body.style.overflow = '';
+            },
+
+            closeHelpOnBackdrop(event) {
+                if (event.target === document.getElementById('helpModal')) {
+                    this.closeHelp();
+                }
             },
 
             exportPDF() {
@@ -1282,6 +2544,7 @@
                 const equipementVal = document.getElementById('filterEquipement')?.value || '';
                 const typeVal = document.getElementById('filterType')?.value || '';
                 const jourVal = document.getElementById('filterJour')?.value || '';
+                const visiteVal = document.getElementById('filterVisite')?.value || '';
 
                 let visibleCount = 0;
                 const cards = document.querySelectorAll('.travail-card');
@@ -1305,7 +2568,13 @@
                     // Filtre jour (jeudi/hors-jeudi)
                     const matchJour = !jourVal || travail.jourArret === jourVal;
 
-                    const visible = matchSearch && matchEquipement && matchType && matchJour;
+                    // Filtre visite sur place
+                    const hasVisite = this.visitesData[index]?.aVoirSurPlace || false;
+                    const matchVisite = !visiteVal ||
+                        (visiteVal === 'oui' && hasVisite) ||
+                        (visiteVal === 'non' && !hasVisite);
+
+                    const visible = matchSearch && matchEquipement && matchType && matchJour && matchVisite;
                     card.style.display = visible ? '' : 'none';
                     if (visible) visibleCount++;
                 });
@@ -1314,6 +2583,397 @@
                 const countEl = document.getElementById('filterCount');
                 if (countEl) {
                     countEl.textContent = `${visibleCount} / ${this.travaux.length} travaux`;
+                }
+            },
+
+            // ========== FONCTIONS VISITE SUR PLACE ==========
+
+            async toggleVisite(index) {
+                // Initialiser si nécessaire
+                if (!this.visitesData[index]) {
+                    this.visitesData[index] = { aVoirSurPlace: false, photos: [], mesures: '' };
+                }
+
+                // Toggle
+                this.visitesData[index].aVoirSurPlace = !this.visitesData[index].aVoirSurPlace;
+
+                // Mettre à jour l'UI
+                const container = document.getElementById(`visite-container-${index}`);
+                const section = document.getElementById(`visite-section-${index}`);
+                const card = document.querySelector(`.travail-card[data-index="${index}"]`);
+
+                if (this.visitesData[index].aVoirSurPlace) {
+                    container?.classList.add('checked');
+                    section?.classList.add('show');
+                    // Ajouter le badge dans le header de la carte
+                    const badgesDiv = card?.querySelector('.travail-badges');
+                    if (badgesDiv && !badgesDiv.querySelector('.badge-visite')) {
+                        badgesDiv.innerHTML = '<span class="badge badge-visite">📍 À voir sur place</span>' + badgesDiv.innerHTML;
+                    }
+                } else {
+                    container?.classList.remove('checked');
+                    section?.classList.remove('show');
+                    // Retirer le badge
+                    const badge = card?.querySelector('.badge-visite');
+                    if (badge) badge.remove();
+                }
+
+                // Mettre à jour le compteur dans le header
+                this.updateVisitesCounter();
+
+                // Sauvegarder
+                await this.sauvegarderVisitesData();
+            },
+
+            updateVisitesCounter() {
+                const nbVisites = this.visitesData.filter(v => v?.aVoirSurPlace).length;
+                const headerVisites = document.getElementById('header-visites');
+                if (headerVisites) {
+                    headerVisites.style.color = nbVisites > 0 ? '#fce7f3' : 'inherit';
+                    headerVisites.querySelector('.header-stat-num').textContent = nbVisites;
+                }
+            },
+
+            async ajouterPhotoVisite(index, files) {
+                if (!files || files.length === 0) return;
+
+                // Initialiser si nécessaire
+                if (!this.visitesData[index]) {
+                    this.visitesData[index] = { aVoirSurPlace: true, photos: [], mesures: '' };
+                }
+                if (!this.visitesData[index].photos) {
+                    this.visitesData[index].photos = [];
+                }
+
+                // Compresser et ajouter chaque photo
+                for (const file of files) {
+                    if (this.visitesData[index].photos.length >= 10) {
+                        this.showToast('Maximum 10 photos par travail', 'error');
+                        break;
+                    }
+
+                    try {
+                        const compressed = await this.compressImage(file, 1200, 0.8);
+                        this.visitesData[index].photos.push(compressed);
+                    } catch (error) {
+                        console.error('Erreur compression:', error);
+                    }
+                }
+
+                // Mettre à jour l'affichage des photos
+                this.updateVisitePhotosUI(index);
+
+                // Sauvegarder
+                await this.sauvegarderVisitesData();
+                this.showToast('📷 Photo(s) ajoutée(s)!');
+
+                // Reset input
+                document.getElementById(`visite-photo-input-${index}`).value = '';
+            },
+
+            async supprimerPhotoVisite(index, photoIndex) {
+                if (!this.visitesData[index]?.photos) return;
+
+                this.visitesData[index].photos.splice(photoIndex, 1);
+
+                // Mettre à jour l'affichage
+                this.updateVisitePhotosUI(index);
+
+                // Sauvegarder
+                await this.sauvegarderVisitesData();
+                this.showToast('Photo supprimée');
+            },
+
+            updateVisitePhotosUI(index) {
+                const container = document.getElementById(`visite-photos-${index}`);
+                if (!container) return;
+
+                const photos = this.visitesData[index]?.photos || [];
+
+                if (photos.length === 0) {
+                    container.innerHTML = '';
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="visite-photos-grid">
+                        ${photos.map((photo, photoIndex) => `
+                            <div class="visite-photo-item">
+                                <img src="${photo}" class="visite-photo-img" onclick="PortailEntrepreneur.showPhoto('${photo}')">
+                                <button class="visite-photo-delete" onclick="PortailEntrepreneur.supprimerPhotoVisite(${index}, ${photoIndex})">×</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            async sauvegarderMesures(index, value) {
+                // Initialiser si nécessaire
+                if (!this.visitesData[index]) {
+                    this.visitesData[index] = { aVoirSurPlace: true, photos: [], mesures: '' };
+                }
+
+                this.visitesData[index].mesures = value;
+
+                // Sauvegarder
+                await this.sauvegarderVisitesData();
+            },
+
+            async sauvegarderVisitesData() {
+                try {
+                    await firebase.firestore()
+                        .collection('commentaires_entrepreneurs')
+                        .doc(this.appelId)
+                        .set({
+                            commentaire: this.commentaireEntrepreneur,
+                            commentairesTravaux: this.commentairesTravaux,
+                            visitesData: this.visitesData,
+                            entreprise: this.entreprise,
+                            dateModification: new Date().toISOString()
+                        }, { merge: true });
+                } catch (error) {
+                    console.error('Erreur sauvegarde visites:', error);
+                    this.showToast('❌ Erreur de sauvegarde', 'error');
+                }
+            },
+
+            compressImage(file, maxSize = 1200, quality = 0.8) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+
+                            // Redimensionner si nécessaire
+                            if (width > maxSize || height > maxSize) {
+                                if (width > height) {
+                                    height = (height / width) * maxSize;
+                                    width = maxSize;
+                                } else {
+                                    width = (width / height) * maxSize;
+                                    height = maxSize;
+                                }
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            resolve(canvas.toDataURL('image/jpeg', quality));
+                        };
+                        img.onerror = reject;
+                        img.src = e.target.result;
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            },
+
+            // ========== FONCTIONS UPLOAD PHOTOS/DOCUMENTS ENTREPRENEUR ==========
+
+            renderEntrepreneurPhotos(index) {
+                const photos = this.uploadsData[index]?.photos || [];
+                if (photos.length === 0) return '';
+
+                return `
+                    <div class="entrepreneur-photos-grid">
+                        ${photos.map((photo, photoIndex) => `
+                            <div class="entrepreneur-photo-item">
+                                <img src="${photo}" class="entrepreneur-photo-img" onclick="PortailEntrepreneur.showPhoto('${photo}')">
+                                <button class="entrepreneur-photo-delete" onclick="PortailEntrepreneur.supprimerPhotoEntrepreneur(${index}, ${photoIndex})">×</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            renderEntrepreneurDocs(index) {
+                const docs = this.uploadsData[index]?.documents || [];
+                if (docs.length === 0) return '';
+
+                return `
+                    <div class="entrepreneur-docs-list">
+                        ${docs.map((doc, docIndex) => `
+                            <div class="entrepreneur-doc-item">
+                                <span class="entrepreneur-doc-icon">${this.getDocIcon(doc.name)}</span>
+                                <div class="entrepreneur-doc-info">
+                                    <div class="entrepreneur-doc-name">${doc.name}</div>
+                                    <div class="entrepreneur-doc-size">${this.formatFileSize(doc.size)}</div>
+                                </div>
+                                <a href="${doc.data}" download="${doc.name}" class="entrepreneur-doc-view">Télécharger</a>
+                                <button class="entrepreneur-doc-delete" onclick="PortailEntrepreneur.supprimerDocEntrepreneur(${index}, ${docIndex})">Supprimer</button>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            },
+
+            getDocIcon(filename) {
+                const ext = filename.split('.').pop().toLowerCase();
+                const icons = {
+                    'pdf': '📕',
+                    'doc': '📘',
+                    'docx': '📘',
+                    'xls': '📗',
+                    'xlsx': '📗',
+                    'txt': '📄'
+                };
+                return icons[ext] || '📄';
+            },
+
+            formatFileSize(bytes) {
+                if (bytes < 1024) return bytes + ' B';
+                if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+                return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+            },
+
+            async ajouterPhotosEntrepreneur(index, files) {
+                if (!files || files.length === 0) return;
+
+                // Initialiser si nécessaire
+                if (!this.uploadsData[index]) {
+                    this.uploadsData[index] = { photos: [], documents: [] };
+                }
+                if (!this.uploadsData[index].photos) {
+                    this.uploadsData[index].photos = [];
+                }
+
+                // Compresser et ajouter chaque photo
+                for (const file of files) {
+                    if (this.uploadsData[index].photos.length >= 20) {
+                        this.showToast('Maximum 20 photos par travail', 'error');
+                        break;
+                    }
+
+                    try {
+                        const compressed = await this.compressImage(file, 1200, 0.8);
+                        this.uploadsData[index].photos.push(compressed);
+                    } catch (error) {
+                        console.error('Erreur compression:', error);
+                    }
+                }
+
+                // Mettre à jour l'affichage
+                this.updateEntrepreneurPhotosUI(index);
+
+                // Sauvegarder
+                await this.sauvegarderUploadsData();
+                this.showToast(`🖼️ ${files.length} photo(s) ajoutée(s)!`);
+
+                // Reset input
+                document.getElementById(`entrepreneur-photos-input-${index}`).value = '';
+            },
+
+            async supprimerPhotoEntrepreneur(index, photoIndex) {
+                if (!this.uploadsData[index]?.photos) return;
+
+                this.uploadsData[index].photos.splice(photoIndex, 1);
+                this.updateEntrepreneurPhotosUI(index);
+                await this.sauvegarderUploadsData();
+                this.showToast('Photo supprimée');
+            },
+
+            updateEntrepreneurPhotosUI(index) {
+                const container = document.getElementById(`entrepreneur-photos-${index}`);
+                if (container) {
+                    container.innerHTML = this.renderEntrepreneurPhotos(index);
+                }
+            },
+
+            async ajouterDocsEntrepreneur(index, files) {
+                if (!files || files.length === 0) return;
+
+                // Initialiser si nécessaire
+                if (!this.uploadsData[index]) {
+                    this.uploadsData[index] = { photos: [], documents: [] };
+                }
+                if (!this.uploadsData[index].documents) {
+                    this.uploadsData[index].documents = [];
+                }
+
+                // Lire et ajouter chaque document
+                for (const file of files) {
+                    if (this.uploadsData[index].documents.length >= 10) {
+                        this.showToast('Maximum 10 documents par travail', 'error');
+                        break;
+                    }
+
+                    // Limiter la taille (5MB max par fichier)
+                    if (file.size > 5 * 1024 * 1024) {
+                        this.showToast(`${file.name} trop volumineux (max 5MB)`, 'error');
+                        continue;
+                    }
+
+                    try {
+                        const base64 = await this.readFileAsBase64(file);
+                        this.uploadsData[index].documents.push({
+                            name: file.name,
+                            size: file.size,
+                            type: file.type,
+                            data: base64
+                        });
+                    } catch (error) {
+                        console.error('Erreur lecture fichier:', error);
+                    }
+                }
+
+                // Mettre à jour l'affichage
+                this.updateEntrepreneurDocsUI(index);
+
+                // Sauvegarder
+                await this.sauvegarderUploadsData();
+                this.showToast(`📄 ${files.length} document(s) ajouté(s)!`);
+
+                // Reset input
+                document.getElementById(`entrepreneur-docs-input-${index}`).value = '';
+            },
+
+            readFileAsBase64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(file);
+                });
+            },
+
+            async supprimerDocEntrepreneur(index, docIndex) {
+                if (!this.uploadsData[index]?.documents) return;
+
+                this.uploadsData[index].documents.splice(docIndex, 1);
+                this.updateEntrepreneurDocsUI(index);
+                await this.sauvegarderUploadsData();
+                this.showToast('Document supprimé');
+            },
+
+            updateEntrepreneurDocsUI(index) {
+                const container = document.getElementById(`entrepreneur-docs-${index}`);
+                if (container) {
+                    container.innerHTML = this.renderEntrepreneurDocs(index);
+                }
+            },
+
+            async sauvegarderUploadsData() {
+                try {
+                    await firebase.firestore()
+                        .collection('commentaires_entrepreneurs')
+                        .doc(this.appelId)
+                        .set({
+                            commentaire: this.commentaireEntrepreneur,
+                            commentairesTravaux: this.commentairesTravaux,
+                            visitesData: this.visitesData,
+                            uploadsData: this.uploadsData,
+                            entreprise: this.entreprise,
+                            dateModification: new Date().toISOString()
+                        }, { merge: true });
+                } catch (error) {
+                    console.error('Erreur sauvegarde uploads:', error);
+                    this.showToast('❌ Erreur de sauvegarde', 'error');
                 }
             }
         };

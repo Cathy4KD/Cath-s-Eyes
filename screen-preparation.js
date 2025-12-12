@@ -6061,23 +6061,25 @@ const ScreenPreparation = {
                                     <table class="planifier-table table-soumission" id="tableTravauxEntrepreneur">
                                         <thead>
                                             <tr>
-                                                <th>OT</th>
-                                                <th>Description</th>
+                                                <th style="width: 70px;">OT</th>
+                                                <th style="width: 180px;">Description</th>
                                                 <th>Équipement</th>
-                                                <th>Heures</th>
+                                                <th style="width: 60px;">Heures</th>
                                                 <th style="width: 100px;">Type</th>
                                                 <th style="width: 110px;">Jour</th>
-                                                <th style="width: 150px;">Commentaire</th>
-                                                <th style="width: 80px;">Photos</th>
+                                                <th style="width: 140px;">Commentaire</th>
+                                                <th style="width: 70px;">Photos</th>
+                                                <th style="width: 70px;">Docs</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             ${travauxAffiches.length === 0 ? `
-                                                <tr><td colspan="8" class="empty-msg">Aucun travail pour cette entreprise</td></tr>
+                                                <tr><td colspan="9" class="empty-msg">Aucun travail pour cette entreprise</td></tr>
                                             ` : travauxAffiches.map((t, idx) => {
                                                 const travailKey = this.getTravailSoumissionKey(t);
                                                 const soumData = this.getSoumissionData(travailKey);
                                                 const photosCount = soumData.photos?.length || 0;
+                                                const docsCount = soumData.documents?.length || 0;
                                                 return `
                                                 <tr data-travail-key="${travailKey}">
                                                     <td><strong>${t.ot || '-'}</strong></td>
@@ -6107,7 +6109,7 @@ const ScreenPreparation = {
                                                     <td>
                                                         <input type="text" class="mini-input commentaire-input"
                                                                value="${soumData.commentaire || ''}"
-                                                               placeholder="Commentaire..."
+                                                               placeholder="..."
                                                                onchange="ScreenPreparation.updateSoumissionCommentaire('${travailKey}', this.value)">
                                                     </td>
                                                     <td class="center">
@@ -6115,6 +6117,13 @@ const ScreenPreparation = {
                                                                 onclick="ScreenPreparation.gererPhotosSoumission('${travailKey}')"
                                                                 title="${photosCount > 0 ? photosCount + ' photo(s)' : 'Ajouter des photos'}">
                                                             📷 ${photosCount > 0 ? photosCount : '+'}
+                                                        </button>
+                                                    </td>
+                                                    <td class="center">
+                                                        <button class="btn-photo ${docsCount > 0 ? 'has-photos' : ''}"
+                                                                onclick="ScreenPreparation.gererDocsSoumission('${travailKey}')"
+                                                                title="${docsCount > 0 ? docsCount + ' document(s)' : 'Ajouter des documents'}">
+                                                            📄 ${docsCount > 0 ? docsCount : '+'}
                                                         </button>
                                                     </td>
                                                 </tr>
@@ -6323,7 +6332,7 @@ const ScreenPreparation = {
 
                             <div class="portail-options">
                                 <label class="portail-checkbox">
-                                    <input type="checkbox" name="inclurePlan" ${DataManager.data.planConfig?.imageURL ? 'checked' : ''}>
+                                    <input type="checkbox" name="inclurePlan" ${(DataManager.data.processus?.planConfig?.imageURL || DataManager.data.processus?.planConfig?.imageData) ? 'checked' : ''}>
                                     <span class="checkmark"></span>
                                     🗺️ Inclure le plan de l'usine
                                 </label>
@@ -6406,8 +6415,11 @@ const ScreenPreparation = {
         };
 
         // Ajouter le plan si demandé
-        if (appelData.inclurePlan && DataManager.data.planConfig?.imageURL) {
-            appelData.planImage = DataManager.data.planConfig.imageURL;
+        if (appelData.inclurePlan) {
+            const planImage = DataManager.data.processus?.planConfig?.imageURL || DataManager.data.processus?.planConfig?.imageData;
+            if (planImage) {
+                appelData.planImage = planImage;
+            }
         }
 
         try {
@@ -6602,7 +6614,7 @@ const ScreenPreparation = {
                             <button class="btn btn-primary" onclick="document.getElementById('photoInput').click()">
                                 📷 Ajouter des photos
                             </button>
-                            <p class="hint">Max 5 photos, compression automatique</p>
+                            <p class="hint">Max 10 photos, compression automatique</p>
                         </div>
                     </div>
                     <div class="overlay-footer">
@@ -6617,17 +6629,21 @@ const ScreenPreparation = {
     },
 
     async ajouterPhotosSoumission(travailKey, files) {
+        if (!files || files.length === 0) return;
+
         const soumData = this.getSoumissionData(travailKey);
         let photos = soumData.photos || [];
 
-        if (photos.length + files.length > 5) {
-            App.showToast('Maximum 5 photos par travail', 'error');
+        // Calculer combien de photos on peut ajouter
+        const placesDisponibles = 10 - photos.length;
+        if (placesDisponibles <= 0) {
+            App.showToast('Maximum 10 photos par travail', 'error');
             return;
         }
 
-        for (let file of files) {
-            if (photos.length >= 5) break;
+        const filesToAdd = Array.from(files).slice(0, placesDisponibles);
 
+        for (let file of filesToAdd) {
             try {
                 const compressed = await this.compressImage(file, 800, 0.7);
                 photos.push(compressed);
@@ -6644,6 +6660,8 @@ const ScreenPreparation = {
 
         // Mettre à jour le bouton dans le tableau
         this.updatePhotoBtnCount(travailKey, photos.length);
+
+        App.showToast(`${filesToAdd.length} photo(s) ajoutée(s)`, 'success');
     },
 
     supprimerPhotoSoumission(travailKey, index) {
@@ -6678,6 +6696,159 @@ const ScreenPreparation = {
             </div>
         `;
         document.body.insertAdjacentHTML('beforeend', html);
+    },
+
+    // ========== GESTION DOCUMENTS SOUMISSION ==========
+
+    gererDocsSoumission(travailKey) {
+        const soumData = this.getSoumissionData(travailKey);
+        const docs = soumData.documents || [];
+
+        const html = `
+            <div class="overlay-modal" id="docsSoumissionModal">
+                <div class="overlay-content" style="max-width: 600px;">
+                    <div class="overlay-header">
+                        <h3>📄 Documents du travail</h3>
+                        <button class="btn-close" onclick="document.getElementById('docsSoumissionModal').remove()">×</button>
+                    </div>
+                    <div class="overlay-body">
+                        <div class="docs-list-edit" id="docsListEdit">
+                            ${docs.length === 0 ? '<p class="empty-msg">Aucun document</p>' : ''}
+                            ${docs.map((d, i) => `
+                                <div class="doc-item-edit" style="display: flex; align-items: center; gap: 10px; padding: 10px; background: #f8fafc; border-radius: 8px; margin-bottom: 8px;">
+                                    <span style="font-size: 1.5rem;">${this.getDocIconSoum(d.name)}</span>
+                                    <div style="flex: 1; min-width: 0;">
+                                        <div style="font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${d.name}</div>
+                                        <div style="font-size: 0.8rem; color: #64748b;">${this.formatFileSizeSoum(d.size)}</div>
+                                    </div>
+                                    <a href="${d.data}" download="${d.name}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">Télécharger</a>
+                                    <button class="btn btn-danger" style="padding: 6px 12px; font-size: 0.8rem;" onclick="ScreenPreparation.supprimerDocSoumission('${travailKey}', ${i})">×</button>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="doc-upload-zone" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                            <input type="file" id="docInput" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt" multiple style="display:none"
+                                   onchange="ScreenPreparation.ajouterDocsSoumission('${travailKey}', this.files)">
+                            <button class="btn btn-primary" onclick="document.getElementById('docInput').click()">
+                                📄 Ajouter des documents
+                            </button>
+                            <p class="hint">PDF, Word, Excel, TXT - Max 5 documents, 5MB chacun</p>
+                        </div>
+                    </div>
+                    <div class="overlay-footer">
+                        <button class="btn btn-primary" onclick="document.getElementById('docsSoumissionModal').remove()">
+                            Terminé
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', html);
+    },
+
+    async ajouterDocsSoumission(travailKey, files) {
+        if (!files || files.length === 0) return;
+
+        const soumData = this.getSoumissionData(travailKey);
+        let docs = soumData.documents || [];
+
+        const placesDisponibles = 5 - docs.length;
+        if (placesDisponibles <= 0) {
+            App.showToast('Maximum 5 documents par travail', 'error');
+            return;
+        }
+
+        const filesToAdd = Array.from(files).slice(0, placesDisponibles);
+        let addedCount = 0;
+
+        for (let file of filesToAdd) {
+            // Vérifier la taille (max 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                App.showToast(`${file.name} trop volumineux (max 5MB)`, 'error');
+                continue;
+            }
+
+            try {
+                const base64 = await this.readFileAsBase64Soum(file);
+                docs.push({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type,
+                    data: base64
+                });
+                addedCount++;
+            } catch (e) {
+                console.error('Erreur lecture fichier:', e);
+            }
+        }
+
+        this.saveSoumissionData(travailKey, { documents: docs });
+
+        // Rafraîchir le modal
+        document.getElementById('docsSoumissionModal')?.remove();
+        this.gererDocsSoumission(travailKey);
+
+        // Mettre à jour le bouton dans le tableau
+        this.updateDocBtnCount(travailKey, docs.length);
+
+        if (addedCount > 0) {
+            App.showToast(`${addedCount} document(s) ajouté(s)`, 'success');
+        }
+    },
+
+    readFileAsBase64Soum(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    },
+
+    supprimerDocSoumission(travailKey, index) {
+        const soumData = this.getSoumissionData(travailKey);
+        let docs = soumData.documents || [];
+        docs.splice(index, 1);
+        this.saveSoumissionData(travailKey, { documents: docs });
+
+        // Rafraîchir le modal
+        document.getElementById('docsSoumissionModal')?.remove();
+        this.gererDocsSoumission(travailKey);
+
+        // Mettre à jour le bouton dans le tableau
+        this.updateDocBtnCount(travailKey, docs.length);
+    },
+
+    updateDocBtnCount(travailKey, count) {
+        const row = document.querySelector(`tr[data-travail-key="${travailKey}"]`);
+        if (row) {
+            const btns = row.querySelectorAll('.btn-photo');
+            // Le bouton docs est le deuxième
+            const btn = btns[1];
+            if (btn) {
+                btn.textContent = `📄 ${count > 0 ? count : '+'}`;
+                btn.classList.toggle('has-photos', count > 0);
+            }
+        }
+    },
+
+    getDocIconSoum(filename) {
+        const ext = filename.split('.').pop().toLowerCase();
+        const icons = {
+            'pdf': '📕',
+            'doc': '📘',
+            'docx': '📘',
+            'xls': '📗',
+            'xlsx': '📗',
+            'txt': '📄'
+        };
+        return icons[ext] || '📄';
+    },
+
+    formatFileSizeSoum(bytes) {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     },
 
     async compressImage(file, maxSize = 800, quality = 0.7) {
@@ -6738,15 +6909,18 @@ const ScreenPreparation = {
                 localisation: t.localisation || t.secteur,
                 conditions: t.conditions || '',
                 photos: formData.get('inclurePhotos') === 'on' ? (t.photos || []) : [],
-                positionPlan: DataManager.data.planConfig?.positions?.[t.equipement] || null
+                positionPlan: DataManager.data.processus?.planConfig?.positions?.[t.equipement] || null
             })),
             dateCreation: new Date().toISOString(),
             soumissionRecue: false
         };
 
         // Ajouter le plan si demandé
-        if (appelData.inclurePlan && DataManager.data.planConfig?.imageURL) {
-            appelData.planImage = DataManager.data.planConfig.imageURL;
+        if (appelData.inclurePlan) {
+            const planImage = DataManager.data.processus?.planConfig?.imageURL || DataManager.data.processus?.planConfig?.imageData;
+            if (planImage) {
+                appelData.planImage = planImage;
+            }
         }
 
         try {
