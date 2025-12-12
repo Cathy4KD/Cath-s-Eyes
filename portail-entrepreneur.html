@@ -299,122 +299,151 @@
             flex-wrap: wrap;
         }
 
-        /* Ligne unique compacte pour calculateur */
-        .bilan-ligne-unique {
+        /* Blocs compacts pour calculateur */
+        .bilan-total-badge {
+            background: #059669;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .bilan-blocs-row {
             display: flex;
-            align-items: center;
-            gap: 8px;
-            background: white;
-            padding: 10px 15px;
-            border-radius: 10px;
+            gap: 12px;
+            margin-top: 10px;
             flex-wrap: wrap;
         }
 
-        .bilan-bloc {
+        .bilan-bloc-compact {
+            background: white;
+            border-radius: 8px;
+            padding: 10px 12px;
+            flex: 1;
+            min-width: 200px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .bilan-bloc-compact.bilan-bloc-aa {
+            border-left: 3px solid #7c3aed;
+        }
+
+        .bilan-bloc-compact.bilan-bloc-tpaa {
+            border-left: 3px solid #2563eb;
+        }
+
+        .bilan-bloc-compact.bilan-bloc-mixte {
+            border-left: 3px solid #f59e0b;
+            flex: 0.5;
+            min-width: 120px;
+        }
+
+        .bloc-header-aa, .bloc-header-tpaa, .bloc-header-mixte {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .bloc-titre {
+            font-weight: 700;
+            font-size: 0.85rem;
+            color: #374151;
+        }
+
+        .bloc-heures {
+            font-weight: 800;
+            font-size: 1rem;
+        }
+
+        .bloc-header-aa .bloc-heures { color: #7c3aed; }
+        .bloc-header-tpaa .bloc-heures { color: #2563eb; }
+        .bloc-header-mixte .bloc-heures { color: #f59e0b; }
+
+        .bloc-controls {
             display: flex;
             align-items: center;
             gap: 6px;
+            flex-wrap: wrap;
         }
 
-        .bilan-bloc-label {
-            font-size: 0.75rem;
-            color: #64748b;
-            font-weight: 600;
-        }
-
-        .bilan-bloc-value {
-            font-size: 1rem;
-            font-weight: 800;
-        }
-
-        .bilan-bloc-total .bilan-bloc-value {
-            color: #059669;
-            font-size: 1.1rem;
-        }
-
-        .bilan-bloc-aa .bilan-bloc-value {
-            color: #7c3aed;
-        }
-
-        .bilan-bloc-tpaa .bilan-bloc-value {
-            color: #2563eb;
-        }
-
-        .bilan-bloc-mixte .bilan-bloc-value {
-            color: #f59e0b;
-        }
-
-        .bilan-bloc-result {
-            background: #1e293b;
-            color: white;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-weight: 700;
-            font-size: 0.85rem;
-        }
-
-        .bilan-sep-vertical {
-            width: 1px;
-            height: 30px;
-            background: #e2e8f0;
-        }
-
-        .bilan-mini-input {
-            width: 40px;
-            padding: 3px 5px;
+        .bloc-input {
+            width: 42px;
+            padding: 4px 6px;
             border: 2px solid #e2e8f0;
-            border-radius: 4px;
-            font-size: 0.85rem;
+            border-radius: 5px;
+            font-size: 0.9rem;
             font-weight: 700;
             text-align: center;
         }
 
-        .bilan-mini-input:focus {
+        .bloc-input:focus {
             outline: none;
             border-color: #0ea5e9;
         }
 
-        .bilan-duree-mini {
-            display: flex;
-            gap: 2px;
+        .bloc-label {
+            font-size: 0.75rem;
+            color: #64748b;
         }
 
-        .duree-btn-mini {
-            padding: 3px 6px;
+        .bloc-duree {
+            display: flex;
+            gap: 3px;
+        }
+
+        .btn-duree {
+            padding: 4px 7px;
             border: 1px solid #e2e8f0;
             background: white;
-            border-radius: 3px;
-            font-size: 0.7rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
             font-weight: 600;
             cursor: pointer;
             color: #64748b;
         }
 
-        .duree-btn-mini:hover {
+        .btn-duree:hover {
             border-color: #94a3b8;
         }
 
-        .duree-btn-mini.active-aa {
+        .btn-duree.active-aa {
             border-color: #7c3aed;
             background: #7c3aed;
             color: white;
         }
 
-        .duree-btn-mini.active-tpaa {
+        .btn-duree.active-tpaa {
             border-color: #2563eb;
             background: #2563eb;
             color: white;
         }
 
-        @media (max-width: 768px) {
-            .bilan-ligne-unique {
+        .bloc-result-aa, .bloc-result-tpaa {
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: white;
+            margin-left: auto;
+        }
+
+        .bloc-result-aa {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+        }
+
+        .bloc-result-tpaa {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        }
+
+        @media (max-width: 600px) {
+            .bilan-blocs-row {
                 flex-direction: column;
-                align-items: flex-start;
             }
 
-            .bilan-sep-vertical {
-                width: 100%;
-                height: 1px;
+            .bilan-bloc-compact {
+                min-width: 100%;
             }
         }
 
@@ -2979,57 +3008,58 @@
                             </div>
                         </div>
 
-                        <!-- Bilan des heures - tout sur une ligne -->
+                        <!-- Bilan des heures -->
                         <div class="bilan-heures">
                             <div class="bilan-heures-title">
                                 <span>Calculateur de charge de travail</span>
+                                <span class="bilan-total-badge">${totalHeures}h total</span>
                             </div>
 
-                            <!-- Ligne unique compacte -->
-                            <div class="bilan-ligne-unique">
-                                <!-- Total -->
-                                <div class="bilan-bloc bilan-bloc-total">
-                                    <span class="bilan-bloc-label">TOTAL</span>
-                                    <span class="bilan-bloc-value">${totalHeures}h</span>
+                            <!-- Deux blocs compacts côte à côte -->
+                            <div class="bilan-blocs-row">
+                                <!-- Bloc AA -->
+                                <div class="bilan-bloc-compact bilan-bloc-aa">
+                                    <div class="bloc-header-aa">
+                                        <span class="bloc-titre">Arrêt Annuel</span>
+                                        <span class="bloc-heures">${heuresAA}h</span>
+                                    </div>
+                                    <div class="bloc-controls">
+                                        <input type="number" class="bloc-input" id="bilanTechAA" value="1" min="1" max="50" onchange="PortailEntrepreneur.calculerBilan()">
+                                        <span class="bloc-label">tech</span>
+                                        <div class="bloc-duree" id="dureeAA">
+                                            <button class="btn-duree active-aa" data-duree="8" onclick="PortailEntrepreneur.setDureeJour('AA', 8)">8h</button>
+                                            <button class="btn-duree" data-duree="10" onclick="PortailEntrepreneur.setDureeJour('AA', 10)">10h</button>
+                                            <button class="btn-duree" data-duree="12" onclick="PortailEntrepreneur.setDureeJour('AA', 12)">12h</button>
+                                        </div>
+                                        <span class="bloc-result-aa" id="bilanJourneesAA">${Math.ceil(heuresAA / 8)}j</span>
+                                    </div>
                                 </div>
 
-                                <div class="bilan-sep-vertical"></div>
-
-                                <!-- AA -->
-                                <div class="bilan-bloc bilan-bloc-aa">
-                                    <span class="bilan-bloc-label">AA</span>
-                                    <span class="bilan-bloc-value">${heuresAA}h</span>
-                                    <input type="number" class="bilan-mini-input" id="bilanTechAA" value="1" min="1" max="50" onchange="PortailEntrepreneur.calculerBilan()" title="Nb techniciens">
-                                    <span class="bilan-bloc-label">tech</span>
-                                    <div class="bilan-duree-mini" id="dureeAA">
-                                        <button class="duree-btn-mini active-aa" data-duree="8" onclick="PortailEntrepreneur.setDureeJour('AA', 8)">8h</button>
-                                        <button class="duree-btn-mini" data-duree="10" onclick="PortailEntrepreneur.setDureeJour('AA', 10)">10h</button>
-                                        <button class="duree-btn-mini" data-duree="12" onclick="PortailEntrepreneur.setDureeJour('AA', 12)">12h</button>
+                                <!-- Bloc TPAA -->
+                                <div class="bilan-bloc-compact bilan-bloc-tpaa">
+                                    <div class="bloc-header-tpaa">
+                                        <span class="bloc-titre">TPAA</span>
+                                        <span class="bloc-heures">${heuresTPAA}h</span>
                                     </div>
-                                    <span class="bilan-bloc-result" id="bilanJourneesAA">${Math.ceil(heuresAA / 8)}j</span>
-                                </div>
-
-                                <div class="bilan-sep-vertical"></div>
-
-                                <!-- TPAA -->
-                                <div class="bilan-bloc bilan-bloc-tpaa">
-                                    <span class="bilan-bloc-label">TPAA</span>
-                                    <span class="bilan-bloc-value">${heuresTPAA}h</span>
-                                    <input type="number" class="bilan-mini-input" id="bilanTechTPAA" value="1" min="1" max="50" onchange="PortailEntrepreneur.calculerBilan()" title="Nb techniciens">
-                                    <span class="bilan-bloc-label">tech</span>
-                                    <div class="bilan-duree-mini" id="dureeTPAA">
-                                        <button class="duree-btn-mini active-tpaa" data-duree="8" onclick="PortailEntrepreneur.setDureeJour('TPAA', 8)">8h</button>
-                                        <button class="duree-btn-mini" data-duree="10" onclick="PortailEntrepreneur.setDureeJour('TPAA', 10)">10h</button>
-                                        <button class="duree-btn-mini" data-duree="12" onclick="PortailEntrepreneur.setDureeJour('TPAA', 12)">12h</button>
+                                    <div class="bloc-controls">
+                                        <input type="number" class="bloc-input" id="bilanTechTPAA" value="1" min="1" max="50" onchange="PortailEntrepreneur.calculerBilan()">
+                                        <span class="bloc-label">tech</span>
+                                        <div class="bloc-duree" id="dureeTPAA">
+                                            <button class="btn-duree active-tpaa" data-duree="8" onclick="PortailEntrepreneur.setDureeJour('TPAA', 8)">8h</button>
+                                            <button class="btn-duree" data-duree="10" onclick="PortailEntrepreneur.setDureeJour('TPAA', 10)">10h</button>
+                                            <button class="btn-duree" data-duree="12" onclick="PortailEntrepreneur.setDureeJour('TPAA', 12)">12h</button>
+                                        </div>
+                                        <span class="bloc-result-tpaa" id="bilanJourneesTPAA">${Math.ceil(heuresTPAA / 8)}j</span>
                                     </div>
-                                    <span class="bilan-bloc-result" id="bilanJourneesTPAA">${Math.ceil(heuresTPAA / 8)}j</span>
                                 </div>
 
                                 ${heuresAAouTPAA > 0 ? `
-                                <div class="bilan-sep-vertical"></div>
-                                <div class="bilan-bloc bilan-bloc-mixte">
-                                    <span class="bilan-bloc-label">AA/TPAA</span>
-                                    <span class="bilan-bloc-value">${heuresAAouTPAA}h</span>
+                                <!-- Bloc Mixte -->
+                                <div class="bilan-bloc-compact bilan-bloc-mixte">
+                                    <div class="bloc-header-mixte">
+                                        <span class="bloc-titre">AA ou TPAA</span>
+                                        <span class="bloc-heures">${heuresAAouTPAA}h</span>
+                                    </div>
                                 </div>
                                 ` : ''}
                             </div>
@@ -4424,7 +4454,7 @@
                 if (type === 'AA') {
                     this.dureeJourAA = duree;
                     // Mettre à jour les boutons
-                    document.querySelectorAll('#dureeAA .duree-btn-mini').forEach(btn => {
+                    document.querySelectorAll('#dureeAA .btn-duree').forEach(btn => {
                         btn.classList.remove('active-aa');
                         if (parseInt(btn.dataset.duree) === duree) {
                             btn.classList.add('active-aa');
@@ -4433,7 +4463,7 @@
                 } else {
                     this.dureeJourTPAA = duree;
                     // Mettre à jour les boutons
-                    document.querySelectorAll('#dureeTPAA .duree-btn-mini').forEach(btn => {
+                    document.querySelectorAll('#dureeTPAA .btn-duree').forEach(btn => {
                         btn.classList.remove('active-tpaa');
                         if (parseInt(btn.dataset.duree) === duree) {
                             btn.classList.add('active-tpaa');
