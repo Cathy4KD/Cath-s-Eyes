@@ -200,20 +200,21 @@
         .bilan-input-group {
             display: flex;
             flex-direction: column;
-            gap: 5px;
+            align-items: center;
+            gap: 3px;
         }
 
         .bilan-input-label {
-            font-size: 0.85rem;
+            font-size: 0.7rem;
             color: #0369a1;
             font-weight: 600;
         }
 
         .bilan-input {
-            width: 100px;
-            padding: 10px 12px;
+            width: 55px;
+            padding: 6px 8px;
             border: 2px solid #7dd3fc;
-            border-radius: 8px;
+            border-radius: 6px;
             font-size: 1.1rem;
             font-weight: 700;
             text-align: center;
@@ -236,21 +237,21 @@
 
         .bilan-stat {
             background: white;
-            border-radius: 10px;
-            padding: 12px 18px;
+            border-radius: 8px;
+            padding: 8px 12px;
             text-align: center;
-            min-width: 100px;
-            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.15);
+            min-width: 60px;
+            box-shadow: 0 2px 6px rgba(14, 165, 233, 0.15);
         }
 
         .bilan-stat-value {
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: 800;
             color: #0369a1;
         }
 
         .bilan-stat-label {
-            font-size: 0.8rem;
+            font-size: 0.7rem;
             color: #64748b;
             margin-top: 2px;
         }
@@ -272,27 +273,34 @@
             border-top: 1px solid #bae6fd;
         }
 
-        .bilan-repartition {
+        .bilan-ligne-complete {
             display: flex;
             align-items: center;
             gap: 0;
-            margin-bottom: 15px;
+            flex-wrap: wrap;
         }
 
         .bilan-type {
             background: white;
-            border-radius: 10px;
-            padding: 10px 15px;
+            border-radius: 8px;
+            padding: 8px 12px;
             text-align: center;
-            min-width: 80px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            min-width: 70px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
         }
 
         .bilan-separator {
             width: 1px;
-            height: 40px;
+            height: 35px;
             background: #cbd5e1;
-            margin: 0 10px;
+            margin: 0 8px;
+        }
+
+        .bilan-separator-large {
+            width: 2px;
+            height: 45px;
+            background: #94a3b8;
+            margin: 0 15px;
         }
 
         .bilan-type-label {
@@ -2498,8 +2506,8 @@
                                 <span>Calculateur de charge de travail</span>
                             </div>
 
-                            <!-- Repartition par type -->
-                            <div class="bilan-repartition">
+                            <!-- Ligne unique avec types à gauche et stats à droite -->
+                            <div class="bilan-ligne-complete">
                                 <div class="bilan-type bilan-type-aa">
                                     <div class="bilan-type-label">Arret Annuel</div>
                                     <div class="bilan-type-value">${heuresAA}h</div>
@@ -2521,30 +2529,30 @@
                                     <div class="bilan-type-label">TOTAL</div>
                                     <div class="bilan-type-value">${totalHeures}h</div>
                                 </div>
-                            </div>
-
-                            <div class="bilan-heures-content">
+                                <div class="bilan-separator-large"></div>
                                 <div class="bilan-input-group">
-                                    <span class="bilan-input-label">Nb techniciens</span>
+                                    <span class="bilan-input-label">Nb tech.</span>
                                     <input type="number" class="bilan-input" id="bilanTechniciens" value="1" min="1" max="50" onchange="PortailEntrepreneur.calculerBilan()">
                                 </div>
-                                <div class="bilan-resultats" id="bilanResultats">
-                                    <div class="bilan-stat">
-                                        <div class="bilan-stat-value" id="bilanHeuresParTech">${totalHeures}</div>
-                                        <div class="bilan-stat-label">h/technicien</div>
-                                    </div>
-                                    <div class="bilan-stat highlight">
-                                        <div class="bilan-stat-value" id="bilanJournees">${Math.floor(totalHeures / 8)}</div>
-                                        <div class="bilan-stat-label">journees (8h)</div>
-                                    </div>
-                                    <div class="bilan-stat">
-                                        <div class="bilan-stat-value" id="bilanDemiJournees">${Math.floor(totalHeures / 4)}</div>
-                                        <div class="bilan-stat-label">demi-journees</div>
-                                    </div>
-                                    <div class="bilan-stat">
-                                        <div class="bilan-stat-value" id="bilanReste">${totalHeures % 8}</div>
-                                        <div class="bilan-stat-label">h restantes</div>
-                                    </div>
+                                <div class="bilan-separator"></div>
+                                <div class="bilan-stat">
+                                    <div class="bilan-stat-value" id="bilanHeuresParTech">${totalHeures}</div>
+                                    <div class="bilan-stat-label">h/tech</div>
+                                </div>
+                                <div class="bilan-separator"></div>
+                                <div class="bilan-stat highlight">
+                                    <div class="bilan-stat-value" id="bilanJournees">${Math.floor(totalHeures / 8)}</div>
+                                    <div class="bilan-stat-label">journées</div>
+                                </div>
+                                <div class="bilan-separator"></div>
+                                <div class="bilan-stat">
+                                    <div class="bilan-stat-value" id="bilanDemiJournees">${Math.floor(totalHeures / 4)}</div>
+                                    <div class="bilan-stat-label">1/2 jour.</div>
+                                </div>
+                                <div class="bilan-separator"></div>
+                                <div class="bilan-stat">
+                                    <div class="bilan-stat-value" id="bilanReste">${totalHeures % 8}</div>
+                                    <div class="bilan-stat-label">h rest.</div>
                                 </div>
                             </div>
                             <div class="bilan-detail" id="bilanDetail">
