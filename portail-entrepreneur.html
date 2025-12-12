@@ -420,21 +420,49 @@
             color: white;
         }
 
-        .bloc-result-aa, .bloc-result-tpaa {
-            padding: 4px 10px;
-            border-radius: 5px;
-            font-weight: 800;
-            font-size: 0.9rem;
-            color: white;
+        .bloc-stats {
+            display: flex;
+            gap: 6px;
             margin-left: auto;
         }
 
-        .bloc-result-aa {
+        .bloc-stat {
+            background: #f1f5f9;
+            border-radius: 5px;
+            padding: 4px 8px;
+            text-align: center;
+            min-width: 45px;
+        }
+
+        .stat-value {
+            display: block;
+            font-weight: 800;
+            font-size: 0.95rem;
+            color: #1e293b;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.6rem;
+            color: #64748b;
+        }
+
+        .bloc-stat.stat-highlight-aa {
             background: linear-gradient(135deg, #7c3aed, #6d28d9);
         }
 
-        .bloc-result-tpaa {
+        .bloc-stat.stat-highlight-aa .stat-value,
+        .bloc-stat.stat-highlight-aa .stat-label {
+            color: white;
+        }
+
+        .bloc-stat.stat-highlight-tpaa {
             background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        }
+
+        .bloc-stat.stat-highlight-tpaa .stat-value,
+        .bloc-stat.stat-highlight-tpaa .stat-label {
+            color: white;
         }
 
         @media (max-width: 600px) {
@@ -3031,7 +3059,20 @@
                                             <button class="btn-duree" data-duree="10" onclick="PortailEntrepreneur.setDureeJour('AA', 10)">10h</button>
                                             <button class="btn-duree" data-duree="12" onclick="PortailEntrepreneur.setDureeJour('AA', 12)">12h</button>
                                         </div>
-                                        <span class="bloc-result-aa" id="bilanJourneesAA">${Math.ceil(heuresAA / 8)}j</span>
+                                        <div class="bloc-stats">
+                                            <div class="bloc-stat">
+                                                <span class="stat-value" id="bilanHeuresParTechAA">${heuresAA}</span>
+                                                <span class="stat-label">h/tech</span>
+                                            </div>
+                                            <div class="bloc-stat stat-highlight-aa">
+                                                <span class="stat-value" id="bilanJourneesAA">${Math.ceil(heuresAA / 8)}</span>
+                                                <span class="stat-label">jours</span>
+                                            </div>
+                                            <div class="bloc-stat">
+                                                <span class="stat-value" id="bilanResteAA">${heuresAA % 8}</span>
+                                                <span class="stat-label">h rest.</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -3049,7 +3090,20 @@
                                             <button class="btn-duree" data-duree="10" onclick="PortailEntrepreneur.setDureeJour('TPAA', 10)">10h</button>
                                             <button class="btn-duree" data-duree="12" onclick="PortailEntrepreneur.setDureeJour('TPAA', 12)">12h</button>
                                         </div>
-                                        <span class="bloc-result-tpaa" id="bilanJourneesTPAA">${Math.ceil(heuresTPAA / 8)}j</span>
+                                        <div class="bloc-stats">
+                                            <div class="bloc-stat">
+                                                <span class="stat-value" id="bilanHeuresParTechTPAA">${heuresTPAA}</span>
+                                                <span class="stat-label">h/tech</span>
+                                            </div>
+                                            <div class="bloc-stat stat-highlight-tpaa">
+                                                <span class="stat-value" id="bilanJourneesTPAA">${Math.ceil(heuresTPAA / 8)}</span>
+                                                <span class="stat-label">jours</span>
+                                            </div>
+                                            <div class="bloc-stat">
+                                                <span class="stat-value" id="bilanResteTPAA">${heuresTPAA % 8}</span>
+                                                <span class="stat-label">h rest.</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -4488,20 +4542,34 @@
 
                 // Calculs pour AA
                 const heuresParTechAA = heuresAA / nbTechAA;
-                const journeesAA = Math.ceil(heuresParTechAA / dureeAA);
+                const journeesAA = Math.floor(heuresParTechAA / dureeAA);
+                const resteAA = Math.round((heuresParTechAA % dureeAA) * 10) / 10;
 
-                // Mettre à jour les valeurs AA (format compact: Xj)
+                // Mettre à jour les valeurs AA
+                if (document.getElementById('bilanHeuresParTechAA')) {
+                    document.getElementById('bilanHeuresParTechAA').textContent = Math.round(heuresParTechAA * 10) / 10;
+                }
                 if (document.getElementById('bilanJourneesAA')) {
-                    document.getElementById('bilanJourneesAA').textContent = journeesAA + 'j';
+                    document.getElementById('bilanJourneesAA').textContent = journeesAA;
+                }
+                if (document.getElementById('bilanResteAA')) {
+                    document.getElementById('bilanResteAA').textContent = resteAA;
                 }
 
                 // Calculs pour TPAA
                 const heuresParTechTPAA = heuresTPAA / nbTechTPAA;
-                const journeesTPAA = Math.ceil(heuresParTechTPAA / dureeTPAA);
+                const journeesTPAA = Math.floor(heuresParTechTPAA / dureeTPAA);
+                const resteTPAA = Math.round((heuresParTechTPAA % dureeTPAA) * 10) / 10;
 
-                // Mettre à jour les valeurs TPAA (format compact: Xj)
+                // Mettre à jour les valeurs TPAA
+                if (document.getElementById('bilanHeuresParTechTPAA')) {
+                    document.getElementById('bilanHeuresParTechTPAA').textContent = Math.round(heuresParTechTPAA * 10) / 10;
+                }
                 if (document.getElementById('bilanJourneesTPAA')) {
-                    document.getElementById('bilanJourneesTPAA').textContent = journeesTPAA + 'j';
+                    document.getElementById('bilanJourneesTPAA').textContent = journeesTPAA;
+                }
+                if (document.getElementById('bilanResteTPAA')) {
+                    document.getElementById('bilanResteTPAA').textContent = resteTPAA;
                 }
             },
 
