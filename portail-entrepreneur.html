@@ -272,6 +272,60 @@
             border-top: 1px solid #bae6fd;
         }
 
+        .bilan-repartition {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .bilan-type {
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .bilan-type-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .bilan-type-value {
+            font-size: 1.4rem;
+            font-weight: 800;
+        }
+
+        .bilan-type-aa {
+            background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+            border: 2px solid #8b5cf6;
+        }
+        .bilan-type-aa .bilan-type-label { color: #6d28d9; }
+        .bilan-type-aa .bilan-type-value { color: #5b21b6; }
+
+        .bilan-type-tpaa {
+            background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+            border: 2px solid #3b82f6;
+        }
+        .bilan-type-tpaa .bilan-type-label { color: #1d4ed8; }
+        .bilan-type-tpaa .bilan-type-value { color: #1e40af; }
+
+        .bilan-type-mixte {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #f59e0b;
+        }
+        .bilan-type-mixte .bilan-type-label { color: #b45309; }
+        .bilan-type-mixte .bilan-type-value { color: #92400e; }
+
+        .bilan-type-total {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            border: 2px solid #0369a1;
+        }
+        .bilan-type-total .bilan-type-label { color: rgba(255,255,255,0.9); }
+        .bilan-type-total .bilan-type-value { color: #ffffff; }
+
         /* Section title */
         .section-title {
             font-size: 1.3rem;
@@ -2380,6 +2434,9 @@
 
             render() {
                 const totalHeures = this.travaux.reduce((sum, t) => sum + (t.estimationHeures || 0), 0);
+                const heuresAA = this.travaux.filter(t => t.typeTravail === 'aa').reduce((sum, t) => sum + (t.estimationHeures || 0), 0);
+                const heuresTPAA = this.travaux.filter(t => t.typeTravail === 'tpaa').reduce((sum, t) => sum + (t.estimationHeures || 0), 0);
+                const heuresAAouTPAA = this.travaux.filter(t => t.typeTravail === 'aa-tpaa').reduce((sum, t) => sum + (t.estimationHeures || 0), 0);
                 const dateLimite = this.appelData.dateLimite ? new Date(this.appelData.dateLimite) : null;
                 const nbVisites = this.visitesData.filter(v => v?.aVoirSurPlace).length;
 
@@ -2435,11 +2492,30 @@
                             <div class="bilan-heures-title">
                                 <span>Calculateur de charge de travail</span>
                             </div>
-                            <div class="bilan-heures-content">
-                                <div class="bilan-input-group">
-                                    <span class="bilan-input-label">Heures totales</span>
-                                    <input type="number" class="bilan-input" id="bilanHeuresTotal" value="${totalHeures}" readonly>
+
+                            <!-- Repartition par type -->
+                            <div class="bilan-repartition">
+                                <div class="bilan-type bilan-type-aa">
+                                    <div class="bilan-type-label">Arret Annuel</div>
+                                    <div class="bilan-type-value">${heuresAA}h</div>
                                 </div>
+                                <div class="bilan-type bilan-type-tpaa">
+                                    <div class="bilan-type-label">TPAA</div>
+                                    <div class="bilan-type-value">${heuresTPAA}h</div>
+                                </div>
+                                ${heuresAAouTPAA > 0 ? `
+                                <div class="bilan-type bilan-type-mixte">
+                                    <div class="bilan-type-label">AA ou TPAA</div>
+                                    <div class="bilan-type-value">${heuresAAouTPAA}h</div>
+                                </div>
+                                ` : ''}
+                                <div class="bilan-type bilan-type-total">
+                                    <div class="bilan-type-label">TOTAL</div>
+                                    <div class="bilan-type-value">${totalHeures}h</div>
+                                </div>
+                            </div>
+
+                            <div class="bilan-heures-content">
                                 <div class="bilan-input-group">
                                     <span class="bilan-input-label">Nb techniciens</span>
                                     <input type="number" class="bilan-input" id="bilanTechniciens" value="1" min="1" max="50" onchange="PortailEntrepreneur.calculerBilan()">
