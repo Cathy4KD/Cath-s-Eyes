@@ -2825,63 +2825,84 @@
                 // === LIGNE TYPE TRAVAIL / JOUR (style HTML) ===
                 if (travail.typeTravail) {
                     // Fond gris clair pour toute la section
-                    doc.setFillColor(248, 250, 252);
-                    doc.roundedRect(margin, y, pageWidth - margin * 2, 16, 3, 3, 'F');
+                    doc.setFillColor(245, 247, 250);
+                    doc.roundedRect(margin, y, pageWidth - margin * 2, 18, 3, 3, 'F');
 
-                    let xPos = margin + 5;
+                    let xPos = margin + 8;
 
-                    // Label "Doit être fait pendant :"
-                    doc.setTextColor(100, 116, 139);
+                    // Label "Doit etre fait pendant :"
+                    doc.setTextColor(71, 85, 105);
                     doc.setFontSize(9);
                     doc.setFont(undefined, 'normal');
-                    doc.text('Doit être fait pendant :', xPos, y + 11);
-                    xPos += 48;
+                    doc.text('Doit etre fait pendant :', xPos, y + 12);
+                    xPos += 52;
 
                     // Badge type (AA / TPAA / AA ou TPAA)
-                    const typeColors = { 'aa': [219, 234, 254], 'tpaa': [237, 233, 254], 'aa-tpaa': [254, 243, 199] };
-                    const typeTextColors = { 'aa': [29, 78, 216], 'tpaa': [109, 40, 217], 'aa-tpaa': [146, 64, 14] };
-                    const typeEmoji = { 'aa': '🔧', 'tpaa': '📋', 'aa-tpaa': '🔧📋' };
-
-                    doc.setFillColor(...(typeColors[travail.typeTravail] || [229, 231, 235]));
-                    const typeText = `${typeEmoji[travail.typeTravail] || ''} ${typeLabels[travail.typeTravail] || travail.typeTravail}`;
-                    const typeWidth = doc.getTextWidth(typeText) + 10;
-                    doc.roundedRect(xPos, y + 3, typeWidth, 10, 2, 2, 'F');
-                    doc.setTextColor(...(typeTextColors[travail.typeTravail] || [100, 100, 100]));
-                    doc.setFont(undefined, 'bold');
-                    doc.setFontSize(8);
-                    doc.text(typeText, xPos + 5, y + 10);
-                    xPos += typeWidth + 10;
+                    if (travail.typeTravail === 'aa') {
+                        // Bleu pour AA
+                        doc.setFillColor(59, 130, 246);
+                        doc.roundedRect(xPos, y + 4, 55, 11, 3, 3, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFont(undefined, 'bold');
+                        doc.setFontSize(9);
+                        doc.text('Arret Annuel', xPos + 5, y + 12);
+                        xPos += 60;
+                    } else if (travail.typeTravail === 'tpaa') {
+                        // Violet pour TPAA
+                        doc.setFillColor(139, 92, 246);
+                        doc.roundedRect(xPos, y + 4, 35, 11, 3, 3, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFont(undefined, 'bold');
+                        doc.setFontSize(9);
+                        doc.text('TPAA', xPos + 6, y + 12);
+                        xPos += 42;
+                    } else if (travail.typeTravail === 'aa-tpaa') {
+                        // Orange pour AA ou TPAA
+                        doc.setFillColor(245, 158, 11);
+                        doc.roundedRect(xPos, y + 4, 55, 11, 3, 3, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.setFont(undefined, 'bold');
+                        doc.setFontSize(9);
+                        doc.text('AA ou TPAA', xPos + 5, y + 12);
+                        xPos += 62;
+                    }
 
                     // Si TPAA ou AA-TPAA, afficher le jour
                     if (travail.jourArret && travail.typeTravail !== 'aa') {
-                        // Séparateur
+                        // Separateur
                         doc.setTextColor(148, 163, 184);
                         doc.setFont(undefined, 'normal');
-                        doc.text('—', xPos, y + 11);
-                        xPos += 8;
+                        doc.setFontSize(10);
+                        doc.text('-', xPos + 2, y + 12);
+                        xPos += 10;
 
                         // Label "Durant :"
-                        doc.setTextColor(100, 116, 139);
+                        doc.setTextColor(71, 85, 105);
                         doc.setFontSize(9);
-                        doc.text('Durant :', xPos, y + 11);
+                        doc.text('Durant :', xPos, y + 12);
                         xPos += 22;
 
                         // Badge jour
-                        const jourColors = { 'jeudi': [254, 243, 199], 'hors-jeudi': [220, 252, 231] };
-                        const jourTextColors = { 'jeudi': [146, 64, 14], 'hors-jeudi': [6, 95, 70] };
-                        const jourEmoji = { 'jeudi': '🗓️', 'hors-jeudi': '✓' };
-
-                        doc.setFillColor(...(jourColors[travail.jourArret] || [229, 231, 235]));
-                        const jourText = `${jourEmoji[travail.jourArret] || ''} ${jourLabels[travail.jourArret] || travail.jourArret}`;
-                        const jourWidth = doc.getTextWidth(jourText) + 10;
-                        doc.roundedRect(xPos, y + 3, jourWidth, 10, 2, 2, 'F');
-                        doc.setTextColor(...(jourTextColors[travail.jourArret] || [100, 100, 100]));
-                        doc.setFont(undefined, 'bold');
-                        doc.setFontSize(8);
-                        doc.text(jourText, xPos + 5, y + 10);
+                        if (travail.jourArret === 'jeudi') {
+                            // Jaune/Orange pour Jeudi
+                            doc.setFillColor(251, 191, 36);
+                            doc.roundedRect(xPos, y + 4, 55, 11, 3, 3, 'F');
+                            doc.setTextColor(0, 0, 0);
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(9);
+                            doc.text("Jeudi d'arret", xPos + 5, y + 12);
+                        } else if (travail.jourArret === 'hors-jeudi') {
+                            // Vert pour Hors jeudi
+                            doc.setFillColor(34, 197, 94);
+                            doc.roundedRect(xPos, y + 4, 45, 11, 3, 3, 'F');
+                            doc.setTextColor(255, 255, 255);
+                            doc.setFont(undefined, 'bold');
+                            doc.setFontSize(9);
+                            doc.text('Hors jeudi', xPos + 5, y + 12);
+                        }
                     }
 
-                    y += 22;
+                    y += 24;
                 }
 
                 // === GRILLE D'INFORMATIONS ===
@@ -2926,80 +2947,80 @@
 
                 // Commentaire gestionnaire (si existe)
                 if (travail.commentaire) {
-                    // Bordure jaune à gauche
-                    doc.setFillColor(254, 243, 199);
-                    doc.rect(colGauche, yGauche, 3, 32, 'F');
-                    // Fond
-                    doc.setFillColor(255, 251, 235);
-                    doc.rect(colGauche + 3, yGauche, colWidth - 3, 32, 'F');
+                    // Fond jaune
+                    doc.setFillColor(254, 249, 195);
+                    doc.roundedRect(colGauche, yGauche, colWidth, 35, 3, 3, 'F');
+                    // Bordure jaune fonce a gauche
+                    doc.setFillColor(251, 191, 36);
+                    doc.rect(colGauche, yGauche, 4, 35, 'F');
 
                     doc.setTextColor(146, 64, 14);
-                    doc.setFontSize(8);
+                    doc.setFontSize(9);
                     doc.setFont(undefined, 'bold');
-                    doc.text('💬 Note du gestionnaire', colGauche + 8, yGauche + 9);
+                    doc.text('Note du gestionnaire', colGauche + 10, yGauche + 10);
 
                     doc.setTextColor(113, 63, 18);
                     doc.setFont(undefined, 'normal');
                     doc.setFontSize(8);
                     const noteLines = doc.splitTextToSize(travail.commentaire, colWidth - 15);
-                    doc.text(noteLines.slice(0, 3), colGauche + 8, yGauche + 18);
+                    doc.text(noteLines.slice(0, 3), colGauche + 10, yGauche + 20);
 
-                    yGauche += 38;
+                    yGauche += 40;
                 }
 
                 // Commentaire entrepreneur (si existe)
                 if (commentaire) {
-                    // Bordure verte à gauche
-                    doc.setFillColor(134, 239, 172);
-                    doc.rect(colGauche, yGauche, 3, 32, 'F');
-                    // Fond
-                    doc.setFillColor(240, 253, 244);
-                    doc.rect(colGauche + 3, yGauche, colWidth - 3, 32, 'F');
+                    // Fond vert
+                    doc.setFillColor(220, 252, 231);
+                    doc.roundedRect(colGauche, yGauche, colWidth, 35, 3, 3, 'F');
+                    // Bordure verte fonce a gauche
+                    doc.setFillColor(34, 197, 94);
+                    doc.rect(colGauche, yGauche, 4, 35, 'F');
 
                     doc.setTextColor(22, 101, 52);
-                    doc.setFontSize(8);
+                    doc.setFontSize(9);
                     doc.setFont(undefined, 'bold');
-                    doc.text('✏️ Commentaire entrepreneur', colGauche + 8, yGauche + 9);
+                    doc.text('Commentaire entrepreneur', colGauche + 10, yGauche + 10);
 
                     doc.setTextColor(20, 83, 45);
                     doc.setFont(undefined, 'normal');
                     doc.setFontSize(8);
                     const entLines = doc.splitTextToSize(commentaire, colWidth - 15);
-                    doc.text(entLines.slice(0, 3), colGauche + 8, yGauche + 18);
+                    doc.text(entLines.slice(0, 3), colGauche + 10, yGauche + 20);
 
-                    yGauche += 38;
+                    yGauche += 40;
                 }
 
                 // Notes visite terrain (si existe)
                 if (visiteData.aVoirSurPlace && visiteData.mesures) {
-                    // Bordure rose à gauche
-                    doc.setFillColor(249, 168, 212);
-                    doc.rect(colGauche, yGauche, 3, 28, 'F');
-                    // Fond
-                    doc.setFillColor(253, 242, 248);
-                    doc.rect(colGauche + 3, yGauche, colWidth - 3, 28, 'F');
+                    // Fond rose
+                    doc.setFillColor(252, 231, 243);
+                    doc.roundedRect(colGauche, yGauche, colWidth, 30, 3, 3, 'F');
+                    // Bordure rose fonce a gauche
+                    doc.setFillColor(236, 72, 153);
+                    doc.rect(colGauche, yGauche, 4, 30, 'F');
 
                     doc.setTextColor(190, 24, 93);
-                    doc.setFontSize(8);
+                    doc.setFontSize(9);
                     doc.setFont(undefined, 'bold');
-                    doc.text('📍 Notes visite terrain', colGauche + 8, yGauche + 9);
+                    doc.text('Notes visite terrain', colGauche + 10, yGauche + 10);
 
                     doc.setTextColor(157, 23, 77);
                     doc.setFont(undefined, 'normal');
                     doc.setFontSize(8);
                     const mesuresLines = doc.splitTextToSize(visiteData.mesures, colWidth - 15);
-                    doc.text(mesuresLines.slice(0, 2), colGauche + 8, yGauche + 18);
+                    doc.text(mesuresLines.slice(0, 2), colGauche + 10, yGauche + 20);
 
-                    yGauche += 34;
+                    yGauche += 35;
                 }
 
                 // Si aucun commentaire, afficher un placeholder
                 if (!travail.commentaire && !commentaire && !(visiteData.aVoirSurPlace && visiteData.mesures)) {
-                    doc.setFillColor(248, 250, 252);
+                    doc.setFillColor(241, 245, 249);
                     doc.roundedRect(colGauche, yGauche, colWidth, 30, 3, 3, 'F');
                     doc.setTextColor(148, 163, 184);
                     doc.setFontSize(9);
-                    doc.setFont(undefined, 'italic');
+                    doc.setFont(undefined, 'normal');
                     doc.text('Aucun commentaire', colGauche + colWidth / 2, yGauche + 18, { align: 'center' });
                     yGauche += 36;
                 }
