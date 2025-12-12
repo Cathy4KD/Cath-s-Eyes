@@ -6037,6 +6037,9 @@ const ScreenPreparation = {
                                         <button class="btn btn-sm btn-primary" onclick="ScreenPreparation.creerAppelSoumission()" title="Créer un appel de soumission avec portail">
                                             🚀 Portail Soumission
                                         </button>
+                                        <button class="btn btn-sm btn-secondary" onclick="ScreenPreparation.ouvrirEditeurPlan()" title="Annoter le plan pour cette entreprise">
+                                            🗺️ Annoter Plan
+                                        </button>
                                         <button class="btn btn-sm btn-secondary" onclick="ScreenPreparation.voirHistoriqueSoumissions()" title="Voir l'historique des soumissions passées">
                                             📜 Historique
                                         </button>
@@ -6282,6 +6285,538 @@ const ScreenPreparation = {
     },
 
     // ==========================================
+    // EDITEUR DE PLAN AVEC ANNOTATIONS
+    // ==========================================
+
+    planEditor: {
+        canvas: null,
+        ctx: null,
+        image: null,
+        annotations: [],
+        currentTool: 'pointer',
+        currentColor: '#ef4444',
+        isDrawing: false,
+        startX: 0,
+        startY: 0,
+        scale: 1,
+        offsetX: 0,
+        offsetY: 0
+    },
+
+    ouvrirEditeurPlan() {
+        const entreprise = this.entrepreneurActif;
+        if (!entreprise) {
+            App.showToast('Selectionnez une entreprise', 'error');
+            return;
+        }
+
+        // Recuperer le plan existant
+        const planImage = DataManager.data.processus?.planConfig?.imageURL || DataManager.data.processus?.planConfig?.imageData;
+
+        if (!planImage) {
+            App.showToast('Aucun plan configure. Allez dans Configuration > Plan pour ajouter un plan.', 'error');
+            return;
+        }
+
+        // Charger les annotations existantes pour cette entreprise
+        const savedAnnotations = DataManager.data.processus?.plansAnnotes?.[entreprise]?.annotations || [];
+        this.planEditor.annotations = [...savedAnnotations];
+
+        const html = `
+            <div class="plan-editor-overlay" id="planEditorModal">
+                <div class="plan-editor-modal">
+                    <div class="plan-editor-header">
+                        <h2>Annoter le plan - ${entreprise}</h2>
+                        <button class="plan-editor-close" onclick="ScreenPreparation.fermerEditeurPlan()">&times;</button>
+                    </div>
+
+                    <div class="plan-editor-toolbar">
+                        <div class="tool-group">
+                            <button class="tool-btn active" data-tool="pointer" onclick="ScreenPreparation.setToolPlan('pointer')" title="Pointeur/Marqueur">
+                                📍
+                            </button>
+                            <button class="tool-btn" data-tool="rect" onclick="ScreenPreparation.setToolPlan('rect')" title="Rectangle">
+                                ▢
+                            </button>
+                            <button class="tool-btn" data-tool="circle" onclick="ScreenPreparation.setToolPlan('circle')" title="Cercle">
+                                ◯
+                            </button>
+                            <button class="tool-btn" data-tool="arrow" onclick="ScreenPreparation.setToolPlan('arrow')" title="Fleche">
+                                ➤
+                            </button>
+                            <button class="tool-btn" data-tool="text" onclick="ScreenPreparation.setToolPlan('text')" title="Texte">
+                                T
+                            </button>
+                        </div>
+                        <div class="tool-group">
+                            <label>Couleur:</label>
+                            <input type="color" id="planColorPicker" value="#ef4444" onchange="ScreenPreparation.planEditor.currentColor=this.value">
+                            <button class="tool-btn-color" style="background:#ef4444" onclick="ScreenPreparation.setColorPlan('#ef4444')"></button>
+                            <button class="tool-btn-color" style="background:#3b82f6" onclick="ScreenPreparation.setColorPlan('#3b82f6')"></button>
+                            <button class="tool-btn-color" style="background:#22c55e" onclick="ScreenPreparation.setColorPlan('#22c55e')"></button>
+                            <button class="tool-btn-color" style="background:#f59e0b" onclick="ScreenPreparation.setColorPlan('#f59e0b')"></button>
+                        </div>
+                        <div class="tool-group">
+                            <button class="tool-btn" onclick="ScreenPreparation.annulerAnnotation()" title="Annuler derniere annotation">
+                                ↩️ Annuler
+                            </button>
+                            <button class="tool-btn" onclick="ScreenPreparation.effacerAnnotations()" title="Effacer tout">
+                                🗑️ Effacer tout
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="plan-editor-canvas-container" id="planCanvasContainer">
+                        <canvas id="planEditorCanvas"></canvas>
+                    </div>
+
+                    <div class="plan-editor-footer">
+                        <div class="plan-editor-info">
+                            <span id="planAnnotationCount">${savedAnnotations.length} annotation(s)</span>
+                        </div>
+                        <div class="plan-editor-actions">
+                            <button class="btn btn-outline" onclick="ScreenPreparation.fermerEditeurPlan()">Annuler</button>
+                            <button class="btn btn-primary" onclick="ScreenPreparation.sauvegarderPlanAnnote()">
+                                💾 Sauvegarder
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                .plan-editor-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(0,0,0,0.8);
+                    z-index: 10000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .plan-editor-modal {
+                    background: white;
+                    border-radius: 12px;
+                    width: 95vw;
+                    height: 95vh;
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                }
+                .plan-editor-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 15px 20px;
+                    background: #1e3a5f;
+                    color: white;
+                }
+                .plan-editor-header h2 {
+                    margin: 0;
+                    font-size: 1.2rem;
+                }
+                .plan-editor-close {
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 2rem;
+                    cursor: pointer;
+                    line-height: 1;
+                }
+                .plan-editor-toolbar {
+                    display: flex;
+                    gap: 20px;
+                    padding: 10px 20px;
+                    background: #f1f5f9;
+                    border-bottom: 1px solid #e2e8f0;
+                    flex-wrap: wrap;
+                    align-items: center;
+                }
+                .tool-group {
+                    display: flex;
+                    gap: 8px;
+                    align-items: center;
+                }
+                .tool-group label {
+                    font-size: 0.85rem;
+                    color: #64748b;
+                }
+                .tool-btn {
+                    width: 40px;
+                    height: 40px;
+                    border: 2px solid #e2e8f0;
+                    background: white;
+                    border-radius: 8px;
+                    cursor: pointer;
+                    font-size: 1.1rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: all 0.2s;
+                }
+                .tool-btn:hover {
+                    border-color: #3b82f6;
+                    background: #eff6ff;
+                }
+                .tool-btn.active {
+                    border-color: #3b82f6;
+                    background: #3b82f6;
+                    color: white;
+                }
+                .tool-btn-color {
+                    width: 28px;
+                    height: 28px;
+                    border: 2px solid #e2e8f0;
+                    border-radius: 50%;
+                    cursor: pointer;
+                }
+                .tool-btn-color:hover {
+                    transform: scale(1.1);
+                }
+                .plan-editor-canvas-container {
+                    flex: 1;
+                    overflow: auto;
+                    background: #374151;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 20px;
+                }
+                #planEditorCanvas {
+                    background: white;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                    cursor: crosshair;
+                }
+                .plan-editor-footer {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    padding: 15px 20px;
+                    background: #f8fafc;
+                    border-top: 1px solid #e2e8f0;
+                }
+                .plan-editor-info {
+                    color: #64748b;
+                    font-size: 0.9rem;
+                }
+                .plan-editor-actions {
+                    display: flex;
+                    gap: 10px;
+                }
+            </style>
+        `;
+
+        document.body.insertAdjacentHTML('beforeend', html);
+        this.initPlanCanvas(planImage);
+    },
+
+    initPlanCanvas(planImage) {
+        const canvas = document.getElementById('planEditorCanvas');
+        const container = document.getElementById('planCanvasContainer');
+        const ctx = canvas.getContext('2d');
+
+        this.planEditor.canvas = canvas;
+        this.planEditor.ctx = ctx;
+
+        // Charger l'image
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            this.planEditor.image = img;
+
+            // Calculer la taille pour que l'image rentre dans le container
+            const maxWidth = container.clientWidth - 40;
+            const maxHeight = container.clientHeight - 40;
+
+            let width = img.width;
+            let height = img.height;
+
+            if (width > maxWidth) {
+                const ratio = maxWidth / width;
+                width = maxWidth;
+                height = height * ratio;
+            }
+            if (height > maxHeight) {
+                const ratio = maxHeight / height;
+                height = height * ratio;
+                width = width * ratio;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            this.planEditor.scale = width / img.width;
+
+            this.redrawPlanCanvas();
+        };
+        img.src = planImage;
+
+        // Event listeners
+        canvas.addEventListener('mousedown', (e) => this.onPlanMouseDown(e));
+        canvas.addEventListener('mousemove', (e) => this.onPlanMouseMove(e));
+        canvas.addEventListener('mouseup', (e) => this.onPlanMouseUp(e));
+        canvas.addEventListener('mouseleave', (e) => this.onPlanMouseUp(e));
+    },
+
+    redrawPlanCanvas() {
+        const { canvas, ctx, image, annotations, scale } = this.planEditor;
+        if (!image) return;
+
+        // Dessiner l'image de fond
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+        // Dessiner les annotations
+        annotations.forEach(ann => this.drawAnnotation(ann));
+    },
+
+    drawAnnotation(ann) {
+        const { ctx, scale } = this.planEditor;
+        ctx.strokeStyle = ann.color;
+        ctx.fillStyle = ann.color;
+        ctx.lineWidth = 3;
+
+        switch (ann.type) {
+            case 'pointer':
+                // Marqueur/pointeur
+                ctx.beginPath();
+                ctx.arc(ann.x * scale, ann.y * scale, 12, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(ann.x * scale, ann.y * scale, 5, 0, Math.PI * 2);
+                ctx.fill();
+                break;
+
+            case 'rect':
+                ctx.strokeRect(ann.x * scale, ann.y * scale, ann.width * scale, ann.height * scale);
+                break;
+
+            case 'circle':
+                ctx.beginPath();
+                ctx.arc(ann.x * scale, ann.y * scale, ann.radius * scale, 0, Math.PI * 2);
+                ctx.stroke();
+                break;
+
+            case 'arrow':
+                this.drawArrow(ctx, ann.x * scale, ann.y * scale, ann.endX * scale, ann.endY * scale, ann.color);
+                break;
+
+            case 'text':
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText(ann.text, ann.x * scale, ann.y * scale);
+                break;
+        }
+    },
+
+    drawArrow(ctx, fromX, fromY, toX, toY, color) {
+        const headLength = 15;
+        const angle = Math.atan2(toY - fromY, toX - fromX);
+
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = 3;
+
+        // Ligne
+        ctx.beginPath();
+        ctx.moveTo(fromX, fromY);
+        ctx.lineTo(toX, toY);
+        ctx.stroke();
+
+        // Tete de fleche
+        ctx.beginPath();
+        ctx.moveTo(toX, toY);
+        ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+        ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
+        ctx.closePath();
+        ctx.fill();
+    },
+
+    onPlanMouseDown(e) {
+        const rect = this.planEditor.canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / this.planEditor.scale;
+        const y = (e.clientY - rect.top) / this.planEditor.scale;
+
+        this.planEditor.isDrawing = true;
+        this.planEditor.startX = x;
+        this.planEditor.startY = y;
+
+        if (this.planEditor.currentTool === 'pointer') {
+            // Ajouter un marqueur immediatement
+            this.planEditor.annotations.push({
+                type: 'pointer',
+                x: x,
+                y: y,
+                color: this.planEditor.currentColor
+            });
+            this.redrawPlanCanvas();
+            this.updateAnnotationCount();
+            this.planEditor.isDrawing = false;
+        } else if (this.planEditor.currentTool === 'text') {
+            const text = prompt('Entrez le texte:');
+            if (text) {
+                this.planEditor.annotations.push({
+                    type: 'text',
+                    x: x,
+                    y: y,
+                    text: text,
+                    color: this.planEditor.currentColor
+                });
+                this.redrawPlanCanvas();
+                this.updateAnnotationCount();
+            }
+            this.planEditor.isDrawing = false;
+        }
+    },
+
+    onPlanMouseMove(e) {
+        if (!this.planEditor.isDrawing) return;
+
+        const rect = this.planEditor.canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / this.planEditor.scale;
+        const y = (e.clientY - rect.top) / this.planEditor.scale;
+
+        // Redessiner avec preview
+        this.redrawPlanCanvas();
+
+        const { ctx, startX, startY, currentTool, currentColor, scale } = this.planEditor;
+        ctx.strokeStyle = currentColor;
+        ctx.fillStyle = currentColor;
+        ctx.lineWidth = 3;
+        ctx.setLineDash([5, 5]);
+
+        if (currentTool === 'rect') {
+            ctx.strokeRect(startX * scale, startY * scale, (x - startX) * scale, (y - startY) * scale);
+        } else if (currentTool === 'circle') {
+            const radius = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2));
+            ctx.beginPath();
+            ctx.arc(startX * scale, startY * scale, radius * scale, 0, Math.PI * 2);
+            ctx.stroke();
+        } else if (currentTool === 'arrow') {
+            this.drawArrow(ctx, startX * scale, startY * scale, x * scale, y * scale, currentColor);
+        }
+
+        ctx.setLineDash([]);
+    },
+
+    onPlanMouseUp(e) {
+        if (!this.planEditor.isDrawing) return;
+
+        const rect = this.planEditor.canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / this.planEditor.scale;
+        const y = (e.clientY - rect.top) / this.planEditor.scale;
+
+        const { startX, startY, currentTool, currentColor } = this.planEditor;
+
+        if (currentTool === 'rect') {
+            if (Math.abs(x - startX) > 5 && Math.abs(y - startY) > 5) {
+                this.planEditor.annotations.push({
+                    type: 'rect',
+                    x: Math.min(startX, x),
+                    y: Math.min(startY, y),
+                    width: Math.abs(x - startX),
+                    height: Math.abs(y - startY),
+                    color: currentColor
+                });
+            }
+        } else if (currentTool === 'circle') {
+            const radius = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2));
+            if (radius > 5) {
+                this.planEditor.annotations.push({
+                    type: 'circle',
+                    x: startX,
+                    y: startY,
+                    radius: radius,
+                    color: currentColor
+                });
+            }
+        } else if (currentTool === 'arrow') {
+            if (Math.abs(x - startX) > 5 || Math.abs(y - startY) > 5) {
+                this.planEditor.annotations.push({
+                    type: 'arrow',
+                    x: startX,
+                    y: startY,
+                    endX: x,
+                    endY: y,
+                    color: currentColor
+                });
+            }
+        }
+
+        this.planEditor.isDrawing = false;
+        this.redrawPlanCanvas();
+        this.updateAnnotationCount();
+    },
+
+    setToolPlan(tool) {
+        this.planEditor.currentTool = tool;
+        document.querySelectorAll('.tool-btn[data-tool]').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tool === tool);
+        });
+    },
+
+    setColorPlan(color) {
+        this.planEditor.currentColor = color;
+        document.getElementById('planColorPicker').value = color;
+    },
+
+    annulerAnnotation() {
+        if (this.planEditor.annotations.length > 0) {
+            this.planEditor.annotations.pop();
+            this.redrawPlanCanvas();
+            this.updateAnnotationCount();
+        }
+    },
+
+    effacerAnnotations() {
+        if (confirm('Effacer toutes les annotations?')) {
+            this.planEditor.annotations = [];
+            this.redrawPlanCanvas();
+            this.updateAnnotationCount();
+        }
+    },
+
+    updateAnnotationCount() {
+        const count = this.planEditor.annotations.length;
+        document.getElementById('planAnnotationCount').textContent = `${count} annotation(s)`;
+    },
+
+    async sauvegarderPlanAnnote() {
+        const entreprise = this.entrepreneurActif;
+        const canvas = this.planEditor.canvas;
+
+        // Convertir le canvas en image
+        const planAnnoteImage = canvas.toDataURL('image/png');
+
+        // Sauvegarder dans DataManager
+        if (!DataManager.data.processus.plansAnnotes) {
+            DataManager.data.processus.plansAnnotes = {};
+        }
+
+        DataManager.data.processus.plansAnnotes[entreprise] = {
+            imageData: planAnnoteImage,
+            annotations: this.planEditor.annotations,
+            dateModification: new Date().toISOString()
+        };
+
+        await DataManager.sauvegarder();
+
+        App.showToast('Plan annote sauvegarde!', 'success');
+        this.fermerEditeurPlan();
+    },
+
+    fermerEditeurPlan() {
+        const modal = document.getElementById('planEditorModal');
+        if (modal) modal.remove();
+        this.planEditor.annotations = [];
+        this.planEditor.canvas = null;
+        this.planEditor.ctx = null;
+        this.planEditor.image = null;
+    },
+
+    // ==========================================
     // PORTAIL SOUMISSION ENTREPRENEURS
     // ==========================================
 
@@ -6414,11 +6949,18 @@ const ScreenPreparation = {
             soumissionRecue: false
         };
 
-        // Ajouter le plan si demandé
+        // Ajouter le plan si demandé - priorité au plan annoté
         if (appelData.inclurePlan) {
-            const planImage = DataManager.data.processus?.planConfig?.imageURL || DataManager.data.processus?.planConfig?.imageData;
-            if (planImage) {
-                appelData.planImage = planImage;
+            // Verifier si un plan annoté existe pour cette entreprise
+            const planAnnote = DataManager.data.processus?.plansAnnotes?.[entreprise]?.imageData;
+            if (planAnnote) {
+                appelData.planImage = planAnnote;
+            } else {
+                // Sinon utiliser le plan original
+                const planImage = DataManager.data.processus?.planConfig?.imageURL || DataManager.data.processus?.planConfig?.imageData;
+                if (planImage) {
+                    appelData.planImage = planImage;
+                }
             }
         }
 
@@ -6915,11 +7457,16 @@ const ScreenPreparation = {
             soumissionRecue: false
         };
 
-        // Ajouter le plan si demandé
+        // Ajouter le plan si demandé - priorité au plan annoté
         if (appelData.inclurePlan) {
-            const planImage = DataManager.data.processus?.planConfig?.imageURL || DataManager.data.processus?.planConfig?.imageData;
-            if (planImage) {
-                appelData.planImage = planImage;
+            const planAnnote = DataManager.data.processus?.plansAnnotes?.[entreprise]?.imageData;
+            if (planAnnote) {
+                appelData.planImage = planAnnote;
+            } else {
+                const planImage = DataManager.data.processus?.planConfig?.imageURL || DataManager.data.processus?.planConfig?.imageData;
+                if (planImage) {
+                    appelData.planImage = planImage;
+                }
             }
         }
 
