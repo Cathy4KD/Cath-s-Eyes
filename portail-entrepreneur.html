@@ -3750,16 +3750,20 @@
                 });
 
                 // Nettoyer les données pour éviter les undefined (Firebase les refuse)
-                const cleanVisitesData = this.visitesData.map(v => {
-                    if (!v) return { aVoirSurPlace: false, photos: [], mesures: '' };
-                    return {
-                        aVoirSurPlace: v.aVoirSurPlace || false,
-                        photos: v.photos || [],
-                        mesures: v.mesures || ''
-                    };
-                });
+                const cleanVisitesData = this.cleanArrayForFirebase(
+                    this.visitesData,
+                    { aVoirSurPlace: false, photos: [], mesures: '' }
+                );
 
-                const cleanCommentairesTravaux = commentairesTravaux.map(c => c || '');
+                const cleanCommentairesTravaux = this.cleanArrayForFirebase(
+                    commentairesTravaux,
+                    ''
+                );
+
+                const cleanUploadsData = this.cleanArrayForFirebase(
+                    this.uploadsData,
+                    { photos: [], documents: [] }
+                );
 
                 try {
                     await firebase.firestore()
@@ -3769,6 +3773,7 @@
                             commentaire: commentaireGlobal || '',
                             commentairesTravaux: cleanCommentairesTravaux,
                             visitesData: cleanVisitesData,
+                            uploadsData: cleanUploadsData,
                             entreprise: this.entreprise || '',
                             dateModification: new Date().toISOString()
                         });
@@ -4744,19 +4749,47 @@
                 await this.sauvegarderVisitesData();
             },
 
+            // Nettoyer un tableau pour Firebase (remplacer undefined par valeurs par défaut)
+            cleanArrayForFirebase(arr, defaultValue) {
+                const result = [];
+                const length = Math.max(arr.length, this.travaux.length);
+                for (let i = 0; i < length; i++) {
+                    if (typeof defaultValue === 'object') {
+                        const v = arr[i];
+                        if (!v) {
+                            result[i] = { ...defaultValue };
+                        } else {
+                            // Nettoyer chaque propriété
+                            const clean = {};
+                            for (const key in defaultValue) {
+                                clean[key] = v[key] !== undefined ? v[key] : defaultValue[key];
+                            }
+                            result[i] = clean;
+                        }
+                    } else {
+                        result[i] = arr[i] !== undefined ? arr[i] : defaultValue;
+                    }
+                }
+                return result;
+            },
+
             async sauvegarderVisitesData() {
                 try {
                     // Nettoyer les données pour éviter les undefined (Firebase les refuse)
-                    const cleanVisitesData = this.visitesData.map(v => {
-                        if (!v) return { aVoirSurPlace: false, photos: [], mesures: '' };
-                        return {
-                            aVoirSurPlace: v.aVoirSurPlace || false,
-                            photos: v.photos || [],
-                            mesures: v.mesures || ''
-                        };
-                    });
+                    const cleanVisitesData = this.cleanArrayForFirebase(
+                        this.visitesData,
+                        { aVoirSurPlace: false, photos: [], mesures: '' }
+                    );
 
-                    const cleanCommentairesTravaux = this.commentairesTravaux.map(c => c || '');
+                    const cleanCommentairesTravaux = this.cleanArrayForFirebase(
+                        this.commentairesTravaux,
+                        ''
+                    );
+
+                    const cleanUploadsData = this.cleanArrayForFirebase(
+                        this.uploadsData,
+                        { photos: [], documents: [] }
+                    );
 
                     await firebase.firestore()
                         .collection('commentaires_entrepreneurs')
@@ -4765,6 +4798,7 @@
                             commentaire: this.commentaireEntrepreneur || '',
                             commentairesTravaux: cleanCommentairesTravaux,
                             visitesData: cleanVisitesData,
+                            uploadsData: cleanUploadsData,
                             entreprise: this.entreprise || '',
                             dateModification: new Date().toISOString()
                         }, { merge: true });
@@ -4997,15 +5031,31 @@
 
             async sauvegarderUploadsData() {
                 try {
+                    // Nettoyer les données pour éviter les undefined (Firebase les refuse)
+                    const cleanVisitesData = this.cleanArrayForFirebase(
+                        this.visitesData,
+                        { aVoirSurPlace: false, photos: [], mesures: '' }
+                    );
+
+                    const cleanCommentairesTravaux = this.cleanArrayForFirebase(
+                        this.commentairesTravaux,
+                        ''
+                    );
+
+                    const cleanUploadsData = this.cleanArrayForFirebase(
+                        this.uploadsData,
+                        { photos: [], documents: [] }
+                    );
+
                     await firebase.firestore()
                         .collection('commentaires_entrepreneurs')
                         .doc(this.appelId)
                         .set({
-                            commentaire: this.commentaireEntrepreneur,
-                            commentairesTravaux: this.commentairesTravaux,
-                            visitesData: this.visitesData,
-                            uploadsData: this.uploadsData,
-                            entreprise: this.entreprise,
+                            commentaire: this.commentaireEntrepreneur || '',
+                            commentairesTravaux: cleanCommentairesTravaux,
+                            visitesData: cleanVisitesData,
+                            uploadsData: cleanUploadsData,
+                            entreprise: this.entreprise || '',
                             dateModification: new Date().toISOString()
                         }, { merge: true });
                 } catch (error) {
