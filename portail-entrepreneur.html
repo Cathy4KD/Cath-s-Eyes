@@ -2991,31 +2991,78 @@
                     yGauche += 32;
                 }
 
-                // Notes visite terrain (si existe)
-                if (visiteData.aVoirSurPlace && visiteData.mesures) {
+                // Section VISITE SUR PLACE (si coche)
+                if (visiteData.aVoirSurPlace) {
+                    const hasVisitePhotos = photosVisite.length > 0;
+                    const hasVisiteMesures = visiteData.mesures && visiteData.mesures.trim();
+
+                    // Calculer hauteur selon contenu
+                    let visiteHeight = 14; // Titre
+                    if (hasVisiteMesures) visiteHeight += 18;
+                    if (hasVisitePhotos) visiteHeight += 28;
+                    if (!hasVisiteMesures && !hasVisitePhotos) visiteHeight += 10;
+
                     // Fond rose
                     doc.setFillColor(252, 231, 243);
-                    doc.roundedRect(colGauche, yGauche, colWidth, 24, 3, 3, 'F');
+                    doc.roundedRect(colGauche, yGauche, colWidth, visiteHeight, 3, 3, 'F');
                     // Bordure rose fonce a gauche
                     doc.setFillColor(236, 72, 153);
-                    doc.rect(colGauche, yGauche, 4, 24, 'F');
+                    doc.rect(colGauche, yGauche, 4, visiteHeight, 'F');
 
+                    // Titre
                     doc.setTextColor(190, 24, 93);
                     doc.setFontSize(10);
                     doc.setFont(undefined, 'bold');
-                    doc.text('Notes visite terrain', colGauche + 10, yGauche + 8);
+                    doc.text('A voir sur place', colGauche + 10, yGauche + 10);
 
-                    doc.setTextColor(157, 23, 77);
-                    doc.setFont(undefined, 'normal');
-                    doc.setFontSize(9);
-                    const mesuresLines = doc.splitTextToSize(visiteData.mesures, colWidth - 15);
-                    doc.text(mesuresLines.slice(0, 2), colGauche + 10, yGauche + 17);
+                    let yVisite = yGauche + 14;
 
-                    yGauche += 28;
+                    // Mesures/notes si presentes
+                    if (hasVisiteMesures) {
+                        doc.setTextColor(157, 23, 77);
+                        doc.setFont(undefined, 'normal');
+                        doc.setFontSize(9);
+                        const mesuresLines = doc.splitTextToSize(visiteData.mesures, colWidth - 15);
+                        doc.text(mesuresLines.slice(0, 2), colGauche + 10, yVisite + 5);
+                        yVisite += 18;
+                    }
+
+                    // Photos visite si presentes
+                    if (hasVisitePhotos) {
+                        doc.setTextColor(157, 23, 77);
+                        doc.setFontSize(9);
+                        doc.text(`${photosVisite.length} photo(s) de visite`, colGauche + 10, yVisite + 5);
+
+                        // Mini apercu des photos (max 3)
+                        const miniPhotoSize = 20;
+                        const maxMiniPhotos = Math.min(photosVisite.length, 3);
+                        for (let i = 0; i < maxMiniPhotos; i++) {
+                            try {
+                                const photoData = photosVisite[i];
+                                if (photoData && typeof photoData === 'string') {
+                                    let format = 'JPEG';
+                                    if (photoData.includes('data:image/png')) format = 'PNG';
+                                    doc.addImage(photoData, format, colGauche + 10 + i * (miniPhotoSize + 3), yVisite + 8, miniPhotoSize, miniPhotoSize);
+                                }
+                            } catch (e) {
+                                // Ignorer erreur photo
+                            }
+                        }
+                    }
+
+                    // Si rien
+                    if (!hasVisiteMesures && !hasVisitePhotos) {
+                        doc.setTextColor(157, 23, 77);
+                        doc.setFont(undefined, 'normal');
+                        doc.setFontSize(9);
+                        doc.text('Visite a effectuer', colGauche + 10, yGauche + 20);
+                    }
+
+                    yGauche += visiteHeight + 4;
                 }
 
-                // Si aucun commentaire, afficher un placeholder
-                if (!travail.commentaire && !commentaire && !(visiteData.aVoirSurPlace && visiteData.mesures)) {
+                // Si aucun commentaire ni visite, afficher placeholder
+                if (!travail.commentaire && !commentaire && !visiteData.aVoirSurPlace) {
                     doc.setFillColor(241, 245, 249);
                     doc.roundedRect(colGauche, yGauche, colWidth, 25, 3, 3, 'F');
                     doc.setTextColor(148, 163, 184);
