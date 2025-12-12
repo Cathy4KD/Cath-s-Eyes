@@ -602,6 +602,26 @@
             .travaux-table-container {
                 flex: 1;
                 overflow-y: auto;
+                scrollbar-width: thin;
+                scrollbar-color: #94a3b8 #f1f5f9;
+            }
+
+            .travaux-table-container::-webkit-scrollbar {
+                width: 10px;
+            }
+
+            .travaux-table-container::-webkit-scrollbar-track {
+                background: #f1f5f9;
+                border-radius: 5px;
+            }
+
+            .travaux-table-container::-webkit-scrollbar-thumb {
+                background: #94a3b8;
+                border-radius: 5px;
+            }
+
+            .travaux-table-container::-webkit-scrollbar-thumb:hover {
+                background: #64748b;
             }
 
             .travaux-table {
