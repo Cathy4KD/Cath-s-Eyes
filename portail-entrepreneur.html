@@ -2783,269 +2783,307 @@
                 const allPhotos = [...photosGestionnaire, ...photosVisite, ...photosEntrepreneur];
                 const hasPhotos = allPhotos.length > 0;
 
-                // === EN-TÊTE AVEC BANDE BLEUE ===
-                doc.setFillColor(30, 58, 95);
-                doc.rect(0, 0, pageWidth, 25, 'F');
-
-                // Numéro travail à gauche
-                doc.setTextColor(255, 255, 255);
-                doc.setFontSize(10);
-                doc.setFont(undefined, 'normal');
-                doc.text(`${index + 1} / ${this.travaux.length}`, margin, 16);
-
-                // OT au centre
-                doc.setFontSize(16);
-                doc.setFont(undefined, 'bold');
-                doc.text(`OT: ${travail.ot || 'N/A'}`, pageWidth / 2, 16, { align: 'center' });
-
-                // Badge visite à droite si applicable
-                if (visiteData.aVoirSurPlace) {
-                    doc.setFillColor(252, 231, 243);
-                    doc.roundedRect(pageWidth - margin - 45, 8, 45, 12, 3, 3, 'F');
-                    doc.setTextColor(190, 24, 93);
-                    doc.setFontSize(8);
-                    doc.text('À voir sur place', pageWidth - margin - 22.5, 16, { align: 'center' });
-                }
-
-                // === DESCRIPTION SOUS L'EN-TÊTE ===
-                doc.setTextColor(30, 41, 59);
-                doc.setFontSize(12);
-                doc.setFont(undefined, 'bold');
-                const descLines = doc.splitTextToSize(travail.description || 'Sans description', pageWidth - margin * 2);
-                doc.text(descLines.slice(0, 2), pageWidth / 2, 35, { align: 'center' });
-
-                // === MISE EN PAGE 2 COLONNES ===
-                const colGauche = margin;
-                const colDroite = pageWidth / 2 + 5;
-                const colWidth = pageWidth / 2 - margin - 5;
-                let yGauche = 50;
-                let yDroite = 50;
-
-                // === COLONNE GAUCHE: INFORMATIONS ===
-
-                // Bloc infos principales
-                doc.setFillColor(248, 250, 252);
-                doc.roundedRect(colGauche, yGauche, colWidth, 50, 4, 4, 'F');
-
-                let yInfo = yGauche + 12;
-                const labelX = colGauche + 8;
-                const valueX = colGauche + 55;
-
-                // Ligne 1: Équipement
-                doc.setTextColor(100, 116, 139);
-                doc.setFontSize(9);
-                doc.setFont(undefined, 'normal');
-                doc.text('Équipement:', labelX, yInfo);
-                doc.setTextColor(30, 41, 59);
-                doc.setFont(undefined, 'bold');
-                doc.text((travail.equipement || '-').substring(0, 25), valueX, yInfo);
-
-                // Ligne 2: Opération
-                yInfo += 10;
-                doc.setTextColor(100, 116, 139);
-                doc.setFont(undefined, 'normal');
-                doc.text('Opération:', labelX, yInfo);
-                doc.setTextColor(30, 41, 59);
-                doc.setFont(undefined, 'bold');
-                doc.text((travail.operation || '-').substring(0, 25), valueX, yInfo);
-
-                // Ligne 3: Localisation
-                yInfo += 10;
-                doc.setTextColor(100, 116, 139);
-                doc.setFont(undefined, 'normal');
-                doc.text('Localisation:', labelX, yInfo);
-                doc.setTextColor(30, 41, 59);
-                doc.setFont(undefined, 'bold');
-                doc.text((travail.localisation || travail.secteur || '-').substring(0, 25), valueX, yInfo);
-
-                // Ligne 4: Discipline
-                yInfo += 10;
-                doc.setTextColor(100, 116, 139);
-                doc.setFont(undefined, 'normal');
-                doc.text('Discipline:', labelX, yInfo);
-                doc.setTextColor(30, 41, 59);
-                doc.setFont(undefined, 'bold');
-                doc.text((travail.discipline || '-').substring(0, 25), valueX, yInfo);
-
-                yGauche += 55;
-
-                // Badges Type / Jour / Heures sur une ligne
+                // Labels
                 const typeLabels = { 'aa': 'Arrêt Annuel', 'tpaa': 'TPAA', 'aa-tpaa': 'AA ou TPAA' };
                 const jourLabels = { 'jeudi': 'Jeudi d\'arrêt', 'hors-jeudi': 'Hors jeudi' };
 
-                let badgeX = colGauche;
+                // === EN-TÊTE BLEU FONCÉ ===
+                doc.setFillColor(30, 58, 95);
+                doc.rect(0, 0, pageWidth, 22, 'F');
 
-                // Badge heures
-                doc.setFillColor(219, 234, 254);
-                doc.roundedRect(badgeX, yGauche, 35, 14, 3, 3, 'F');
-                doc.setTextColor(29, 78, 216);
-                doc.setFontSize(10);
+                // Numéro travail à gauche
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(9);
+                doc.setFont(undefined, 'normal');
+                doc.text(`Travail ${index + 1} sur ${this.travaux.length}`, margin, 14);
+
+                // OT au centre
+                doc.setFontSize(14);
                 doc.setFont(undefined, 'bold');
-                doc.text(`${travail.estimationHeures || 0}h`, badgeX + 17.5, yGauche + 10, { align: 'center' });
-                badgeX += 40;
+                doc.text(`OT: ${travail.ot || 'N/A'}`, pageWidth / 2, 14, { align: 'center' });
 
-                // Badge priorité
-                if (travail.priorite) {
-                    const prioColors = { 'haute': [254, 226, 226], 'moyenne': [254, 243, 199], 'basse': [220, 252, 231] };
-                    const prioText = { 'haute': [185, 28, 28], 'moyenne': [146, 64, 14], 'basse': [6, 95, 70] };
-                    const prio = travail.priorite.toLowerCase();
-                    doc.setFillColor(...(prioColors[prio] || [229, 231, 235]));
-                    doc.roundedRect(badgeX, yGauche, 40, 14, 3, 3, 'F');
-                    doc.setTextColor(...(prioText[prio] || [100, 100, 100]));
-                    doc.setFontSize(9);
-                    doc.text(travail.priorite, badgeX + 20, yGauche + 10, { align: 'center' });
-                    badgeX += 45;
-                }
-
-                // Badge type travail
-                if (travail.typeTravail) {
-                    doc.setFillColor(237, 233, 254);
-                    doc.roundedRect(badgeX, yGauche, 50, 14, 3, 3, 'F');
-                    doc.setTextColor(109, 40, 217);
-                    doc.setFontSize(9);
-                    doc.text(typeLabels[travail.typeTravail] || travail.typeTravail, badgeX + 25, yGauche + 10, { align: 'center' });
-                }
-
-                yGauche += 20;
-
-                // Badge jour arrêt
-                if (travail.jourArret && travail.typeTravail !== 'aa') {
-                    doc.setFillColor(254, 243, 199);
-                    doc.roundedRect(colGauche, yGauche, 55, 14, 3, 3, 'F');
-                    doc.setTextColor(146, 64, 14);
-                    doc.setFontSize(9);
-                    doc.text(jourLabels[travail.jourArret] || travail.jourArret, colGauche + 27.5, yGauche + 10, { align: 'center' });
-                    yGauche += 18;
-                }
-
-                // === COMMENTAIRE GESTIONNAIRE ===
-                if (travail.commentaire) {
-                    doc.setFillColor(254, 249, 195);
-                    doc.roundedRect(colGauche, yGauche, colWidth, 35, 4, 4, 'F');
-                    doc.setTextColor(146, 64, 14);
-                    doc.setFontSize(9);
-                    doc.setFont(undefined, 'bold');
-                    doc.text('Note du gestionnaire', colGauche + 5, yGauche + 10);
-                    doc.setFont(undefined, 'normal');
-                    doc.setFontSize(8);
-                    const noteLines = doc.splitTextToSize(travail.commentaire, colWidth - 10);
-                    doc.text(noteLines.slice(0, 4), colGauche + 5, yGauche + 18);
-                    yGauche += 40;
-                }
-
-                // === COMMENTAIRE ENTREPRENEUR ===
-                if (commentaire) {
-                    doc.setFillColor(220, 252, 231);
-                    doc.roundedRect(colGauche, yGauche, colWidth, 35, 4, 4, 'F');
-                    doc.setTextColor(6, 95, 70);
-                    doc.setFontSize(9);
-                    doc.setFont(undefined, 'bold');
-                    doc.text('Commentaire entrepreneur', colGauche + 5, yGauche + 10);
-                    doc.setFont(undefined, 'normal');
-                    doc.setFontSize(8);
-                    const entLines = doc.splitTextToSize(commentaire, colWidth - 10);
-                    doc.text(entLines.slice(0, 4), colGauche + 5, yGauche + 18);
-                    yGauche += 40;
-                }
-
-                // === VISITE SUR PLACE ===
-                if (visiteData.aVoirSurPlace && visiteData.mesures) {
-                    doc.setFillColor(252, 231, 243);
-                    doc.roundedRect(colGauche, yGauche, colWidth, 28, 4, 4, 'F');
+                // Badge visite si applicable
+                if (visiteData.aVoirSurPlace) {
+                    doc.setFillColor(255, 255, 255);
+                    doc.roundedRect(pageWidth - margin - 50, 6, 50, 10, 2, 2, 'F');
                     doc.setTextColor(190, 24, 93);
+                    doc.setFontSize(7);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('À VOIR SUR PLACE', pageWidth - margin - 25, 13, { align: 'center' });
+                }
+
+                let y = 30;
+
+                // === DESCRIPTION ===
+                doc.setTextColor(30, 41, 59);
+                doc.setFontSize(11);
+                doc.setFont(undefined, 'bold');
+                const descLines = doc.splitTextToSize(travail.description || 'Sans description', pageWidth - margin * 2);
+                doc.text(descLines.slice(0, 2), margin, y);
+                y += descLines.slice(0, 2).length * 5 + 8;
+
+                // === LIGNE TYPE TRAVAIL / JOUR (style HTML) ===
+                if (travail.typeTravail) {
+                    // Fond gris clair pour toute la section
+                    doc.setFillColor(248, 250, 252);
+                    doc.roundedRect(margin, y, pageWidth - margin * 2, 16, 3, 3, 'F');
+
+                    let xPos = margin + 5;
+
+                    // Label "Doit être fait pendant :"
+                    doc.setTextColor(100, 116, 139);
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'normal');
+                    doc.text('Doit être fait pendant :', xPos, y + 11);
+                    xPos += 48;
+
+                    // Badge type (AA / TPAA / AA ou TPAA)
+                    const typeColors = { 'aa': [219, 234, 254], 'tpaa': [237, 233, 254], 'aa-tpaa': [254, 243, 199] };
+                    const typeTextColors = { 'aa': [29, 78, 216], 'tpaa': [109, 40, 217], 'aa-tpaa': [146, 64, 14] };
+                    const typeEmoji = { 'aa': '🔧', 'tpaa': '📋', 'aa-tpaa': '🔧📋' };
+
+                    doc.setFillColor(...(typeColors[travail.typeTravail] || [229, 231, 235]));
+                    const typeText = `${typeEmoji[travail.typeTravail] || ''} ${typeLabels[travail.typeTravail] || travail.typeTravail}`;
+                    const typeWidth = doc.getTextWidth(typeText) + 10;
+                    doc.roundedRect(xPos, y + 3, typeWidth, 10, 2, 2, 'F');
+                    doc.setTextColor(...(typeTextColors[travail.typeTravail] || [100, 100, 100]));
+                    doc.setFont(undefined, 'bold');
+                    doc.setFontSize(8);
+                    doc.text(typeText, xPos + 5, y + 10);
+                    xPos += typeWidth + 10;
+
+                    // Si TPAA ou AA-TPAA, afficher le jour
+                    if (travail.jourArret && travail.typeTravail !== 'aa') {
+                        // Séparateur
+                        doc.setTextColor(148, 163, 184);
+                        doc.setFont(undefined, 'normal');
+                        doc.text('—', xPos, y + 11);
+                        xPos += 8;
+
+                        // Label "Durant :"
+                        doc.setTextColor(100, 116, 139);
+                        doc.setFontSize(9);
+                        doc.text('Durant :', xPos, y + 11);
+                        xPos += 22;
+
+                        // Badge jour
+                        const jourColors = { 'jeudi': [254, 243, 199], 'hors-jeudi': [220, 252, 231] };
+                        const jourTextColors = { 'jeudi': [146, 64, 14], 'hors-jeudi': [6, 95, 70] };
+                        const jourEmoji = { 'jeudi': '🗓️', 'hors-jeudi': '✓' };
+
+                        doc.setFillColor(...(jourColors[travail.jourArret] || [229, 231, 235]));
+                        const jourText = `${jourEmoji[travail.jourArret] || ''} ${jourLabels[travail.jourArret] || travail.jourArret}`;
+                        const jourWidth = doc.getTextWidth(jourText) + 10;
+                        doc.roundedRect(xPos, y + 3, jourWidth, 10, 2, 2, 'F');
+                        doc.setTextColor(...(jourTextColors[travail.jourArret] || [100, 100, 100]));
+                        doc.setFont(undefined, 'bold');
+                        doc.setFontSize(8);
+                        doc.text(jourText, xPos + 5, y + 10);
+                    }
+
+                    y += 22;
+                }
+
+                // === GRILLE D'INFORMATIONS ===
+                const infoBoxWidth = (pageWidth - margin * 2 - 15) / 4;
+                const infoBoxHeight = 22;
+
+                // Ligne 1: Équipement, Opération, Localisation, Heures
+                const infos = [
+                    { label: 'Équipement', value: travail.equipement || '-' },
+                    { label: 'Opération', value: travail.operation || '-' },
+                    { label: 'Localisation', value: travail.localisation || travail.secteur || '-' },
+                    { label: 'Heures estimées', value: `${travail.estimationHeures || 0} h` }
+                ];
+
+                infos.forEach((info, i) => {
+                    const boxX = margin + i * (infoBoxWidth + 5);
+                    doc.setFillColor(248, 250, 252);
+                    doc.roundedRect(boxX, y, infoBoxWidth, infoBoxHeight, 2, 2, 'F');
+
+                    doc.setTextColor(100, 116, 139);
+                    doc.setFontSize(7);
+                    doc.setFont(undefined, 'normal');
+                    doc.text(info.label, boxX + 4, y + 8);
+
+                    doc.setTextColor(30, 41, 59);
                     doc.setFontSize(9);
                     doc.setFont(undefined, 'bold');
-                    doc.text('Notes visite terrain', colGauche + 5, yGauche + 10);
+                    const valueText = info.value.length > 20 ? info.value.substring(0, 18) + '...' : info.value;
+                    doc.text(valueText, boxX + 4, y + 17);
+                });
+
+                y += infoBoxHeight + 8;
+
+                // === SECTION 2 COLONNES: Commentaires / Photos ===
+                const colWidth = (pageWidth - margin * 2 - 10) / 2;
+                const colGauche = margin;
+                const colDroite = margin + colWidth + 10;
+                let yGauche = y;
+                let yDroite = y;
+
+                // === COLONNE GAUCHE: COMMENTAIRES ===
+
+                // Commentaire gestionnaire (si existe)
+                if (travail.commentaire) {
+                    // Bordure jaune à gauche
+                    doc.setFillColor(254, 243, 199);
+                    doc.rect(colGauche, yGauche, 3, 32, 'F');
+                    // Fond
+                    doc.setFillColor(255, 251, 235);
+                    doc.rect(colGauche + 3, yGauche, colWidth - 3, 32, 'F');
+
+                    doc.setTextColor(146, 64, 14);
+                    doc.setFontSize(8);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('💬 Note du gestionnaire', colGauche + 8, yGauche + 9);
+
+                    doc.setTextColor(113, 63, 18);
                     doc.setFont(undefined, 'normal');
                     doc.setFontSize(8);
-                    const mesuresLines = doc.splitTextToSize(visiteData.mesures, colWidth - 10);
-                    doc.text(mesuresLines.slice(0, 3), colGauche + 5, yGauche + 18);
-                    yGauche += 33;
+                    const noteLines = doc.splitTextToSize(travail.commentaire, colWidth - 15);
+                    doc.text(noteLines.slice(0, 3), colGauche + 8, yGauche + 18);
+
+                    yGauche += 38;
+                }
+
+                // Commentaire entrepreneur (si existe)
+                if (commentaire) {
+                    // Bordure verte à gauche
+                    doc.setFillColor(134, 239, 172);
+                    doc.rect(colGauche, yGauche, 3, 32, 'F');
+                    // Fond
+                    doc.setFillColor(240, 253, 244);
+                    doc.rect(colGauche + 3, yGauche, colWidth - 3, 32, 'F');
+
+                    doc.setTextColor(22, 101, 52);
+                    doc.setFontSize(8);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('✏️ Commentaire entrepreneur', colGauche + 8, yGauche + 9);
+
+                    doc.setTextColor(20, 83, 45);
+                    doc.setFont(undefined, 'normal');
+                    doc.setFontSize(8);
+                    const entLines = doc.splitTextToSize(commentaire, colWidth - 15);
+                    doc.text(entLines.slice(0, 3), colGauche + 8, yGauche + 18);
+
+                    yGauche += 38;
+                }
+
+                // Notes visite terrain (si existe)
+                if (visiteData.aVoirSurPlace && visiteData.mesures) {
+                    // Bordure rose à gauche
+                    doc.setFillColor(249, 168, 212);
+                    doc.rect(colGauche, yGauche, 3, 28, 'F');
+                    // Fond
+                    doc.setFillColor(253, 242, 248);
+                    doc.rect(colGauche + 3, yGauche, colWidth - 3, 28, 'F');
+
+                    doc.setTextColor(190, 24, 93);
+                    doc.setFontSize(8);
+                    doc.setFont(undefined, 'bold');
+                    doc.text('📍 Notes visite terrain', colGauche + 8, yGauche + 9);
+
+                    doc.setTextColor(157, 23, 77);
+                    doc.setFont(undefined, 'normal');
+                    doc.setFontSize(8);
+                    const mesuresLines = doc.splitTextToSize(visiteData.mesures, colWidth - 15);
+                    doc.text(mesuresLines.slice(0, 2), colGauche + 8, yGauche + 18);
+
+                    yGauche += 34;
+                }
+
+                // Si aucun commentaire, afficher un placeholder
+                if (!travail.commentaire && !commentaire && !(visiteData.aVoirSurPlace && visiteData.mesures)) {
+                    doc.setFillColor(248, 250, 252);
+                    doc.roundedRect(colGauche, yGauche, colWidth, 30, 3, 3, 'F');
+                    doc.setTextColor(148, 163, 184);
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'italic');
+                    doc.text('Aucun commentaire', colGauche + colWidth / 2, yGauche + 18, { align: 'center' });
+                    yGauche += 36;
                 }
 
                 // === COLONNE DROITE: PHOTOS ===
                 if (hasPhotos) {
-                    // Titre section photos
+                    // En-tête photos
                     doc.setFillColor(241, 245, 249);
-                    doc.roundedRect(colDroite, yDroite, colWidth, 20, 4, 4, 'F');
-                    doc.setTextColor(71, 85, 105);
-                    doc.setFontSize(10);
+                    doc.roundedRect(colDroite, yDroite, colWidth, 14, 3, 3, 'F');
+                    doc.setTextColor(51, 65, 85);
+                    doc.setFontSize(9);
                     doc.setFont(undefined, 'bold');
-                    doc.text(`Photos (${allPhotos.length})`, colDroite + colWidth / 2, yDroite + 13, { align: 'center' });
-                    yDroite += 25;
+                    doc.text(`📷 Photos (${allPhotos.length})`, colDroite + 8, yDroite + 10);
+                    yDroite += 18;
 
-                    // Grille de photos 2x3
-                    const photoW = (colWidth - 10) / 2;
-                    const photoH = 40;
-                    const maxPhotos = Math.min(allPhotos.length, 6);
+                    // Grille de photos 2x2
+                    const photoW = (colWidth - 8) / 2;
+                    const photoH = 38;
+                    const maxPhotos = Math.min(allPhotos.length, 4);
 
                     for (let i = 0; i < maxPhotos; i++) {
                         const col = i % 2;
                         const row = Math.floor(i / 2);
-                        const pX = colDroite + col * (photoW + 5);
-                        const pY = yDroite + row * (photoH + 5);
+                        const pX = colDroite + col * (photoW + 4);
+                        const pY = yDroite + row * (photoH + 4);
 
                         try {
                             const photoData = allPhotos[i];
                             if (photoData && typeof photoData === 'string') {
-                                // Détecter le format de l'image
                                 let format = 'JPEG';
-                                if (photoData.includes('data:image/png')) {
-                                    format = 'PNG';
-                                } else if (photoData.includes('data:image/webp')) {
-                                    format = 'WEBP';
-                                }
+                                if (photoData.includes('data:image/png')) format = 'PNG';
+                                else if (photoData.includes('data:image/webp')) format = 'WEBP';
                                 doc.addImage(photoData, format, pX, pY, photoW, photoH);
                             } else {
                                 throw new Error('Photo invalide');
                             }
                         } catch (e) {
-                            console.error('Erreur ajout photo PDF:', e, allPhotos[i]?.substring(0, 50));
-                            doc.setFillColor(229, 231, 235);
-                            doc.roundedRect(pX, pY, photoW, photoH, 3, 3, 'F');
-                            doc.setTextColor(150, 150, 150);
+                            console.error('Erreur ajout photo PDF:', e);
+                            doc.setFillColor(241, 245, 249);
+                            doc.roundedRect(pX, pY, photoW, photoH, 2, 2, 'F');
+                            doc.setTextColor(148, 163, 184);
                             doc.setFontSize(8);
                             doc.text('Photo', pX + photoW / 2, pY + photoH / 2, { align: 'center' });
                         }
                     }
 
-                    yDroite += Math.ceil(maxPhotos / 2) * (photoH + 5) + 5;
+                    yDroite += Math.ceil(maxPhotos / 2) * (photoH + 4) + 4;
 
-                    if (allPhotos.length > 6) {
+                    if (allPhotos.length > 4) {
                         doc.setTextColor(100, 116, 139);
-                        doc.setFontSize(9);
-                        doc.text(`+ ${allPhotos.length - 6} autres photos`, colDroite + colWidth / 2, yDroite, { align: 'center' });
-                        yDroite += 10;
+                        doc.setFontSize(8);
+                        doc.text(`+ ${allPhotos.length - 4} autres photos`, colDroite + colWidth / 2, yDroite, { align: 'center' });
                     }
                 } else {
-                    // Pas de photos - afficher placeholder
+                    // Pas de photos
                     doc.setFillColor(248, 250, 252);
-                    doc.roundedRect(colDroite, yDroite, colWidth, 80, 4, 4, 'F');
+                    doc.roundedRect(colDroite, yDroite, colWidth, 50, 3, 3, 'F');
                     doc.setTextColor(148, 163, 184);
-                    doc.setFontSize(10);
-                    doc.text('Aucune photo', colDroite + colWidth / 2, yDroite + 40, { align: 'center' });
-                    yDroite += 85;
+                    doc.setFontSize(9);
+                    doc.setFont(undefined, 'italic');
+                    doc.text('Aucune photo', colDroite + colWidth / 2, yDroite + 28, { align: 'center' });
                 }
 
-                // === PIÈCES JOINTES (sous les photos) ===
+                // === DOCUMENTS (en bas si présents) ===
                 const nbDocs = (uploadData.documents || []).length;
+                const finalY = Math.max(yGauche, yDroite) + 5;
                 if (nbDocs > 0) {
                     doc.setFillColor(239, 246, 255);
-                    doc.roundedRect(colDroite, yDroite, colWidth, 18, 4, 4, 'F');
+                    doc.roundedRect(margin, finalY, pageWidth - margin * 2, 12, 2, 2, 'F');
                     doc.setTextColor(29, 78, 216);
-                    doc.setFontSize(9);
-                    doc.text(`${nbDocs} document(s) joint(s)`, colDroite + colWidth / 2, yDroite + 12, { align: 'center' });
+                    doc.setFontSize(8);
+                    doc.setFont(undefined, 'normal');
+                    doc.text(`📎 ${nbDocs} document(s) joint(s) par l'entrepreneur`, margin + 8, finalY + 8);
                 }
 
                 // === FOOTER ===
                 doc.setDrawColor(226, 232, 240);
-                doc.line(margin, pageHeight - 15, pageWidth - margin, pageHeight - 15);
+                doc.line(margin, pageHeight - 12, pageWidth - margin, pageHeight - 12);
                 doc.setTextColor(148, 163, 184);
-                doc.setFontSize(8);
+                doc.setFontSize(7);
                 doc.setFont(undefined, 'normal');
-                doc.text(this.entreprise, margin, pageHeight - 8);
-                doc.text(this.appelData.nomArret || 'Arrêt Annuel', pageWidth / 2, pageHeight - 8, { align: 'center' });
-                doc.text(new Date().toLocaleDateString('fr-CA'), pageWidth - margin, pageHeight - 8, { align: 'right' });
+                doc.text(this.entreprise, margin, pageHeight - 6);
+                doc.text(this.appelData.nomArret || 'Arrêt Annuel', pageWidth / 2, pageHeight - 6, { align: 'center' });
+                doc.text(new Date().toLocaleDateString('fr-CA'), pageWidth - margin, pageHeight - 6, { align: 'right' });
             },
 
             renderPDFSummaryPage(doc, pageWidth, pageHeight, margin) {
