@@ -2690,6 +2690,21 @@
                 const pageHeight = 210;
                 const margin = 15;
 
+                // Debug: afficher les sources de photos
+                console.log('=== DEBUG PDF PHOTOS ===');
+                this.travaux.forEach((t, i) => {
+                    const visiteData = this.visitesData[i] || {};
+                    const uploadData = this.uploadsData[i] || {};
+                    console.log(`Travail ${i}:`, {
+                        photosGestionnaire: (t.photos || []).length,
+                        photosVisite: (visiteData.photos || []).length,
+                        photosEntrepreneur: (uploadData.photos || []).length,
+                        sampleGest: t.photos?.[0]?.substring(0, 80),
+                        sampleVisite: visiteData.photos?.[0]?.substring(0, 80),
+                        sampleUpload: uploadData.photos?.[0]?.substring(0, 80)
+                    });
+                });
+
                 // === PAGE DE TITRE ===
                 this.renderPDFTitlePage(doc, pageWidth, pageHeight);
 
@@ -2971,8 +2986,21 @@
                         const pY = yDroite + row * (photoH + 5);
 
                         try {
-                            doc.addImage(allPhotos[i], 'JPEG', pX, pY, photoW, photoH);
+                            const photoData = allPhotos[i];
+                            if (photoData && typeof photoData === 'string') {
+                                // Détecter le format de l'image
+                                let format = 'JPEG';
+                                if (photoData.includes('data:image/png')) {
+                                    format = 'PNG';
+                                } else if (photoData.includes('data:image/webp')) {
+                                    format = 'WEBP';
+                                }
+                                doc.addImage(photoData, format, pX, pY, photoW, photoH);
+                            } else {
+                                throw new Error('Photo invalide');
+                            }
                         } catch (e) {
+                            console.error('Erreur ajout photo PDF:', e, allPhotos[i]?.substring(0, 50));
                             doc.setFillColor(229, 231, 235);
                             doc.roundedRect(pX, pY, photoW, photoH, 3, 3, 'F');
                             doc.setTextColor(150, 150, 150);
