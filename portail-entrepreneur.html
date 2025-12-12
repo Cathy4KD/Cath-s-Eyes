@@ -171,6 +171,107 @@
             box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
         }
 
+        /* Bilan heures */
+        .bilan-heures {
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            border: 2px solid #0ea5e9;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .bilan-heures-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #0369a1;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bilan-heures-content {
+            display: flex;
+            align-items: flex-start;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .bilan-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .bilan-input-label {
+            font-size: 0.85rem;
+            color: #0369a1;
+            font-weight: 600;
+        }
+
+        .bilan-input {
+            width: 100px;
+            padding: 10px 12px;
+            border: 2px solid #7dd3fc;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-align: center;
+            color: #0369a1;
+            background: white;
+        }
+
+        .bilan-input:focus {
+            outline: none;
+            border-color: #0ea5e9;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2);
+        }
+
+        .bilan-resultats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        .bilan-stat {
+            background: white;
+            border-radius: 10px;
+            padding: 12px 18px;
+            text-align: center;
+            min-width: 100px;
+            box-shadow: 0 2px 8px rgba(14, 165, 233, 0.15);
+        }
+
+        .bilan-stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #0369a1;
+        }
+
+        .bilan-stat-label {
+            font-size: 0.8rem;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
+        .bilan-stat.highlight {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+        }
+
+        .bilan-stat.highlight .bilan-stat-value,
+        .bilan-stat.highlight .bilan-stat-label {
+            color: white;
+        }
+
+        .bilan-detail {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #bae6fd;
+        }
+
         /* Section title */
         .section-title {
             font-size: 1.3rem;
@@ -2329,6 +2430,44 @@
                             </div>
                         </div>
 
+                        <!-- Bilan des heures -->
+                        <div class="bilan-heures">
+                            <div class="bilan-heures-title">
+                                <span>Calculateur de charge de travail</span>
+                            </div>
+                            <div class="bilan-heures-content">
+                                <div class="bilan-input-group">
+                                    <span class="bilan-input-label">Heures totales</span>
+                                    <input type="number" class="bilan-input" id="bilanHeuresTotal" value="${totalHeures}" readonly>
+                                </div>
+                                <div class="bilan-input-group">
+                                    <span class="bilan-input-label">Nb techniciens</span>
+                                    <input type="number" class="bilan-input" id="bilanTechniciens" value="1" min="1" max="50" onchange="PortailEntrepreneur.calculerBilan()">
+                                </div>
+                                <div class="bilan-resultats" id="bilanResultats">
+                                    <div class="bilan-stat">
+                                        <div class="bilan-stat-value" id="bilanHeuresParTech">${totalHeures}</div>
+                                        <div class="bilan-stat-label">h/technicien</div>
+                                    </div>
+                                    <div class="bilan-stat highlight">
+                                        <div class="bilan-stat-value" id="bilanJournees">${Math.floor(totalHeures / 8)}</div>
+                                        <div class="bilan-stat-label">journees (8h)</div>
+                                    </div>
+                                    <div class="bilan-stat">
+                                        <div class="bilan-stat-value" id="bilanDemiJournees">${Math.floor(totalHeures / 4)}</div>
+                                        <div class="bilan-stat-label">demi-journees</div>
+                                    </div>
+                                    <div class="bilan-stat">
+                                        <div class="bilan-stat-value" id="bilanReste">${totalHeures % 8}</div>
+                                        <div class="bilan-stat-label">h restantes</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bilan-detail" id="bilanDetail">
+                                Avec 1 technicien : ${Math.floor(totalHeures / 8)} jours complets + ${totalHeures % 8}h
+                            </div>
+                        </div>
+
                         ${this.appelData.planImage ? `
                             <div class="plan-section">
                                 <h2 class="section-title">🗺️ Plan de localisation</h2>
@@ -3254,6 +3393,31 @@
                 toast.textContent = message;
                 toast.className = `toast ${type} show`;
                 setTimeout(() => toast.classList.remove('show'), 3000);
+            },
+
+            calculerBilan() {
+                const totalHeures = this.travaux.reduce((sum, t) => sum + (parseFloat(t.estimationHeures) || 0), 0);
+                const nbTech = parseInt(document.getElementById('bilanTechniciens')?.value) || 1;
+
+                const heuresParTech = totalHeures / nbTech;
+                const journees = Math.floor(heuresParTech / 8);
+                const demiJournees = Math.floor(heuresParTech / 4);
+                const reste = Math.round((heuresParTech % 8) * 10) / 10;
+
+                // Mettre a jour les valeurs
+                document.getElementById('bilanHeuresParTech').textContent = Math.round(heuresParTech * 10) / 10;
+                document.getElementById('bilanJournees').textContent = journees;
+                document.getElementById('bilanDemiJournees').textContent = demiJournees;
+                document.getElementById('bilanReste').textContent = reste;
+
+                // Detail textuel
+                let detail = `Avec ${nbTech} technicien${nbTech > 1 ? 's' : ''} : `;
+                detail += `${Math.round(heuresParTech * 10) / 10}h chacun = `;
+                detail += `${journees} jour${journees > 1 ? 's' : ''} complet${journees > 1 ? 's' : ''}`;
+                if (reste > 0) {
+                    detail += ` + ${reste}h`;
+                }
+                document.getElementById('bilanDetail').textContent = detail;
             },
 
             filterTravaux() {
