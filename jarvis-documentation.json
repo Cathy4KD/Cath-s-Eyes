@@ -1,0 +1,544 @@
+{
+  "application": {
+    "nom": "Arrêt Annuel - Cath's Eyes",
+    "nomCourt": "AA",
+    "description": "Application web progressive (PWA) de gestion complète des arrêts annuels industriels pour Rio Tinto. Permet de planifier, suivre et documenter tous les travaux de maintenance lors des arrêts programmés d'usine.",
+    "version": "2.0",
+    "langue": "fr",
+    "hebergement": "GitHub Pages avec Firebase pour la synchronisation",
+    "technologiesUtilisees": ["HTML5", "CSS3", "JavaScript (Vanilla)", "Firebase Firestore", "SheetJS (XLSX)", "PDF.js"]
+  },
+
+  "architecture": {
+    "fichiersPrincipaux": {
+      "index.html": "Page principale HTML avec structure de l'interface",
+      "app.js": "Module principal - navigation, gestion des écrans, toasts, interactions",
+      "data.js": "DataManager - gestion des données, localStorage, statistiques",
+      "firebase.js": "FirebaseManager - synchronisation cloud Firestore",
+      "processus.js": "ProcessusArret - structure du processus d'arrêt Rio Tinto",
+      "screens.js": "Module Screens - écrans Exécution et Post-Mortem",
+      "screen-preparation.js": "Module ScreenPreparation - écrans de Préparation",
+      "screen-travail-detail.js": "ScreenTravailDetail - vue détaillée d'un travail",
+      "import.js": "Module d'import Excel SAP intelligent",
+      "reports.js": "ReportsManager - génération de rapports PDF/HTML",
+      "styles.css": "Feuille de styles CSS complète"
+    },
+    "stockageDonnees": {
+      "localStorage": "Stockage local principal avec clé 'arretAnnuel_travaux'",
+      "firebase": {
+        "collection": "arretAnnuel",
+        "document": "mainData",
+        "synchronisation": "Bidirectionnelle avec debounce 1 seconde",
+        "planImage": "Document séparé 'planImage' pour le plan visuel compressé"
+      }
+    }
+  },
+
+  "structureDonnees": {
+    "travail": {
+      "id": "Identifiant unique (ex: TRV-1702345678901)",
+      "ot": "Numéro d'ordre de travail SAP",
+      "operation": "Numéro d'opération",
+      "description": "Description du travail",
+      "equipement": "Équipement/Poste technique concerné",
+      "localisation": "Localisation physique",
+      "discipline": "Discipline (Mécanique, Électrique, Instrumentation, etc.)",
+      "entreprise": "Entreprise externe ou interne",
+      "priorite": "Priorité (Haute, Normale, Basse)",
+      "estimationHeures": "Heures estimées pour le travail",
+      "dateDebutExec": "Date de début d'exécution prévue",
+      "statut": "Statut général du travail",
+      "commentaire": "Commentaire principal visible dans la liste",
+      "preparation": {
+        "materielCommande": "Boolean - Matériel commandé",
+        "permisSecurite": "Boolean - Permis de sécurité préparé",
+        "consignationPrevue": "Boolean - Consignation planifiée",
+        "pieceJointe": "Boolean - Documents attachés",
+        "gammeValidee": "Boolean - Gamme de travail validée",
+        "numDA": "Numéro de demande d'achat",
+        "etatDA": "État de la DA (Fait, En cours, À faire)",
+        "budget": "Budget alloué"
+      },
+      "execution": {
+        "statutExec": "Statut d'exécution (Non démarré, En cours, Terminé, Bloqué)",
+        "heuresReelles": "Heures réellement consommées",
+        "pourcentage": "Pourcentage d'avancement"
+      },
+      "sst": {
+        "ideers5": "Boolean - IDEERS5 validé",
+        "ccc": "Boolean - CCC validé",
+        "verrouillageSST": "Boolean - Verrouillage SST",
+        "balisage": "Boolean - Balisage fait"
+      },
+      "reservations": "Array - Réservations (Nacelles, Grues, Échafaudages)",
+      "tachesCognibox": "Array - Tâches Cognibox avec dates",
+      "avisSynd": "Array - Avis syndicaux",
+      "responsables": "Array - Liste des responsables",
+      "photos": "Object - Références photos PREP et SST",
+      "verrouillage": "Texte - Informations de verrouillage"
+    },
+    "processus": {
+      "dateArret": "Date T-0 de l'arrêt",
+      "dureeArret": "Durée en jours (défaut 14)",
+      "definitionArret": {
+        "budget": "Budget total de l'arrêt",
+        "cheminDossier": "Chemin réseau du dossier",
+        "reunion": "Informations sur les réunions (lien Teams, jour, heure)",
+        "ressources": "Array - Ressources humaines assignées"
+      },
+      "etatEtapes": "Object - État de chaque étape du processus",
+      "planConfig": {
+        "imageData": "Image du plan en base64",
+        "positions": "Object - Positions {equipement: {x, y}} en pourcentage",
+        "vuesDetail": "Array - Vues sauvegardées avec zoom et pan"
+      },
+      "plansEntretien": "Données plans d'entretien long délai",
+      "equipeGestion": "Membres de l'équipe de gestion",
+      "demandesAchat": "Lignes de demandes d'achat",
+      "soumissions": "Soumissions entrepreneurs avec relances",
+      "strategieAppro": "Stratégie d'approvisionnement",
+      "journals": "Object - Journaux quotidiens par date",
+      "demandes": "Object - Demandes quotidiennes (grues, échafauds, verrouillages)",
+      "postMortem": "Données d'évaluation post-mortem",
+      "tpaa": "Travaux Préparatoires Avant Arrêt"
+    }
+  },
+
+  "navigation": {
+    "menuPrincipal": {
+      "phasesColorees": {
+        "Preparation": {
+          "couleur": "Orange (#f97316)",
+          "description": "Phase de préparation - planification avant l'arrêt",
+          "ecran": "preparation"
+        },
+        "Execution": {
+          "couleur": "Bleu (#3b82f6)",
+          "description": "Phase d'exécution - pendant l'arrêt",
+          "ecran": "execution"
+        },
+        "PostMortem": {
+          "couleur": "Vert (#22c55e)",
+          "description": "Phase de retour d'expérience - après l'arrêt",
+          "ecran": "postmortem"
+        }
+      },
+      "outils": [
+        {"nom": "Tableau de bord", "ecran": "dashboard", "icone": "📊"},
+        {"nom": "Liste Travaux", "ecran": "travaux", "icone": "🔧"},
+        {"nom": "Rapports", "ecran": "rapports", "icone": "📄"}
+      ]
+    }
+  },
+
+  "ecrans": {
+    "dashboard": {
+      "description": "Vue d'ensemble avec statistiques globales et prochaines actions",
+      "composants": [
+        "Compteurs: Total travaux, % Préparation, % Exécution, Heures consommées",
+        "Prochaines étapes du processus",
+        "Étapes bloquées",
+        "Graphiques d'avancement"
+      ]
+    },
+    "travaux": {
+      "description": "Liste complète de tous les travaux avec filtres et recherche",
+      "fonctionnalites": [
+        "Filtrage par discipline, entreprise, statut",
+        "Recherche textuelle",
+        "Tri par colonnes",
+        "Clic sur ligne pour détail complet",
+        "Bouton import SAP"
+      ],
+      "colonnes": ["OT", "Description", "Équipement", "Discipline", "Date début", "Entreprise", "Statut", "Commentaire"]
+    },
+    "travailDetail": {
+      "description": "Vue complète d'un travail en 2 colonnes",
+      "colonneGauche": [
+        "Informations générales (OT, opération, équipement, heures)",
+        "Section Préparation (DA, budget)",
+        "Réservations (Nacelles, Grues, Échafaudages)",
+        "Tâches Cognibox",
+        "Avis syndicaux",
+        "Responsables",
+        "Commentaire principal",
+        "Historique des commentaires",
+        "Verrouillage"
+      ],
+      "colonneDroite": [
+        "Photos PREP (8 slots)",
+        "Liens Documents",
+        "Section Santé-Sécurité (IDEERS5, CCC, Verrouillage, Balisage)",
+        "Photos SST (8 slots)"
+      ]
+    },
+    "preparation": {
+      "description": "Écran principal de la phase de préparation",
+      "structure": "Liste des étapes du processus avec progression",
+      "vues": ["liste", "detail"],
+      "etapesSpeciales": {
+        "D1.0": {
+          "nom": "Définition de l'arrêt",
+          "champs": ["Date de début", "Durée", "Date fin", "Budget", "Chemin dossier", "Réunion Teams"],
+          "ressources": "Liste des ressources avec rôle, département, contact"
+        },
+        "D2.0": {
+          "nom": "Plans d'entretien long délai",
+          "fonctionnalites": ["Import Excel", "Mapping colonnes", "Tableau avec statut (À commander/Commandé/Reçu)", "Validation"]
+        },
+        "D3.0": {
+          "nom": "Équipe de gestion d'arrêt",
+          "fonctionnalites": ["Organigramme visuel", "4 niveaux hiérarchiques", "Ajout/modification membres"]
+        },
+        "D4.0": {
+          "nom": "DA et Soumissions",
+          "fonctionnalites": ["Tableau DA avec totaux", "Suivi budget utilisé/restant", "Tableau soumissions avec relances automatiques (14/28/42 jours)"]
+        },
+        "PL3.0": {
+          "nom": "TPAA - Travaux Préparatoires Avant Arrêt",
+          "fonctionnalites": ["Liste filtrée des travaux TPAA", "Statuts: À faire, Planifié, En cours, Fait, Annulé", "Commentaires directs"]
+        }
+      }
+    },
+    "execution": {
+      "description": "Écran de suivi pendant l'arrêt",
+      "onglets": {
+        "realisation": {
+          "nom": "Réalisation temps réel",
+          "sousOnglets": {
+            "liste": "Liste du jour - travaux en cours/prévus avec statut modifiable",
+            "calendrier": "Vue semaine avec aperçu des travaux par jour",
+            "plan": {
+              "description": "Vue plan visuel de l'usine",
+              "fonctionnalites": [
+                "Upload plan (PNG, JPG, PDF)",
+                "Positionnement équipements sur le plan",
+                "Marqueurs colorés selon avancement",
+                "Zoom/Pan avec molette et boutons",
+                "Vues sauvegardées",
+                "Clic sur marqueur pour détail équipement"
+              ]
+            }
+          }
+        },
+        "reunions": {
+          "nom": "Réunions entrepreneurs",
+          "description": "Réunions automatiques par entreprise externe détectée dans les travaux",
+          "entreprisesDetectees": ["MECEXT*", "HYDEP", "ORTEC", "VEOLIA", "A91CS", "AEROVAC"]
+        },
+        "journal": {
+          "nom": "Points de presse",
+          "description": "Journal de bord quotidien",
+          "champs": [
+            "Upside (points positifs)",
+            "Downside (points négatifs)",
+            "Statut suivi coûts (Favorable/Conforme/Dépassement)",
+            "Chemins critiques (nom + statut)",
+            "Sécurité: Quasi, Règle d'or, Incident + description"
+          ],
+          "historique": "Navigation par date avec historique consultable"
+        },
+        "demandes": {
+          "nom": "Demandes quotidiennes",
+          "categories": ["Grues", "Échafauds", "Verrouillages"],
+          "champsParDemande": ["Demandeur", "OT", "Date", "Localisation", "Commentaire", "Statut"],
+          "statuts": ["Demandé", "Approuvé", "En place", "Terminé"]
+        },
+        "rapportsQuart": {
+          "nom": "Rapports de quart",
+          "description": "Rapports par quart de travail"
+        }
+      }
+    },
+    "postmortem": {
+      "description": "Analyse post-arrêt et retours d'expérience",
+      "onglets": {
+        "preparation": {
+          "nom": "Évaluation Préparation",
+          "sections": ["Qualité du Scope", "Planification", "Ressources", "Communication pré-arrêt"],
+          "notations": "Étoiles 1-5 + checklists + commentaires"
+        },
+        "execution": {
+          "nom": "Évaluation Exécution",
+          "sections": ["Respect calendrier (prévu vs réel)", "Sécurité (quasi/règle d'or/incidents/accidents)", "Qualité des travaux"]
+        },
+        "couts": {
+          "nom": "Analyse des coûts",
+          "description": "Budget prévu vs réel, analyse des écarts"
+        },
+        "lecons": {
+          "nom": "Leçons apprises",
+          "description": "Documentation des apprentissages pour les arrêts futurs"
+        },
+        "actions": {
+          "nom": "Actions",
+          "description": "Suivi des actions post-mortem avec responsable, échéance, statut"
+        }
+      }
+    },
+    "rapports": {
+      "description": "Génération de rapports",
+      "typesRapports": [
+        {"nom": "Synthèse Globale", "contenu": "Vue d'ensemble complète"},
+        {"nom": "Préparation", "contenu": "État détaillé de préparation"},
+        {"nom": "Exécution", "contenu": "Avancement et heures"},
+        {"nom": "Post-Mortem", "contenu": "Actions et leçons"},
+        {"nom": "Personnalisé", "contenu": "Sélection des sections à inclure"}
+      ],
+      "format": "HTML dans nouvelle fenêtre avec bouton impression/PDF"
+    }
+  },
+
+  "processusArret": {
+    "description": "Structure du processus d'arrêt basé sur Rio Tinto Shutdown Management Process",
+    "phases": {
+      "definir": {
+        "id": "definir",
+        "nom": "Définir",
+        "description": "Élaboration et fixation de l'ampleur",
+        "periode": "T-26 à T-18 semaines",
+        "couleur": "#3b82f6",
+        "etapes": [
+          {"id": "D1.0", "nom": "Définition de l'arrêt", "critical": true},
+          {"id": "D2.0", "nom": "Validation plans entretien long délais", "critical": true},
+          {"id": "D3.0", "nom": "Nommer équipe de gestion", "critical": true},
+          {"id": "D4.0", "nom": "DA et Soumissions", "critical": true},
+          {"id": "D5.0", "nom": "Stratégie d'approvisionnement", "critical": true, "jalon": true}
+        ]
+      },
+      "planifier": {
+        "id": "planifier",
+        "nom": "Planifier",
+        "description": "Programmation de l'arrêt",
+        "periode": "T-18 à T-12 semaines",
+        "couleur": "#8b5cf6",
+        "etapes": [
+          {"id": "PL1.0", "nom": "Liste projets et capitalisation", "lienTravaux": true},
+          {"id": "PL2.0", "nom": "Scope travaux par secteurs", "lienTravaux": true},
+          {"id": "PL3.0", "nom": "TPAA", "lienTravaux": true},
+          {"id": "PL4.0", "nom": "Service incendie"},
+          {"id": "PL5.0", "nom": "VPO", "lienTravaux": true},
+          {"id": "PL6.0", "nom": "PSV", "lienTravaux": true},
+          {"id": "PL7.0", "nom": "Commande matériel", "jalon": true},
+          {"id": "PL8.0", "nom": "Avis priorisés", "lienTravaux": true},
+          {"id": "PL9.0", "nom": "Travaux entrepreneur", "lienTravaux": true},
+          {"id": "PL10.0", "nom": "Verrouillage", "lienTravaux": true},
+          {"id": "PL11.0", "nom": "Équipement de levage", "lienTravaux": true},
+          {"id": "PL12.0", "nom": "Espace clos", "lienTravaux": true},
+          {"id": "PL13.0", "nom": "Arrêt et besoins électriques"},
+          {"id": "PL14.0", "nom": "Chemin critique"},
+          {"id": "PL15.0", "nom": "SMED"},
+          {"id": "PL16.0", "nom": "GAZ CO"},
+          {"id": "PL17.0", "nom": "Plan d'aménagement AA"}
+        ]
+      },
+      "preparer": {
+        "id": "preparer",
+        "nom": "Préparer",
+        "description": "Optimisation du calendrier et mobilisation",
+        "periode": "T-4 à T-0 semaines",
+        "couleur": "#f59e0b",
+        "etapes": [
+          {"id": "PR1.0", "nom": "Examen lots travaux", "jalon": true, "lienTravaux": true},
+          {"id": "PR2.0", "nom": "Calendrier détaillé définitif", "jalon": true},
+          {"id": "PR3.0", "nom": "Examen niveau préparation", "jalon": true},
+          {"id": "PR4.0", "nom": "Procéder à l'arrêt?", "decision": true},
+          {"id": "PR5.0", "nom": "Préparation équipes travail"},
+          {"id": "PR6.0", "nom": "Préparation isolations et autorisations", "lienTravaux": true},
+          {"id": "PR7.0", "nom": "Livraison matériel", "lienTravaux": true},
+          {"id": "PR8.0", "nom": "Exécution tâches préalables", "lienTravaux": true},
+          {"id": "PR9.0", "nom": "Cognibox"},
+          {"id": "PR10.0", "nom": "Emplacement des poches"}
+        ]
+      }
+    },
+    "statutsEtape": ["non_demarre", "en_cours", "termine", "bloque"],
+    "pourcentagesAuto": {
+      "non_demarre": 0,
+      "en_cours": 50,
+      "termine": 100,
+      "bloque": 25
+    }
+  },
+
+  "importSAP": {
+    "description": "Import intelligent depuis fichiers Excel SAP",
+    "etapes": [
+      "1. Upload fichier Excel (.xlsx, .xls, .csv)",
+      "2. Mapping des colonnes vers les champs de l'application",
+      "3. Aperçu des données",
+      "4. Confirmation et import"
+    ],
+    "mappingAutomatique": {
+      "ot": ["Ordre", "OT", "N° Ordre", "Work Order"],
+      "description": ["Description", "Texte", "Désignation"],
+      "equipement": ["Équipement", "Poste technique", "Equipment"],
+      "discipline": ["Discipline", "Service", "Type"],
+      "entreprise": ["Entreprise", "Fournisseur", "Contractor"]
+    },
+    "comportementFusion": {
+      "comparaison": "Par OT + Description",
+      "conservationLocale": "Commentaires, statuts, données préparation",
+      "ajoutNouveaux": true,
+      "suppressionAbsents": true,
+      "resume": "X nouveaux, Y mis à jour, Z supprimés"
+    }
+  },
+
+  "synchronisationFirebase": {
+    "description": "Synchronisation bidirectionnelle avec Firebase Firestore",
+    "fonctionnement": {
+      "sauvegardeLocale": "Immédiate à chaque modification",
+      "syncCloud": "Debounce 1 seconde après modification",
+      "syncImmediate": "Pour données critiques (plan, configuration)",
+      "ecouteurTempsReel": "Écoute des changements Firebase pour mise à jour locale"
+    },
+    "indicateur": "Pastille colorée dans sidebar (vert=sync, orange=en cours)",
+    "syncManuelle": "Clic sur l'icône de synchronisation force une sync",
+    "syncFermeture": "Overlay 'Synchronisation en cours' avant fermeture onglet",
+    "exclusions": "Image du plan stockée séparément pour éviter dépassement quota"
+  },
+
+  "fonctionnalitesSpeciales": {
+    "planVisuel": {
+      "description": "Vue cartographique de l'usine avec positionnement des équipements",
+      "uploadFormats": ["PNG", "JPG", "PDF (converti en image)"],
+      "compression": "Automatique à 500KB pour Firestore",
+      "positionnement": "Clic sur le plan après sélection équipement",
+      "marqueurs": {
+        "couleurs": {
+          "vert": "Tous travaux terminés",
+          "orange": "Travaux en cours",
+          "gris": "Non démarrés"
+        },
+        "comportement": "Taille constante au zoom, éventail si proches",
+        "clic": "Affiche modal avec liste travaux de l'équipement"
+      },
+      "navigation": "Zoom molette/boutons, pan par glisser, vues sauvegardées"
+    },
+    "relancesSoumissions": {
+      "description": "Calcul automatique des dates de relance pour les soumissions",
+      "delais": [14, 28, 42],
+      "couleursStatut": {
+        "relance-passee": "Rouge - date dépassée",
+        "relance-imminente": "Orange - dans 3 jours",
+        "relance-proche": "Jaune - dans la semaine",
+        "relance-done": "Gris - soumission reçue"
+      }
+    },
+    "pourcentageAutomatique": {
+      "description": "Le pourcentage d'avancement est calculé automatiquement selon le statut",
+      "regles": {
+        "À faire": "0%",
+        "En cours": "50%",
+        "Terminé": "100%",
+        "Bloqué": "25%"
+      }
+    }
+  },
+
+  "glossaireTermes": {
+    "AA": "Arrêt Annuel",
+    "OT": "Ordre de Travail (SAP)",
+    "DA": "Demande d'Achat",
+    "TPAA": "Travaux Préparatoires Avant Arrêt",
+    "VPO": "Vérification Pré-Opérationnelle",
+    "PSV": "Soupape de Sécurité (Pressure Safety Valve)",
+    "LOTO": "Lock Out Tag Out (Verrouillage/Cadenassage)",
+    "SMED": "Single Minute Exchange of Die (méthode d'optimisation)",
+    "SST": "Santé Sécurité au Travail",
+    "EHS": "Environment Health Safety",
+    "IDEERS5": "Système d'identification des risques",
+    "CCC": "Checklist de conformité",
+    "Cognibox": "Système de gestion des entrepreneurs externes",
+    "T-0": "Jour de début de l'arrêt (référence temporelle)",
+    "T-X": "X semaines avant l'arrêt",
+    "Chemin critique": "Séquence de tâches déterminant la durée minimale"
+  },
+
+  "commandesUtilisateur": {
+    "navigation": {
+      "changerEcran": "Cliquer sur item du menu latéral",
+      "retourListe": "Bouton '← Retour' dans les vues détail",
+      "detailTravail": "Cliquer sur une ligne dans la liste des travaux"
+    },
+    "actions": {
+      "importerTravaux": "Bouton 'Import SAP' → Sélectionner fichier Excel",
+      "ajouterTravail": "Bouton '+ Nouveau travail' dans liste travaux",
+      "modifierStatut": "Sélecteur de statut dans la vue détail",
+      "ajouterCommentaire": "Zone texte + bouton 'Ajouter' dans historique",
+      "synchroniser": "Clic sur l'icône de sync dans la sidebar",
+      "genererRapport": "Écran Rapports → Choisir type → Générer"
+    },
+    "raccourcis": {
+      "recherche": "Champ de recherche en haut de la liste des travaux",
+      "filtres": "Sélecteurs Discipline/Entreprise/Statut"
+    }
+  },
+
+  "apiModulesDisponibles": {
+    "App": {
+      "navigate(screen)": "Naviguer vers un écran",
+      "showToast(message, type)": "Afficher notification (success/error/warning/info)",
+      "getCurrentUser()": "Obtenir utilisateur connecté"
+    },
+    "DataManager": {
+      "getTravaux()": "Obtenir tous les travaux",
+      "getTravail(id)": "Obtenir un travail par ID",
+      "addTravail(travail)": "Ajouter un nouveau travail",
+      "updateTravail(id, updates)": "Mettre à jour un travail",
+      "deleteTravail(id)": "Supprimer un travail",
+      "getGlobalStats()": "Obtenir statistiques globales",
+      "getPreparationStats()": "Statistiques de préparation",
+      "getExecutionStats()": "Statistiques d'exécution",
+      "saveToStorage(syncImmediate)": "Sauvegarder (et sync Firebase si true)",
+      "getComments(travailId)": "Obtenir commentaires d'un travail",
+      "addComment(travailId, text)": "Ajouter commentaire"
+    },
+    "ProcessusArret": {
+      "getEtatEtape(etapeId)": "Obtenir état d'une étape",
+      "updateStatut(etapeId, statut)": "Mettre à jour statut d'une étape",
+      "getStatsPhase(phaseId)": "Statistiques d'une phase",
+      "getStatsGlobales()": "Statistiques globales du processus",
+      "getProchainEtapes(limit)": "Prochaines étapes à traiter",
+      "getEtapesBloquees()": "Étapes actuellement bloquées",
+      "setDateArret(date)": "Définir la date T-0",
+      "getDatesCibles()": "Obtenir toutes les dates cibles"
+    },
+    "FirebaseManager": {
+      "syncToCloud()": "Forcer synchronisation vers Firebase",
+      "loadFromCloud()": "Charger données depuis Firebase"
+    },
+    "Screens": {
+      "setRealisationView(view)": "Changer vue réalisation (liste/calendrier/plan)",
+      "setPostMortemView(view)": "Changer vue post-mortem",
+      "showConfigPlan()": "Ouvrir configuration du plan",
+      "saveJournal()": "Sauvegarder journal du jour"
+    },
+    "ScreenPreparation": {
+      "showDetail(etapeId)": "Afficher détail d'une étape",
+      "backToList()": "Retourner à la liste des étapes"
+    }
+  },
+
+  "conseilsAssistantIA": {
+    "contexteUtilisateur": "L'utilisateur gère des arrêts annuels industriels dans une usine métallurgique Rio Tinto",
+    "vocabulairePreféré": "Utiliser les termes du glossaire (OT, TPAA, PSV, etc.)",
+    "actionsFrequentes": [
+      "Chercher un travail par OT ou description",
+      "Modifier le statut d'un travail ou d'une étape",
+      "Consulter l'avancement global",
+      "Ajouter des commentaires",
+      "Générer des rapports",
+      "Gérer les soumissions entrepreneurs"
+    ],
+    "points_attention": [
+      "La synchronisation Firebase peut avoir un délai de 1-2 secondes",
+      "Les pourcentages sont automatiques selon le statut (pas modifiables manuellement)",
+      "L'import SAP fusionne intelligemment et supprime les travaux absents",
+      "Le plan visuel doit être compressé (<500KB) pour la synchro",
+      "Les relances soumissions sont automatiques (14/28/42 jours)"
+    ],
+    "formatReponses": "Être précis sur les écrans et boutons à utiliser, donner des chemins de navigation clairs"
+  }
+}
