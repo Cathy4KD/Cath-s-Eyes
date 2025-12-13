@@ -6679,10 +6679,24 @@ const ScreenPreparation = {
 
     initPlanCanvas(planImage) {
         const canvas = document.getElementById('planEditorCanvas');
-        if (!canvas) return;
+        if (!canvas) {
+            console.error('Canvas non trouvé');
+            return;
+        }
+
+        console.log('=== INIT PLAN CANVAS ===');
+        console.log('planImage existe:', !!planImage);
+        console.log('planImage longueur:', planImage?.length);
 
         const img = new Image();
+
+        img.onerror = (e) => {
+            console.error('ERREUR CHARGEMENT IMAGE:', e);
+        };
+
         img.onload = () => {
+            console.log('IMAGE CHARGÉE:', img.width, 'x', img.height);
+
             // Taille max
             const maxW = 1200;
             const maxH = 700;
@@ -6691,11 +6705,14 @@ const ScreenPreparation = {
             if (w > maxW) { h = h * maxW / w; w = maxW; }
             if (h > maxH) { w = w * maxH / h; h = maxH; }
 
+            console.log('Canvas taille:', w, 'x', h);
+
             canvas.width = w;
             canvas.height = h;
 
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, w, h);
+            console.log('Image dessinée sur canvas');
 
             this.planEditor.canvas = canvas;
             this.planEditor.ctx = ctx;
@@ -6710,6 +6727,8 @@ const ScreenPreparation = {
             canvas.onmousemove = (e) => this.onPlanMouseMove(e);
             canvas.onmouseup = (e) => this.onPlanMouseUp(e);
         };
+
+        console.log('Chargement image...');
         img.src = planImage;
     },
 
