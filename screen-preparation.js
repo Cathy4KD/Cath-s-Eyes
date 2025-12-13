@@ -6402,8 +6402,8 @@ const ScreenPreparation = {
                         </div>
 
                         <!-- Zone du canvas -->
-                        <div class="plan-editor-canvas-container" id="planCanvasContainer">
-                            <canvas id="planEditorCanvas"></canvas>
+                        <div class="plan-editor-canvas-container" id="planCanvasContainer" style="min-height:500px; background:#333;">
+                            <canvas id="planEditorCanvas" style="border:3px solid red;"></canvas>
                         </div>
                     </div>
 
