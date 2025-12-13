@@ -6546,8 +6546,21 @@ const ScreenPreparation = {
                 }
                 .plan-travaux-list {
                     flex: 1;
-                    overflow-y: auto;
+                    overflow-y: scroll;
                     padding: 8px;
+                    min-height: 0;
+                    scrollbar-width: thin;
+                    scrollbar-color: #94a3b8 #f1f5f9;
+                }
+                .plan-travaux-list::-webkit-scrollbar {
+                    width: 10px;
+                }
+                .plan-travaux-list::-webkit-scrollbar-track {
+                    background: #f1f5f9;
+                }
+                .plan-travaux-list::-webkit-scrollbar-thumb {
+                    background: #94a3b8;
+                    border-radius: 5px;
                 }
                 .plan-travail-item {
                     background: white;
@@ -6614,6 +6627,8 @@ const ScreenPreparation = {
                 }
                 .plan-editor-canvas-container {
                     flex: 1;
+                    min-width: 0;
+                    min-height: 400px;
                     overflow: auto;
                     background: #374151;
                     display: flex;
@@ -6653,8 +6668,19 @@ const ScreenPreparation = {
     },
 
     initPlanCanvas(planImage) {
+        // Attendre que le DOM soit rendu
+        setTimeout(() => {
+            this._initPlanCanvasDelayed(planImage);
+        }, 100);
+    },
+
+    _initPlanCanvasDelayed(planImage) {
         const canvas = document.getElementById('planEditorCanvas');
         const container = document.getElementById('planCanvasContainer');
+        if (!canvas || !container) {
+            console.error('Canvas ou container non trouvé');
+            return;
+        }
         const ctx = canvas.getContext('2d');
 
         this.planEditor.canvas = canvas;
@@ -6667,8 +6693,9 @@ const ScreenPreparation = {
             this.planEditor.image = img;
 
             // Calculer la taille pour que l'image rentre dans le container
-            const maxWidth = container.clientWidth - 40;
-            const maxHeight = container.clientHeight - 40;
+            // Utiliser des valeurs par défaut si le container n'a pas de taille
+            const maxWidth = Math.max(container.clientWidth - 40, 800);
+            const maxHeight = Math.max(container.clientHeight - 40, 500);
 
             let width = img.width;
             let height = img.height;
