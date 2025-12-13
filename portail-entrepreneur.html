@@ -3129,15 +3129,6 @@
                             </div>
                         </div>
 
-                        ${this.appelData.planImage ? `
-                            <div class="plan-section">
-                                <h2 class="section-title">🗺️ Plan de localisation</h2>
-                                <div class="plan-container">
-                                    <img src="${this.appelData.planImage}" alt="Plan" class="plan-image" onclick="PortailEntrepreneur.showPhoto('${this.appelData.planImage}')">
-                                </div>
-                            </div>
-                        ` : ''}
-
                         <h2 class="section-title">📋 Travaux (${this.travaux.length})</h2>
 
                         <!-- Filtres de recherche -->
@@ -3232,6 +3223,15 @@
                                 </button>
                             </div>
                         </div>
+
+                        ${this.appelData.planImage ? `
+                            <div class="plan-section">
+                                <h2 class="section-title">🗺️ Plan de localisation</h2>
+                                <div class="plan-container">
+                                    <img src="${this.appelData.planImage}" alt="Plan" class="plan-image" onclick="PortailEntrepreneur.showPhoto('${this.appelData.planImage}')">
+                                </div>
+                            </div>
+                        ` : ''}
 
                         <div class="actions-bar">
                             <button class="btn btn-secondary" onclick="window.print()">
