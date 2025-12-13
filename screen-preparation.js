@@ -6699,51 +6699,72 @@ const ScreenPreparation = {
         this.planEditor.canvas = canvas;
         this.planEditor.ctx = ctx;
 
+        console.log('Plan image source:', planImage ? planImage.substring(0, 100) + '...' : 'AUCUNE');
+
+        if (!planImage) {
+            App.showToast('Aucune image de plan trouvée', 'error');
+            return;
+        }
+
         // Charger l'image
         const img = new Image();
-        img.crossOrigin = 'anonymous';
+
+        // Essayer sans crossOrigin d'abord pour les data URLs
+        if (!planImage.startsWith('data:')) {
+            img.crossOrigin = 'anonymous';
+        }
 
         img.onerror = (e) => {
             console.error('Erreur chargement image plan:', e);
-            App.showToast('Erreur lors du chargement du plan', 'error');
+            // Réessayer sans crossOrigin si c'est une URL
+            if (img.crossOrigin) {
+                console.log('Réessai sans crossOrigin...');
+                const img2 = new Image();
+                img2.onload = () => this._onPlanImageLoaded(img2, canvas, container);
+                img2.onerror = () => App.showToast('Impossible de charger le plan', 'error');
+                img2.src = planImage;
+            } else {
+                App.showToast('Erreur lors du chargement du plan', 'error');
+            }
         };
 
-        img.onload = () => {
-            console.log('Image plan chargée:', img.width, 'x', img.height);
-            this.planEditor.image = img;
-
-            // Calculer la taille pour que l'image rentre dans le container
-            // Forcer une taille minimale basée sur le modal
-            const containerRect = container.getBoundingClientRect();
-            const maxWidth = Math.max(containerRect.width - 40, 800);
-            const maxHeight = Math.max(containerRect.height - 40, 500);
-
-            console.log('Container size:', maxWidth, 'x', maxHeight);
-
-            let width = img.width;
-            let height = img.height;
-
-            if (width > maxWidth) {
-                const ratio = maxWidth / width;
-                width = maxWidth;
-                height = height * ratio;
-            }
-            if (height > maxHeight) {
-                const ratio = maxHeight / height;
-                height = height * ratio;
-                width = width * ratio;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            canvas.style.display = 'block';
-            this.planEditor.scale = width / img.width;
-
-            console.log('Canvas size:', width, 'x', height);
-
-            this.redrawPlanCanvas();
-        };
+        img.onload = () => this._onPlanImageLoaded(img, canvas, container);
         img.src = planImage;
+    },
+
+    _onPlanImageLoaded(img, canvas, container) {
+        console.log('Image plan chargée:', img.width, 'x', img.height);
+        this.planEditor.image = img;
+
+        // Calculer la taille pour que l'image rentre dans le container
+        const containerRect = container.getBoundingClientRect();
+        const maxWidth = Math.max(containerRect.width - 40, 800);
+        const maxHeight = Math.max(containerRect.height - 40, 500);
+
+        console.log('Container size:', maxWidth, 'x', maxHeight);
+
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+            const ratio = maxWidth / width;
+            width = maxWidth;
+            height = height * ratio;
+        }
+        if (height > maxHeight) {
+            const ratio = maxHeight / height;
+            height = height * ratio;
+            width = width * ratio;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        canvas.style.display = 'block';
+        this.planEditor.scale = width / img.width;
+
+        console.log('Canvas final:', width, 'x', height);
+
+        this.redrawPlanCanvas();
 
         // Event listeners
         canvas.addEventListener('mousedown', (e) => this.onPlanMouseDown(e));
