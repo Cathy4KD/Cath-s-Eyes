@@ -6651,6 +6651,18 @@ const ScreenPreparation = {
                 }
                 #planBackgroundImg {
                     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                    display: block !important;
+                    visibility: visible !important;
+                    opacity: 1 !important;
+                    max-width: 100%;
+                    max-height: calc(95vh - 250px);
+                    width: auto;
+                    height: auto;
+                }
+                #planWrapper {
+                    position: relative;
+                    display: inline-block;
+                    background: white;
                 }
                 #planEditorCanvas {
                     cursor: crosshair;
