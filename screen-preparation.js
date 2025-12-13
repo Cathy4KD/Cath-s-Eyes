@@ -6735,6 +6735,8 @@ const ScreenPreparation = {
     _onPlanImageLoaded(img, canvas, container) {
         console.log('Image plan chargée:', img.width, 'x', img.height);
         this.planEditor.image = img;
+        this.planEditor.canvas = canvas;
+        this.planEditor.ctx = canvas.getContext('2d');
 
         // Calculer la taille pour que l'image rentre dans le container
         const containerRect = container.getBoundingClientRect();
@@ -6763,6 +6765,11 @@ const ScreenPreparation = {
         this.planEditor.scale = width / img.width;
 
         console.log('Canvas final:', width, 'x', height);
+
+        // Dessiner l'image directement
+        const ctx = this.planEditor.ctx;
+        ctx.drawImage(img, 0, 0, width, height);
+        console.log('Image dessinée sur canvas');
 
         this.redrawPlanCanvas();
 
