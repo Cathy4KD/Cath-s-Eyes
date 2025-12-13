@@ -6404,7 +6404,7 @@ const ScreenPreparation = {
                         <!-- Zone du canvas -->
                         <div class="plan-editor-canvas-container" id="planCanvasContainer">
                             <div id="planWrapper" style="position:relative; display:inline-block;">
-                                <img id="planBackgroundImg" src="${planImage}" style="display:block; max-width:100%; max-height:calc(95vh - 250px);">
+                                <img id="planBackgroundImg" style="display:block; max-width:100%; max-height:calc(95vh - 250px);">
                                 <canvas id="planEditorCanvas" style="position:absolute; top:0; left:0; pointer-events:auto;"></canvas>
                             </div>
                         </div>
@@ -6679,6 +6679,14 @@ const ScreenPreparation = {
         `;
 
         document.body.insertAdjacentHTML('beforeend', html);
+
+        // Charger l'image de fond directement via JavaScript
+        const bgImg = document.getElementById('planBackgroundImg');
+        if (bgImg) {
+            bgImg.src = planImage;
+            console.log('Image src définie, longueur:', planImage.length);
+        }
+
         this.initPlanCanvas(planImage);
     },
 
