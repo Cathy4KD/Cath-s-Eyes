@@ -78,6 +78,32 @@ const FirebaseManager = {
         }
     },
 
+    // === OPÉRATIONS STORAGE ===
+
+    // Uploader une image base64 vers Firebase Storage
+    async uploadImageToStorage(base64Data, path) {
+        if (!base64Data || !base64Data.startsWith('data:image')) {
+            return null;
+        }
+        try {
+            // Convertir base64 en blob
+            const response = await fetch(base64Data);
+            const blob = await response.blob();
+
+            // Uploader vers Storage
+            const storageRef = this.storage.ref(path);
+            await storageRef.put(blob);
+
+            // Retourner l'URL de téléchargement
+            const url = await storageRef.getDownloadURL();
+            console.log('Photo uploadée:', path);
+            return url;
+        } catch (e) {
+            console.error('Erreur upload image vers Storage:', e);
+            return null;
+        }
+    },
+
     // === OPÉRATIONS FIRESTORE ===
 
     // Nettoyer les données pour Firestore (remplacer undefined par null)
@@ -142,11 +168,37 @@ const FirebaseManager = {
                 // Enlever les plans annotés (stockés séparément)
                 delete processusLight.plansAnnotes;
 
-                // Enlever les photos des soumissionData (contiennent des base64)
+                // Uploader les photos des soumissionData vers Storage
                 if (processusLight.soumissionData) {
                     for (const key in processusLight.soumissionData) {
                         if (processusLight.soumissionData[key]?.photos) {
-                            delete processusLight.soumissionData[key].photos;
+                            const photos = processusLight.soumissionData[key].photos;
+                            const photoUrls = [];
+                            let photosModified = false;
+                            for (let i = 0; i < photos.length; i++) {
+                                const photo = photos[i];
+                                // Si c'est déjà une URL Firebase Storage, garder telle quelle
+                                if (photo && photo.startsWith('https://')) {
+                                    photoUrls.push(photo);
+                                } else if (photo && photo.startsWith('data:')) {
+                                    // Uploader vers Storage
+                                    try {
+                                        const url = await this.uploadImageToStorage(photo, `soumissions/${key}/photo_${i}.jpg`);
+                                        if (url) {
+                                            photoUrls.push(url);
+                                            photosModified = true;
+                                        }
+                                    } catch (e) {
+                                        console.warn('Erreur upload photo:', e);
+                                    }
+                                }
+                            }
+                            processusLight.soumissionData[key].photos = photoUrls;
+
+                            // Mettre à jour les données locales avec les URLs pour éviter re-upload
+                            if (photosModified && DataManager.data.processus?.soumissionData?.[key]) {
+                                DataManager.data.processus.soumissionData[key].photos = photoUrls;
+                            }
                         }
                     }
                 }
