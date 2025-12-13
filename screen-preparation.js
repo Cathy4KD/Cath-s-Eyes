@@ -6766,12 +6766,13 @@ const ScreenPreparation = {
 
         console.log('Canvas final:', width, 'x', height);
 
-        // Dessiner l'image directement
+        // Récupérer le contexte APRÈS avoir défini la taille (car canvas.width reset le ctx)
+        this.planEditor.ctx = canvas.getContext('2d');
         const ctx = this.planEditor.ctx;
+
+        // Dessiner l'image
         ctx.drawImage(img, 0, 0, width, height);
         console.log('Image dessinée sur canvas');
-
-        this.redrawPlanCanvas();
 
         // Event listeners
         canvas.addEventListener('mousedown', (e) => this.onPlanMouseDown(e));
