@@ -128,11 +128,25 @@ const FirebaseManager = {
 
         this.syncInProgress = true;
         try {
-            // Document metadata (léger) - inclut processus pour la date d'arrêt
+            // Préparer processus SANS les images volumineuses (plansAnnotes, planConfig.imageData)
+            let processusLight = null;
+            if (DataManager.data.processus) {
+                processusLight = { ...DataManager.data.processus };
+                // Enlever les images base64 volumineuses
+                if (processusLight.planConfig) {
+                    processusLight.planConfig = { ...processusLight.planConfig };
+                    delete processusLight.planConfig.imageData;
+                    delete processusLight.planConfig.imageURL;
+                }
+                // Enlever les plans annotés (stockés séparément)
+                delete processusLight.plansAnnotes;
+            }
+
+            // Document metadata (léger) - sans images
             const metadataRef = this.db.collection('arretAnnuel').doc('metadata');
             await metadataRef.set({
                 metadata: this.cleanForFirestore(DataManager.data.metadata || {}),
-                processus: this.cleanForFirestore(DataManager.data.processus || null),
+                processus: this.cleanForFirestore(processusLight),
                 postmortem: this.cleanForFirestore(DataManager.data.postmortem || []),
                 comments: this.cleanForFirestore(DataManager.data.comments || {}),
                 customFields: this.cleanForFirestore(DataManager.data.customFields || []),
@@ -156,14 +170,39 @@ const FirebaseManager = {
                 lastSync: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            // Document séparé pour l'image du plan (peut être volumineux)
+            // Document séparé pour l'image du plan principal (peut être volumineux)
             if (DataManager.data.processus?.planConfig?.imageData) {
-                const planImageRef = this.db.collection('arretAnnuel').doc('planImage');
-                await planImageRef.set({
-                    imageData: DataManager.data.processus.planConfig.imageData,
-                    lastSync: firebase.firestore.FieldValue.serverTimestamp()
-                });
-                console.log('Image du plan synchronisée');
+                try {
+                    const planImageRef = this.db.collection('arretAnnuel').doc('planImage');
+                    await planImageRef.set({
+                        imageData: DataManager.data.processus.planConfig.imageData,
+                        lastSync: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    console.log('Image du plan synchronisée');
+                } catch (planError) {
+                    console.warn('Image du plan trop volumineuse pour Firebase, ignorée');
+                }
+            }
+
+            // Documents séparés pour les plans annotés (un par entrepreneur)
+            if (DataManager.data.processus?.plansAnnotes) {
+                for (const [entreprise, planData] of Object.entries(DataManager.data.processus.plansAnnotes)) {
+                    try {
+                        // Nom de document sécurisé (remplacer caractères spéciaux)
+                        const docName = `planAnnote_${entreprise.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                        const planAnnoteRef = this.db.collection('arretAnnuel').doc(docName);
+                        await planAnnoteRef.set({
+                            entreprise: entreprise,
+                            imageData: planData.imageData || null,
+                            annotations: this.cleanForFirestore(planData.annotations || []),
+                            dateModification: planData.dateModification || null,
+                            lastSync: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    } catch (annotError) {
+                        console.warn(`Plan annoté ${entreprise} trop volumineux, ignoré`);
+                    }
+                }
+                console.log('Plans annotés synchronisés');
             }
 
             console.log('Données synchronisées vers Firebase:', cleanTravaux.length, 'travaux,', cleanPieces.length, 'pièces');
@@ -203,6 +242,29 @@ const FirebaseManager = {
                 if (!processus.planConfig) processus.planConfig = {};
                 processus.planConfig.imageData = planImageData.imageData;
                 console.log('Image du plan chargée depuis Firebase');
+            }
+
+            // Charger les plans annotés (documents séparés commençant par planAnnote_)
+            if (processus) {
+                const plansAnnotesSnapshot = await this.db.collection('arretAnnuel')
+                    .where(firebase.firestore.FieldPath.documentId(), '>=', 'planAnnote_')
+                    .where(firebase.firestore.FieldPath.documentId(), '<', 'planAnnote_~')
+                    .get();
+
+                if (!plansAnnotesSnapshot.empty) {
+                    processus.plansAnnotes = {};
+                    plansAnnotesSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (data.entreprise) {
+                            processus.plansAnnotes[data.entreprise] = {
+                                imageData: data.imageData,
+                                annotations: data.annotations || [],
+                                dateModification: data.dateModification
+                            };
+                        }
+                    });
+                    console.log('Plans annotés chargés:', Object.keys(processus.plansAnnotes).length);
+                }
             }
 
             console.log('Données chargées depuis Firebase:', (travauxData.travaux || []).length, 'travaux,',
