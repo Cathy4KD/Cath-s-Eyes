@@ -6518,6 +6518,8 @@ const ScreenPreparation = {
                     flex: 1;
                     display: flex;
                     overflow: hidden;
+                    min-height: 0;
+                    height: calc(95vh - 180px);
                 }
                 .plan-travaux-panel {
                     width: 280px;
@@ -6526,6 +6528,8 @@ const ScreenPreparation = {
                     display: flex;
                     flex-direction: column;
                     flex-shrink: 0;
+                    height: 100%;
+                    overflow: hidden;
                 }
                 .plan-travaux-header {
                     padding: 12px;
@@ -6546,21 +6550,25 @@ const ScreenPreparation = {
                 }
                 .plan-travaux-list {
                     flex: 1;
-                    overflow-y: scroll;
+                    overflow-y: auto !important;
+                    overflow-x: hidden;
                     padding: 8px;
                     min-height: 0;
+                    max-height: calc(100% - 120px);
                     scrollbar-width: thin;
                     scrollbar-color: #94a3b8 #f1f5f9;
                 }
                 .plan-travaux-list::-webkit-scrollbar {
-                    width: 10px;
+                    width: 12px;
                 }
                 .plan-travaux-list::-webkit-scrollbar-track {
-                    background: #f1f5f9;
+                    background: #e2e8f0;
+                    border-radius: 6px;
                 }
                 .plan-travaux-list::-webkit-scrollbar-thumb {
-                    background: #94a3b8;
-                    border-radius: 5px;
+                    background: #64748b;
+                    border-radius: 6px;
+                    border: 2px solid #e2e8f0;
                 }
                 .plan-travail-item {
                     background: white;
@@ -6629,17 +6637,22 @@ const ScreenPreparation = {
                     flex: 1;
                     min-width: 0;
                     min-height: 400px;
+                    height: 100%;
                     overflow: auto;
                     background: #374151;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     padding: 20px;
+                    position: relative;
                 }
                 #planEditorCanvas {
                     background: white;
                     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
                     cursor: crosshair;
+                    display: block;
+                    max-width: 100%;
+                    max-height: 100%;
                 }
                 #planEditorCanvas.placing-travail {
                     cursor: copy;
@@ -6668,10 +6681,10 @@ const ScreenPreparation = {
     },
 
     initPlanCanvas(planImage) {
-        // Attendre que le DOM soit rendu
+        // Attendre que le DOM soit complètement rendu
         setTimeout(() => {
             this._initPlanCanvasDelayed(planImage);
-        }, 100);
+        }, 300);
     },
 
     _initPlanCanvasDelayed(planImage) {
@@ -6689,13 +6702,23 @@ const ScreenPreparation = {
         // Charger l'image
         const img = new Image();
         img.crossOrigin = 'anonymous';
+
+        img.onerror = (e) => {
+            console.error('Erreur chargement image plan:', e);
+            App.showToast('Erreur lors du chargement du plan', 'error');
+        };
+
         img.onload = () => {
+            console.log('Image plan chargée:', img.width, 'x', img.height);
             this.planEditor.image = img;
 
             // Calculer la taille pour que l'image rentre dans le container
-            // Utiliser des valeurs par défaut si le container n'a pas de taille
-            const maxWidth = Math.max(container.clientWidth - 40, 800);
-            const maxHeight = Math.max(container.clientHeight - 40, 500);
+            // Forcer une taille minimale basée sur le modal
+            const containerRect = container.getBoundingClientRect();
+            const maxWidth = Math.max(containerRect.width - 40, 800);
+            const maxHeight = Math.max(containerRect.height - 40, 500);
+
+            console.log('Container size:', maxWidth, 'x', maxHeight);
 
             let width = img.width;
             let height = img.height;
@@ -6713,7 +6736,10 @@ const ScreenPreparation = {
 
             canvas.width = width;
             canvas.height = height;
+            canvas.style.display = 'block';
             this.planEditor.scale = width / img.width;
+
+            console.log('Canvas size:', width, 'x', height);
 
             this.redrawPlanCanvas();
         };
