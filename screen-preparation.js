@@ -6678,100 +6678,39 @@ const ScreenPreparation = {
     },
 
     initPlanCanvas(planImage) {
-        // Attendre que le DOM soit complètement rendu
-        setTimeout(() => {
-            this._initPlanCanvasDelayed(planImage);
-        }, 300);
-    },
-
-    _initPlanCanvasDelayed(planImage) {
         const canvas = document.getElementById('planEditorCanvas');
-        const container = document.getElementById('planCanvasContainer');
-        if (!canvas || !container) {
-            console.error('Canvas ou container non trouvé');
-            return;
-        }
-        const ctx = canvas.getContext('2d');
+        if (!canvas) return;
 
-        this.planEditor.canvas = canvas;
-        this.planEditor.ctx = ctx;
-
-        console.log('Plan image source:', planImage ? planImage.substring(0, 100) + '...' : 'AUCUNE');
-
-        if (!planImage) {
-            App.showToast('Aucune image de plan trouvée', 'error');
-            return;
-        }
-
-        // Charger l'image
         const img = new Image();
+        img.onload = () => {
+            // Taille max
+            const maxW = 1200;
+            const maxH = 700;
+            let w = img.width;
+            let h = img.height;
+            if (w > maxW) { h = h * maxW / w; w = maxW; }
+            if (h > maxH) { w = w * maxH / h; h = maxH; }
 
-        // Essayer sans crossOrigin d'abord pour les data URLs
-        if (!planImage.startsWith('data:')) {
-            img.crossOrigin = 'anonymous';
-        }
+            canvas.width = w;
+            canvas.height = h;
 
-        img.onerror = (e) => {
-            console.error('Erreur chargement image plan:', e);
-            // Réessayer sans crossOrigin si c'est une URL
-            if (img.crossOrigin) {
-                console.log('Réessai sans crossOrigin...');
-                const img2 = new Image();
-                img2.onload = () => this._onPlanImageLoaded(img2, canvas, container);
-                img2.onerror = () => App.showToast('Impossible de charger le plan', 'error');
-                img2.src = planImage;
-            } else {
-                App.showToast('Erreur lors du chargement du plan', 'error');
-            }
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+
+            this.planEditor.canvas = canvas;
+            this.planEditor.ctx = ctx;
+            this.planEditor.image = img;
+            this.planEditor.scale = w / img.width;
+
+            // Redessiner les annotations existantes
+            this.planEditor.annotations.forEach(ann => this.drawAnnotation(ann));
+
+            // Events
+            canvas.onmousedown = (e) => this.onPlanMouseDown(e);
+            canvas.onmousemove = (e) => this.onPlanMouseMove(e);
+            canvas.onmouseup = (e) => this.onPlanMouseUp(e);
         };
-
-        img.onload = () => this._onPlanImageLoaded(img, canvas, container);
         img.src = planImage;
-    },
-
-    _onPlanImageLoaded(img, canvas, container) {
-        console.log('Image plan chargée:', img.width, 'x', img.height);
-        this.planEditor.image = img;
-        this.planEditor.canvas = canvas;
-
-        // Calculer la taille du canvas en fonction du container
-        const containerRect = container.getBoundingClientRect();
-        const maxWidth = containerRect.width - 40;
-        const maxHeight = containerRect.height - 40;
-
-        let width = img.width;
-        let height = img.height;
-
-        // Redimensionner pour tenir dans le container
-        if (width > maxWidth) {
-            const ratio = maxWidth / width;
-            width = maxWidth;
-            height = height * ratio;
-        }
-        if (height > maxHeight) {
-            const ratio = maxHeight / height;
-            height = height * ratio;
-            width = width * ratio;
-        }
-
-        console.log('Canvas dimensions:', width, 'x', height);
-
-        // Configurer le canvas
-        canvas.width = width;
-        canvas.height = height;
-        this.planEditor.scale = width / img.width;
-        this.planEditor.ctx = canvas.getContext('2d');
-
-        console.log('Canvas configuré, scale:', this.planEditor.scale);
-
-        // Dessiner l'image et les annotations
-        this.redrawPlanCanvas();
-
-        // Event listeners
-        canvas.addEventListener('mousedown', (e) => this.onPlanMouseDown(e));
-        canvas.addEventListener('mousemove', (e) => this.onPlanMouseMove(e));
-        canvas.addEventListener('mouseup', (e) => this.onPlanMouseUp(e));
-        canvas.addEventListener('mouseleave', (e) => this.onPlanMouseUp(e));
     },
 
     redrawPlanCanvas() {
