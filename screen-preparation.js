@@ -6403,8 +6403,10 @@ const ScreenPreparation = {
 
                         <!-- Zone du canvas -->
                         <div class="plan-editor-canvas-container" id="planCanvasContainer">
-                            <img id="planBackgroundImg" src="${planImage}" style="max-width:100%; max-height:100%; display:block;">
-                            <canvas id="planEditorCanvas" style="position:absolute; top:0; left:0;"></canvas>
+                            <div id="planWrapper" style="position:relative; display:inline-block;">
+                                <img id="planBackgroundImg" src="${planImage}" style="display:block; max-width:100%; max-height:calc(95vh - 250px);">
+                                <canvas id="planEditorCanvas" style="position:absolute; top:0; left:0; pointer-events:auto;"></canvas>
+                            </div>
                         </div>
                     </div>
 
@@ -6739,35 +6741,41 @@ const ScreenPreparation = {
 
         // Utiliser l'image de fond pour dimensionner
         const bgImg = document.getElementById('planBackgroundImg');
-        if (bgImg) {
-            // Attendre que l'image de fond soit chargée et dimensionnée
-            const setupCanvas = () => {
-                const rect = bgImg.getBoundingClientRect();
-                const width = rect.width;
-                const height = rect.height;
+        if (!bgImg) {
+            console.error('Image background non trouvée');
+            return;
+        }
 
-                console.log('Image background size:', width, 'x', height);
+        const setupCanvas = () => {
+            // Utiliser les dimensions affichées de l'image
+            const width = bgImg.offsetWidth || bgImg.clientWidth || bgImg.naturalWidth;
+            const height = bgImg.offsetHeight || bgImg.clientHeight || bgImg.naturalHeight;
 
-                canvas.width = width;
-                canvas.height = height;
-                canvas.style.position = 'absolute';
-                canvas.style.top = bgImg.offsetTop + 'px';
-                canvas.style.left = bgImg.offsetLeft + 'px';
+            console.log('Image background size:', width, 'x', height);
 
-                this.planEditor.scale = width / img.width;
-                this.planEditor.ctx = canvas.getContext('2d');
-
-                console.log('Canvas positionné:', width, 'x', height);
-
-                // Redessiner les annotations existantes
-                this.redrawPlanCanvas();
-            };
-
-            if (bgImg.complete) {
-                setupCanvas();
-            } else {
-                bgImg.onload = setupCanvas;
+            if (width === 0 || height === 0) {
+                console.error('Image a une taille de 0, réessai dans 200ms');
+                setTimeout(() => setupCanvas(), 200);
+                return;
             }
+
+            canvas.width = width;
+            canvas.height = height;
+
+            this.planEditor.scale = width / img.naturalWidth;
+            this.planEditor.ctx = canvas.getContext('2d');
+
+            console.log('Canvas configuré:', width, 'x', height, 'scale:', this.planEditor.scale);
+
+            // Redessiner les annotations existantes
+            this.redrawPlanCanvas();
+        };
+
+        // Attendre que l'image soit chargée
+        if (bgImg.complete && bgImg.naturalWidth > 0) {
+            setTimeout(() => setupCanvas(), 100);
+        } else {
+            bgImg.onload = () => setTimeout(() => setupCanvas(), 100);
         }
 
         // Event listeners
