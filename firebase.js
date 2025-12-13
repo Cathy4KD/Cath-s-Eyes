@@ -128,18 +128,31 @@ const FirebaseManager = {
 
         this.syncInProgress = true;
         try {
-            // Préparer processus SANS les images volumineuses (plansAnnotes, planConfig.imageData)
+            // Préparer processus SANS les images volumineuses
             let processusLight = null;
             if (DataManager.data.processus) {
-                processusLight = { ...DataManager.data.processus };
-                // Enlever les images base64 volumineuses
+                processusLight = JSON.parse(JSON.stringify(DataManager.data.processus)); // Deep clone
+
+                // Enlever les images base64 volumineuses du planConfig
                 if (processusLight.planConfig) {
-                    processusLight.planConfig = { ...processusLight.planConfig };
                     delete processusLight.planConfig.imageData;
                     delete processusLight.planConfig.imageURL;
                 }
+
                 // Enlever les plans annotés (stockés séparément)
                 delete processusLight.plansAnnotes;
+
+                // Enlever les photos des soumissionData (contiennent des base64)
+                if (processusLight.soumissionData) {
+                    for (const key in processusLight.soumissionData) {
+                        if (processusLight.soumissionData[key]?.photos) {
+                            delete processusLight.soumissionData[key].photos;
+                        }
+                    }
+                }
+
+                // Enlever les appelsEnvoyes qui peuvent contenir des images
+                delete processusLight.appelsEnvoyes;
             }
 
             // Document metadata (léger) - sans images
