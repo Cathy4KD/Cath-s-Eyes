@@ -6403,10 +6403,7 @@ const ScreenPreparation = {
 
                         <!-- Zone du canvas -->
                         <div class="plan-editor-canvas-container" id="planCanvasContainer">
-                            <div id="planWrapper" style="position:relative; display:inline-block;">
-                                <img id="planBackgroundImg" style="display:block; max-width:100%; max-height:calc(95vh - 250px);">
-                                <canvas id="planEditorCanvas" style="position:absolute; top:0; left:0; pointer-events:auto;"></canvas>
-                            </div>
+                            <canvas id="planEditorCanvas"></canvas>
                         </div>
                     </div>
 
@@ -6649,24 +6646,10 @@ const ScreenPreparation = {
                     padding: 20px;
                     position: relative;
                 }
-                #planBackgroundImg {
-                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-                    display: block !important;
-                    visibility: visible !important;
-                    opacity: 1 !important;
-                    max-width: 100%;
-                    max-height: calc(95vh - 250px);
-                    width: auto;
-                    height: auto;
-                }
-                #planWrapper {
-                    position: relative;
-                    display: inline-block;
-                    background: white;
-                }
                 #planEditorCanvas {
                     cursor: crosshair;
-                    pointer-events: auto;
+                    background: white;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
                 }
                 #planEditorCanvas.placing-travail {
                     cursor: copy;
@@ -6691,36 +6674,6 @@ const ScreenPreparation = {
         `;
 
         document.body.insertAdjacentHTML('beforeend', html);
-
-        // Charger l'image de fond directement via JavaScript
-        const bgImg = document.getElementById('planBackgroundImg');
-        if (bgImg) {
-            // Convertir data URL en Blob URL pour éviter les problèmes d'encodage
-            if (planImage.startsWith('data:')) {
-                try {
-                    const parts = planImage.split(',');
-                    const mimeMatch = parts[0].match(/:(.*?);/);
-                    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
-                    const base64 = parts[1];
-                    const binary = atob(base64);
-                    const array = new Uint8Array(binary.length);
-                    for (let i = 0; i < binary.length; i++) {
-                        array[i] = binary.charCodeAt(i);
-                    }
-                    const blob = new Blob([array], { type: mime });
-                    const blobUrl = URL.createObjectURL(blob);
-                    bgImg.src = blobUrl;
-                    console.log('Image convertie en Blob URL');
-                } catch (e) {
-                    console.error('Erreur conversion blob:', e);
-                    bgImg.src = planImage;
-                }
-            } else {
-                bgImg.src = planImage;
-            }
-            console.log('Image src définie, longueur:', planImage.length);
-        }
-
         this.initPlanCanvas(planImage);
     },
 
@@ -6781,44 +6734,38 @@ const ScreenPreparation = {
         this.planEditor.image = img;
         this.planEditor.canvas = canvas;
 
-        // Utiliser l'image de fond pour dimensionner
-        const bgImg = document.getElementById('planBackgroundImg');
-        if (!bgImg) {
-            console.error('Image background non trouvée');
-            return;
+        // Calculer la taille du canvas en fonction du container
+        const containerRect = container.getBoundingClientRect();
+        const maxWidth = containerRect.width - 40;
+        const maxHeight = containerRect.height - 40;
+
+        let width = img.width;
+        let height = img.height;
+
+        // Redimensionner pour tenir dans le container
+        if (width > maxWidth) {
+            const ratio = maxWidth / width;
+            width = maxWidth;
+            height = height * ratio;
+        }
+        if (height > maxHeight) {
+            const ratio = maxHeight / height;
+            height = height * ratio;
+            width = width * ratio;
         }
 
-        const setupCanvas = () => {
-            // Utiliser les dimensions affichées de l'image
-            const width = bgImg.offsetWidth || bgImg.clientWidth || bgImg.naturalWidth;
-            const height = bgImg.offsetHeight || bgImg.clientHeight || bgImg.naturalHeight;
+        console.log('Canvas dimensions:', width, 'x', height);
 
-            console.log('Image background size:', width, 'x', height);
+        // Configurer le canvas
+        canvas.width = width;
+        canvas.height = height;
+        this.planEditor.scale = width / img.width;
+        this.planEditor.ctx = canvas.getContext('2d');
 
-            if (width === 0 || height === 0) {
-                console.error('Image a une taille de 0, réessai dans 200ms');
-                setTimeout(() => setupCanvas(), 200);
-                return;
-            }
+        console.log('Canvas configuré, scale:', this.planEditor.scale);
 
-            canvas.width = width;
-            canvas.height = height;
-
-            this.planEditor.scale = width / img.naturalWidth;
-            this.planEditor.ctx = canvas.getContext('2d');
-
-            console.log('Canvas configuré:', width, 'x', height, 'scale:', this.planEditor.scale);
-
-            // Redessiner les annotations existantes
-            this.redrawPlanCanvas();
-        };
-
-        // Attendre que l'image soit chargée
-        if (bgImg.complete && bgImg.naturalWidth > 0) {
-            setTimeout(() => setupCanvas(), 100);
-        } else {
-            bgImg.onload = () => setTimeout(() => setupCanvas(), 100);
-        }
+        // Dessiner l'image et les annotations
+        this.redrawPlanCanvas();
 
         // Event listeners
         canvas.addEventListener('mousedown', (e) => this.onPlanMouseDown(e));
@@ -6828,13 +6775,14 @@ const ScreenPreparation = {
     },
 
     redrawPlanCanvas() {
-        const { canvas, ctx, annotations } = this.planEditor;
-        if (!canvas || !ctx) return;
+        const { canvas, ctx, image, annotations } = this.planEditor;
+        if (!canvas || !ctx || !image) return;
 
-        // Effacer le canvas (l'image est dans l'élément img en dessous)
+        // Effacer et dessiner l'image de fond
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-        // Dessiner les annotations
+        // Dessiner les annotations par-dessus
         annotations.forEach(ann => this.drawAnnotation(ann));
     },
 
