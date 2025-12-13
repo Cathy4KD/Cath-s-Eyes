@@ -6683,7 +6683,29 @@ const ScreenPreparation = {
         // Charger l'image de fond directement via JavaScript
         const bgImg = document.getElementById('planBackgroundImg');
         if (bgImg) {
-            bgImg.src = planImage;
+            // Convertir data URL en Blob URL pour éviter les problèmes d'encodage
+            if (planImage.startsWith('data:')) {
+                try {
+                    const parts = planImage.split(',');
+                    const mimeMatch = parts[0].match(/:(.*?);/);
+                    const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+                    const base64 = parts[1];
+                    const binary = atob(base64);
+                    const array = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) {
+                        array[i] = binary.charCodeAt(i);
+                    }
+                    const blob = new Blob([array], { type: mime });
+                    const blobUrl = URL.createObjectURL(blob);
+                    bgImg.src = blobUrl;
+                    console.log('Image convertie en Blob URL');
+                } catch (e) {
+                    console.error('Erreur conversion blob:', e);
+                    bgImg.src = planImage;
+                }
+            } else {
+                bgImg.src = planImage;
+            }
             console.log('Image src définie, longueur:', planImage.length);
         }
 
