@@ -6402,8 +6402,11 @@ const ScreenPreparation = {
                         </div>
 
                         <!-- Zone du canvas -->
-                        <div class="plan-editor-canvas-container" id="planCanvasContainer" style="min-height:500px; background:#333;">
-                            <canvas id="planEditorCanvas" style="border:3px solid red;"></canvas>
+                        <div class="plan-editor-canvas-container" id="planCanvasContainer">
+                            <div style="position:relative; display:inline-block;">
+                                <img id="planBackgroundImg" src="${planImage}" style="max-width:100%; max-height:700px; display:block;">
+                                <canvas id="planEditorCanvas" style="position:absolute; top:0; left:0;"></canvas>
+                            </div>
                         </div>
                     </div>
 
@@ -6679,47 +6682,23 @@ const ScreenPreparation = {
 
     initPlanCanvas(planImage) {
         const canvas = document.getElementById('planEditorCanvas');
-        if (!canvas) {
-            console.error('Canvas non trouvé');
-            return;
-        }
+        const bgImg = document.getElementById('planBackgroundImg');
+        if (!canvas || !bgImg) return;
 
-        console.log('=== INIT PLAN CANVAS ===');
-        console.log('planImage existe:', !!planImage);
-        console.log('planImage longueur:', planImage?.length);
-
-        const img = new Image();
-
-        img.onerror = (e) => {
-            console.error('ERREUR CHARGEMENT IMAGE:', e);
-        };
-
-        img.onload = () => {
-            console.log('IMAGE CHARGÉE:', img.width, 'x', img.height);
-
-            // Taille max
-            const maxW = 1200;
-            const maxH = 700;
-            let w = img.width;
-            let h = img.height;
-            if (w > maxW) { h = h * maxW / w; w = maxW; }
-            if (h > maxH) { w = w * maxH / h; h = maxH; }
-
-            console.log('Canvas taille:', w, 'x', h);
+        // Attendre que l'image soit chargée
+        const setup = () => {
+            const w = bgImg.offsetWidth;
+            const h = bgImg.offsetHeight;
 
             canvas.width = w;
             canvas.height = h;
 
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            console.log('Image dessinée sur canvas');
-
             this.planEditor.canvas = canvas;
-            this.planEditor.ctx = ctx;
-            this.planEditor.image = img;
-            this.planEditor.scale = w / img.width;
+            this.planEditor.ctx = canvas.getContext('2d');
+            this.planEditor.image = bgImg;
+            this.planEditor.scale = w / bgImg.naturalWidth;
 
-            // Redessiner les annotations existantes
+            // Dessiner les annotations existantes
             this.planEditor.annotations.forEach(ann => this.drawAnnotation(ann));
 
             // Events
@@ -6728,19 +6707,21 @@ const ScreenPreparation = {
             canvas.onmouseup = (e) => this.onPlanMouseUp(e);
         };
 
-        console.log('Chargement image...');
-        img.src = planImage;
+        if (bgImg.complete) {
+            setTimeout(setup, 100);
+        } else {
+            bgImg.onload = setup;
+        }
     },
 
     redrawPlanCanvas() {
-        const { canvas, ctx, image, annotations } = this.planEditor;
-        if (!canvas || !ctx || !image) return;
+        const { canvas, ctx, annotations } = this.planEditor;
+        if (!canvas || !ctx) return;
 
-        // Effacer et dessiner l'image de fond
+        // Effacer le canvas (l'image est en dessous via <img>)
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-        // Dessiner les annotations par-dessus
+        // Dessiner les annotations
         annotations.forEach(ann => this.drawAnnotation(ann));
     },
 
